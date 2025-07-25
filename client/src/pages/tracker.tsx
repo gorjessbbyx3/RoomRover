@@ -309,6 +309,29 @@ export default function Tracker({ params }: TrackerProps) {
                                 </div>
                               </div>
                             </div>
+                            
+                            {/* Additional Fees Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-start">
+                                  <Shield className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="text-sm font-medium text-blue-800">Security Deposit</p>
+                                    <p className="text-xs text-blue-700">$50 initial deposit required (refundable)</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                                <div className="flex items-start">
+                                  <div className="h-4 w-4 text-purple-600 mr-2 mt-0.5 flex-shrink-0">🐕</div>
+                                  <div>
+                                    <p className="text-sm font-medium text-purple-800">Pet Fee</p>
+                                    <p className="text-xs text-purple-700">$50 per pet (non-refundable)</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
 

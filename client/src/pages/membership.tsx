@@ -514,8 +514,37 @@ export default function Membership() {
           </CardContent>
         </Card>
 
+        {/* Fee Information */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start">
+              <Shield className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-blue-800 mb-1">Security Deposit Required</h3>
+                <p className="text-sm text-blue-700">
+                  A <strong>$50 initial security deposit</strong> is required for all memberships. 
+                  This deposit is refundable upon checkout and room inspection.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-start">
+              <div className="h-5 w-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0">🐕</div>
+              <div>
+                <h3 className="font-medium text-purple-800 mb-1">Pet Fee</h3>
+                <p className="text-sm text-purple-700">
+                  A <strong>non-refundable $50 fee per pet</strong> applies to all pets staying 
+                  in the clubhouse accommodations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Important Notice */}
-        <div className="mt-8 p-4 bg-warning-50 border border-warning-200 rounded-lg">
+        <div className="mt-6 p-4 bg-warning-50 border border-warning-200 rounded-lg">
           <div className="flex items-start">
             <Shield className="h-5 w-5 text-warning-600 mr-3 mt-0.5 flex-shrink-0" />
             <div>
