@@ -17,6 +17,9 @@ import Tracker from "@/pages/tracker";
 import Membership from "@/pages/membership";
 import UserManagement from '@/pages/user-management';
 import InventoryManagement from '@/pages/inventory-management';
+import MaintenanceManagement from '@/pages/maintenance-management';
+import BannedUsersManagement from '@/pages/banned-users-management';
+import MasterCodesManagement from '@/pages/master-codes-management';
 
 function AppRouter() {
   const { user, loading } = useAuth();
@@ -99,6 +102,35 @@ function AppRouter() {
           <ProtectedRoute requiredRoles={['admin']}>
             <Navigation />
               <InventoryManagement />
+          </ProtectedRoute>
+        )} />
+        <Route path="/user-management" component={() => (
+          <ProtectedRoute>
+            <UserManagement />
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/inventory-management" component={() => (
+          <ProtectedRoute>
+            <InventoryManagement />
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/maintenance-management" component={() => (
+          <ProtectedRoute>
+            <MaintenanceManagement />
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/banned-users-management" component={() => (
+          <ProtectedRoute>
+            <BannedUsersManagement />
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/master-codes-management" component={() => (
+          <ProtectedRoute>
+            <MasterCodesManagement />
           </ProtectedRoute>
         )} />
 

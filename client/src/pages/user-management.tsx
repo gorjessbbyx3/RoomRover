@@ -1,33 +1,45 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Users, Plus, Shield, UserCheck, UserX } from 'lucide-react';
+
+interface User {
+  id: string;
+  username: string;
+  name: string;
+  role: 'admin' | 'manager' | 'helper';
+  property: string | null;
+  createdAt: string;
+}
+
+interface Property {
+  id: string;
+  name: string;
+}
 
 export default function UserManagement() {
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
     name: '',
-    role: '',
+    password: '',
+    role: 'helper' as 'admin' | 'manager' | 'helper',
     property: ''
   });
 
-  const { data: users, isLoading, error } = useQuery({
+  const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       const response = await fetch('/api/users', {
@@ -37,11 +49,10 @@ export default function UserManagement() {
       });
       if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
-    },
-    enabled: !!user && user.role === 'admin'
+    }
   });
 
-  const { data: properties } = useQuery({
+  const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
       const response = await fetch('/api/properties', {
@@ -55,14 +66,17 @@ export default function UserManagement() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async (userData: typeof formData) => {
+    mutationFn: async (data: typeof formData) => {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          ...data,
+          property: data.property || null
+        })
       });
       if (!response.ok) {
         const error = await response.json();
@@ -73,38 +87,48 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsCreateDialogOpen(false);
-      setFormData({ username: '', password: '', name: '', role: '', property: '' });
+      setFormData({
+        username: '',
+        name: '',
+        password: '',
+        role: 'helper',
+        property: ''
+      });
       toast({
-        title: 'Success',
-        description: 'User created successfully'
+        title: 'User Created',
+        description: 'User has been successfully created.',
       });
     },
     onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: error.message,
-        variant: 'destructive'
+        description: error.message || 'Failed to create user. Please try again.',
+        variant: 'destructive',
       });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.password || !formData.name || !formData.role) {
+    if (!formData.username || !formData.name || !formData.password) {
       toast({
         title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive'
+        description: 'Username, name, and password are required.',
+        variant: 'destructive',
       });
       return;
     }
-    
-    const submitData = {
-      ...formData,
-      property: formData.role === 'manager' ? formData.property : null
-    };
-    
-    createUserMutation.mutate(submitData);
+
+    if (formData.role === 'manager' && !formData.property) {
+      toast({
+        title: 'Error',
+        description: 'Property is required for manager role.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    createUserMutation.mutate(formData);
   };
 
   const getRoleBadge = (role: string) => {
@@ -116,53 +140,123 @@ export default function UserManagement() {
     return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Access denied. Admin privileges required.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const getPropertyName = (propertyId: string | null) => {
+    if (!propertyId) return 'All Properties';
+    const property = properties.find((p: Property) => p.id === propertyId);
+    return property ? property.name : propertyId;
+  };
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
-  }
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Shield className="h-4 w-4" />;
+      case 'manager':
+        return <UserCheck className="h-4 w-4" />;
+      case 'helper':
+        return <UserX className="h-4 w-4" />;
+      default:
+        return <Users className="h-4 w-4" />;
+    }
+  };
 
-  if (error) {
+  const userCounts = {
+    admin: users.filter((u: User) => u.role === 'admin').length,
+    manager: users.filter((u: User) => u.role === 'manager').length,
+    helper: users.filter((u: User) => u.role === 'helper').length
+  };
+
+  if (!currentUser || currentUser.role !== 'admin') {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load users. Please try again.
-          </AlertDescription>
-        </Alert>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">Admin access required</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage system users and permissions</p>
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <Users className="h-8 w-8" />
+          User Management
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Manage system users and their permissions.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Shield className="h-4 w-4 text-red-500" />
+              Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {userCounts.admin}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-blue-500" />
+              Managers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {userCounts.manager}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <UserX className="h-4 w-4 text-green-500" />
+              Helpers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {userCounts.helper}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {users.length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-sm text-gray-500">
+          {users.length} user{users.length !== 1 ? 's' : ''}
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add User
+              Create User
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                Add a new user to the system with appropriate permissions.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -170,7 +264,8 @@ export default function UserManagement() {
                 <Input
                   id="username"
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder="Enter username"
                   required
                 />
               </div>
@@ -179,7 +274,8 @@ export default function UserManagement() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter full name"
                   required
                 />
               </div>
@@ -189,32 +285,33 @@ export default function UserManagement() {
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Enter password"
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="role">Role *</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as typeof formData.role }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="helper">Helper</SelectItem>
+                    <SelectItem value="admin">Admin - Full access</SelectItem>
+                    <SelectItem value="manager">Manager - Property management</SelectItem>
+                    <SelectItem value="helper">Helper - Cleaning tasks</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {formData.role === 'manager' && (
                 <div>
-                  <Label htmlFor="property">Property</Label>
-                  <Select value={formData.property} onValueChange={(value) => setFormData({ ...formData, property: value })}>
+                  <Label htmlFor="property">Property *</Label>
+                  <Select value={formData.property} onValueChange={(value) => setFormData(prev => ({ ...prev, property: value }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
+                      <SelectValue placeholder="Select property to manage" />
                     </SelectTrigger>
                     <SelectContent>
-                      {properties?.map((property: any) => (
+                      {properties.map((property: Property) => (
                         <SelectItem key={property.id} value={property.id}>
                           {property.name}
                         </SelectItem>
@@ -223,14 +320,14 @@ export default function UserManagement() {
                   </Select>
                 </div>
               )}
-              <div className="flex justify-end space-x-2">
+              <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createUserMutation.isPending}>
                   {createUserMutation.isPending ? 'Creating...' : 'Create User'}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -238,38 +335,53 @@ export default function UserManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            System Users ({users?.length || 0})
-          </CardTitle>
+          <CardTitle>System Users</CardTitle>
+          <CardDescription>
+            Manage user accounts and their access permissions.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users?.map((user: any) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.username}</TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>
-                    <Badge className={getRoleBadge(user.role)}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.property || '-'}</TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+          {isLoading ? (
+            <div className="text-center py-8">Loading users...</div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No users found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Property Access</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.map((user: User) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-mono">{user.username}</TableCell>
+                    <TableCell>
+                      <Badge className={`${getRoleBadge(user.role)} flex items-center gap-1 w-fit`}>
+                        {getRoleIcon(user.role)}
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{getPropertyName(user.property)}</TableCell>
+                    <TableCell>
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
