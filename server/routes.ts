@@ -406,12 +406,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update booking payment status
       await storage.updateBooking(payment.bookingId, { paymentStatus: 'paid' });
 
+      // Create audit log for payment receipt
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'payment_received',
+        details: `${req.user.name} recorded ${paymentData.method} payment of $${paymentData.amount} for booking ${paymentData.bookingId}`
+      });
+
       res.status(201).json(payment);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid payment data', details: error.errors });
       }
       res.status(500).json({ error: 'Failed to record payment' });
+    }
+  });
+
+  // Enhanced payments endpoint with staff info
+  app.get("/api/payments/detailed", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const payments = await storage.getPayments();
+      const users = await storage.getAllUsers();
+      
+      const paymentsWithStaff = payments.map(payment => {
+        const staff = users.find(user => user.id === payment.receivedBy);
+        return {
+          ...payment,
+          receivedByName: staff ? staff.name : 'Unknown Staff'
+        };
+      });
+
+      res.json(paymentsWithStaff);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch detailed payments' });
+    }
+  });
+
+  // Cash turn-in endpoints
+  app.get("/api/cash-turnins", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      let turnIns;
+      
+      if (req.user.role === 'admin') {
+        turnIns = await storage.getCashTurnIns();
+      } else {
+        turnIns = await storage.getCashTurnInsByManager(req.user.id);
+      }
+
+      res.json(turnIns);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch cash turn-ins' });
+    }
+  });
+
+  app.post("/api/cash-turnins", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { amount, notes } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Valid amount is required' });
+      }
+
+      const turnIn = await storage.createCashTurnIn({
+        managerId: req.user.id,
+        managerName: req.user.name,
+        property: req.user.property || 'N/A',
+        amount: parseFloat(amount),
+        notes,
+        receivedBy: req.user.role === 'manager' ? null : req.user.id // Admin receives their own turn-ins
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'cash_turned_in',
+        details: `${req.user.name} turned in $${amount} cash from ${req.user.property || 'property'}`
+      });
+
+      res.status(201).json(turnIn);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to record cash turn-in' });
+    }
+  });
+
+  app.get("/api/cash-drawer-stats", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const stats = await storage.getCashDrawerStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch cash drawer stats' });
     }
   });
 
@@ -616,6 +699,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const overduePaymentsCount = overdueBookings.length;
       const overduePaymentsAmount = overdueBookings.reduce((sum, booking) => sum + parseFloat(booking.totalAmount), 0);
 
+      // Get cash drawer stats for admin
+      let cashDrawerStats = null;
+      if (req.user.role === 'admin') {
+        cashDrawerStats = await storage.getCashDrawerStats();
+      }
+
       res.json({
         availableRooms,
         activeBookings,
@@ -630,7 +719,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pendingPaymentsCount,
         pendingPaymentsAmount,
         overduePaymentsCount,
-        overduePaymentsAmount
+        overduePaymentsAmount,
+        cashDrawerStats
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch dashboard stats' });

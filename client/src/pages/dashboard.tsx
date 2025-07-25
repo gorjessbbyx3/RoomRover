@@ -15,7 +15,10 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  Key
+  Key,
+  TrendingUp,
+  HandCoins,
+  Users
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 
@@ -557,8 +560,137 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Cash Drawer Monitoring - Admin Only */}
+      {user.role === 'admin' && (
+        <div className="mt-8 mb-8">
+          <Card className="shadow-material bg-gradient-to-r from-yellow-50 to-green-50 border-yellow-200">
+            <CardHeader className="border-b border-yellow-200">
+              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+                <HandCoins className="h-5 w-5 mr-2 text-yellow-600" />
+                Cash Drawer Monitoring
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Real-time tracking of manager cash holdings and turn-ins
+              </p>
+            </CardHeader>
+            <CardContent className="p-6">
+              {statsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-32" />
+                  <Skeleton className="h-32" />
+                </div>
+              ) : stats?.cashDrawerStats && stats.cashDrawerStats.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                      <div className="flex items-center">
+                        <Users className="h-5 w-5 text-blue-500 mr-2" />
+                        <div>
+                          <div className="text-sm text-gray-600">Active Managers</div>
+                          <div className="text-xl font-bold text-blue-600">
+                            {stats.cashDrawerStats.length}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                      <div className="flex items-center">
+                        <DollarSign className="h-5 w-5 text-green-500 mr-2" />
+                        <div>
+                          <div className="text-sm text-gray-600">Total Cash Holdings</div>
+                          <div className="text-xl font-bold text-green-600">
+                            {formatCurrency(stats.cashDrawerStats.reduce((sum, stat) => sum + stat.currentCashHolding, 0))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                      <div className="flex items-center">
+                        <TrendingUp className="h-5 w-5 text-purple-500 mr-2" />
+                        <div>
+                          <div className="text-sm text-gray-600">Today's Collections</div>
+                          <div className="text-xl font-bold text-purple-600">
+                            {formatCurrency(stats.cashDrawerStats.reduce((sum, stat) => sum + stat.totalCashCollectedToday, 0))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual Manager Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {stats.cashDrawerStats.map((drawerStat) => (
+                      <div key={drawerStat.managerId} className="bg-white p-4 rounded-lg border border-gray-200">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{drawerStat.managerName}</h4>
+                            <p className="text-sm text-gray-600">{drawerStat.property}</p>
+                          </div>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            drawerStat.currentCashHolding > 200 
+                              ? 'bg-warning-100 text-warning-800' 
+                              : 'bg-success-100 text-success-800'
+                          }`}>
+                            {drawerStat.currentCashHolding > 200 ? 'High' : 'Normal'}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Current Holding:</span>
+                            <span className={`font-medium ${
+                              drawerStat.currentCashHolding > 200 ? 'text-warning-600' : 'text-gray-900'
+                            }`}>
+                              {formatCurrency(drawerStat.currentCashHolding)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Today's Collection:</span>
+                            <span className="font-medium text-gray-900">
+                              {formatCurrency(drawerStat.totalCashCollectedToday)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Last Turn-in:</span>
+                            <span className="text-sm text-gray-900">
+                              {drawerStat.lastTurnInDate 
+                                ? `${formatCurrency(drawerStat.lastTurnInAmount || 0)} on ${new Date(drawerStat.lastTurnInDate).toLocaleDateString()}`
+                                : 'No turn-ins yet'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {drawerStat.currentCashHolding > 200 && (
+                          <div className="mt-3 p-2 bg-warning-50 border border-warning-200 rounded">
+                            <div className="flex items-center">
+                              <AlertTriangle className="h-4 w-4 text-warning-500 mr-2" />
+                              <span className="text-xs text-warning-700">
+                                Consider requesting cash turn-in
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <HandCoins className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No active managers with cash holdings</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Front Door Code Management - Visible to all users */}
-      <div className="mt-8"></div>
+      <div className="mt-8">
         {propertiesLoading ? (
           <Card className="shadow-material">
             <CardHeader className="border-b border-gray-200">

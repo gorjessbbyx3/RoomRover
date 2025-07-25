@@ -754,6 +754,79 @@ export class MemStorage implements IStorage {
     return updatedProperty;
   }
 
+  // Cash Turn-In tracking
+  private cashTurnIns: Map<string, any> = new Map();
+
+  async getCashTurnIns(): Promise<any[]> {
+    return Array.from(this.cashTurnIns.values());
+  }
+
+  async getCashTurnInsByManager(managerId: string): Promise<any[]> {
+    return Array.from(this.cashTurnIns.values()).filter(turnIn => turnIn.managerId === managerId);
+  }
+
+  async createCashTurnIn(data: {
+    managerId: string;
+    managerName: string;
+    property: string;
+    amount: number;
+    notes?: string;
+    receivedBy?: string;
+  }): Promise<any> {
+    const id = randomUUID();
+    const turnIn = {
+      id,
+      ...data,
+      turnInDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.cashTurnIns.set(id, turnIn);
+    return turnIn;
+  }
+
+  async getCashDrawerStats(): Promise<any[]> {
+    const managers = Array.from(this.users.values()).filter(user => user.role === 'manager');
+    const payments = Array.from(this.payments.values());
+    const turnIns = Array.from(this.cashTurnIns.values());
+    const today = new Date().toDateString();
+
+    return managers.map(manager => {
+      const managerPayments = payments.filter(p => 
+        p.receivedBy === manager.id && 
+        p.method === 'cash'
+      );
+      
+      const todayPayments = managerPayments.filter(p => 
+        new Date(p.dateReceived).toDateString() === today
+      );
+      
+      const totalCashCollectedToday = todayPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      
+      const managerTurnIns = turnIns.filter(t => t.managerId === manager.id);
+      const lastTurnIn = managerTurnIns.sort((a, b) => 
+        new Date(b.turnInDate).getTime() - new Date(a.turnInDate).getTime()
+      )[0];
+      
+      const todayTurnIns = managerTurnIns.filter(t => 
+        new Date(t.turnInDate).toDateString() === today
+      );
+      const todayTurnInAmount = todayTurnIns.reduce((sum, t) => sum + t.amount, 0);
+      
+      const currentCashHolding = Math.max(0, totalCashCollectedToday - todayTurnInAmount);
+      
+      return {
+        managerId: manager.id,
+        managerName: manager.name,
+        property: manager.property || 'N/A',
+        currentCashHolding,
+        lastTurnInDate: lastTurnIn ? lastTurnIn.turnInDate : null,
+        lastTurnInAmount: lastTurnIn ? lastTurnIn.amount : null,
+        totalCashCollectedToday,
+        pendingTurnIn: currentCashHolding
+      };
+    });
+  }
+
   // Audit Log methods
   async createAuditLog(data: { userId: string; action: string; details: string }) {
     const id = randomUUID();

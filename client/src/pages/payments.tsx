@@ -1,32 +1,28 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { DollarSign, Plus, Receipt, CreditCard, Banknote, Clock } from 'lucide-react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { apiRequest } from '@/lib/queryClient';
-import StatusBadge from '@/components/status-badge';
-import { useAuth } from '@/lib/auth';
+import CashTracker from '@/components/cash-tracker';
 import { 
-  Plus, 
-  DollarSign, 
-  CreditCard, 
-  Banknote,
   Calendar,
-  Receipt,
   TrendingUp
 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import StatusBadge from '@/components/status-badge';
+
 
 interface Payment {
   id: string;
@@ -76,8 +72,17 @@ export default function Payments() {
   const queryClient = useQueryClient();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
-  const { data: payments, isLoading: paymentsLoading } = useQuery<Payment[]>({
-    queryKey: ['/api/payments'],
+  const { data: payments, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['/api/payments/detailed'],
+    queryFn: async () => {
+      const response = await fetch('/api/payments/detailed', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      return response.json();
+    }
   });
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
@@ -106,6 +111,9 @@ export default function Payments() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payments/detailed'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
         title: 'Payment Recorded',
         description: 'Payment has been recorded successfully.',
@@ -270,7 +278,7 @@ export default function Payments() {
               <div className="space-y-3">
                 {pendingPayments.slice(0, 5).map((booking) => {
                   const guest = guests?.find(g => g.id === booking.guestId);
-                  
+
                   return (
                     <div 
                       key={booking.id}
@@ -388,7 +396,7 @@ export default function Payments() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={paymentForm.control}
                         name="method"
@@ -429,7 +437,7 @@ export default function Payments() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={paymentForm.control}
                         name="dateReceived"
@@ -492,7 +500,7 @@ export default function Payments() {
                 {payments.slice(0, 8).map((payment) => {
                   const booking = bookings?.find(b => b.id === payment.bookingId);
                   const guest = guests?.find(g => g.id === booking?.guestId);
-                  
+
                   return (
                     <div 
                       key={payment.id}
@@ -579,7 +587,7 @@ export default function Payments() {
                   {payments.map((payment) => {
                     const booking = bookings?.find(b => b.id === payment.bookingId);
                     const guest = guests?.find(g => g.id === booking?.guestId);
-                    
+
                     return (
                       <TableRow key={payment.id} className="hover:bg-gray-50" data-testid={`payment-row-${payment.id}`}>
                         <TableCell>

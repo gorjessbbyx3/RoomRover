@@ -17,6 +17,43 @@ export interface DashboardStats {
   overduePaymentsCount: number;
   overduePaymentsAmount: number;
   lastPaymentTime?: string;
+  cashDrawerStats?: CashDrawerStats[];
+}
+
+export interface CashDrawerStats {
+  managerId: string;
+  managerName: string;
+  property: string;
+  currentCashHolding: number;
+  lastTurnInDate: string | null;
+  lastTurnInAmount: number | null;
+  totalCashCollectedToday: number;
+  pendingTurnIn: number;
+}
+
+export interface CashTurnIn {
+  id: string;
+  managerId: string;
+  managerName: string;
+  property: string;
+  amount: number;
+  turnInDate: Date;
+  notes?: string;
+  receivedBy?: string;
+  createdAt: Date;
+}
+
+export interface PaymentWithStaff {
+  id: string;
+  bookingId: string;
+  amount: string;
+  method: string;
+  transactionId?: string;
+  dateReceived: Date;
+  receivedBy: string;
+  receivedByName: string;
+  notes?: string;
+  createdAt: Date;
 }
 
 export interface RoomWithDetails {
