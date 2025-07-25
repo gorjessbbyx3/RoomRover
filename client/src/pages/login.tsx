@@ -103,6 +103,16 @@ export default function Login() {
                 'Sign in'
               )}
             </Button>
+
+            <Button 
+              type="button" 
+              variant="outline"
+              className="w-full mt-3" 
+              onClick={() => setLocation('/membership')}
+              data-testid="button-view-membership"
+            >
+              View Membership Plans
+            </Button>
           </form>
 
           <div className="mt-6 text-sm text-gray-500">
