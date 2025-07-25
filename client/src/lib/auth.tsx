@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { apiRequest } from './queryClient';
+import { queryClient } from './queryClient';
 
 export interface User {
   id: string;
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyToken = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         setLoading(false);
         return;
@@ -52,11 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         setUser(data.user);
       } else {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
       }
     } catch (error) {
       console.error('Token verification failed:', error);
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       localStorage.setItem('token', data.token);
       setUser(data.user);
-      setToken(data.token);
 
       // Ensure queryClient is aware of the new auth state
       queryClient.invalidateQueries();
@@ -91,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

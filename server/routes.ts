@@ -18,7 +18,7 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
 
     if (authHeader) {
       if (authHeader.startsWith('Bearer ')) {
-        token = authHeader.replace('Bearer ', '');
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
       } else {
         token = authHeader;
       }

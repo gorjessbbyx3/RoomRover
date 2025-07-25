@@ -27,39 +27,51 @@ function Router() {
       <Route path="/tracker/:token" component={Tracker} />
 
       {/* Protected routes */}
-      <Route path="/" component={() => <Dashboard />} />
+      <Route path="/" component={() => (
+        <ProtectedRoute>
+          <Navigation />
+          <Dashboard />
+        </ProtectedRoute>
+      )} />
       <Route path="/dashboard" component={() => (
         <ProtectedRoute>
+          <Navigation />
           <Dashboard />
         </ProtectedRoute>
       )} />
       <Route path="/rooms" component={() => (
         <ProtectedRoute requiredRoles={['admin', 'manager']}>
+          <Navigation />
           <Rooms />
         </ProtectedRoute>
       )} />
        <Route path="/inquiries" component={() => (
         <ProtectedRoute requiredRoles={['admin', 'manager']}>
+          <Navigation />
           <Inquiries />
         </ProtectedRoute>
       )} />
       <Route path="/bookings" component={() => (
         <ProtectedRoute requiredRoles={['admin', 'manager']}>
+          <Navigation />
           <Bookings />
         </ProtectedRoute>
       )} />
       <Route path="/cleaning" component={() => (
         <ProtectedRoute>
+          <Navigation />
           <Cleaning />
         </ProtectedRoute>
       )} />
       <Route path="/payments" component={() => (
         <ProtectedRoute requiredRoles={['admin', 'manager']}>
+          <Navigation />
           <Payments />
         </ProtectedRoute>
       )} />
       <Route path="/reports" component={() => (
         <ProtectedRoute requiredRoles={['admin']}>
+          <Navigation />
           <Reports />
         </ProtectedRoute>
       )} />
@@ -76,7 +88,6 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <div className="min-h-screen bg-gray-50">
-            <Navigation />
             <Router />
           </div>
           <Toaster />
