@@ -263,21 +263,3 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type BannedUser = typeof bannedUsers.$inferSelect;
 export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
-
-export type Booking = {
-  id: string;
-  roomId: string;
-  guestId: string;
-  plan: 'daily' | 'weekly' | 'monthly';
-  startDate: Date;
-  endDate: Date | null;
-  totalAmount: string;
-  paymentStatus: 'pending' | 'paid' | 'overdue';
-  status: 'active' | 'checked_out';
-  doorCode: string | null;
-  frontDoorCode: string | null;
-  codeExpiry: Date | null;
-  notes: string | null;
-  isTenant: boolean;
-  createdAt: Date;
-};
