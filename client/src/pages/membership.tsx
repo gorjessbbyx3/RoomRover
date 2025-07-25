@@ -91,7 +91,7 @@ export default function Membership() {
             Honolulu ClubHouse
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Exclusive membership-based accommodations in the heart of Honolulu. Experience privacy, comfort, and convenience with our carefully curated residential properties.
+            Exclusive membership-only access to our private clubhouse in the heart of Honolulu. Experience privacy, comfort, and convenience accommodations with your membership plan.
           </p>
           <div className="mt-6 flex justify-center">
             <div className="flex items-center space-x-6 text-sm text-gray-500">
