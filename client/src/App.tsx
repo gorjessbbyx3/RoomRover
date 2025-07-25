@@ -6,16 +6,20 @@ import ProtectedRoute from '@/components/protected-route';
 import { Route, Switch } from 'wouter';
 
 // Import all pages
-import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
-import Rooms from '@/pages/rooms';
-import Bookings from '@/pages/bookings';
+import UserManagement from '@/pages/user-management';
 import Cleaning from '@/pages/cleaning';
+import OperationsDashboard from '@/pages/operations-dashboard';
+import Inquiries from '@/pages/inquiries';
+import Bookings from '@/pages/bookings';
 import Payments from '@/pages/payments';
+import Rooms from '@/pages/rooms';
 import Reports from '@/pages/reports';
 import Analytics from '@/pages/analytics';
-import Inquiries from '@/pages/inquiries';
-import UserManagement from '@/pages/user-management';
+import MaintenanceManagement from '@/pages/maintenance-management';
+import InventoryManagement from '@/pages/inventory-management';
+import BannedUsersManagement from '@/pages/banned-users-management';
+import MasterCodesManagement from '@/pages/master-codes-management';
 import Membership from '@/pages/membership';
 import Tracker from '@/pages/tracker';
 import NotFound from '@/pages/not-found';
@@ -41,6 +45,13 @@ function AppRouter() {
           <Navigation>
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/operations">
+          <Navigation>
+            <ProtectedRoute>
+              <OperationsDashboard />
             </ProtectedRoute>
           </Navigation>
         </Route>
