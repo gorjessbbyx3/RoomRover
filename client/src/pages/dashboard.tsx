@@ -174,6 +174,11 @@ export default function Dashboard() {
                   <dd className="text-lg font-medium text-gray-900" data-testid="stat-revenue-today">
                     {statsLoading ? <Skeleton className="h-6 w-12" /> : formatCurrency(stats?.todayRevenue || 0)}
                   </dd>
+                  <dd className="text-xs text-success-600 mt-1">
+                    {stats?.paymentMethodBreakdown ? (
+                      `Cash: ${formatCurrency(stats.paymentMethodBreakdown.cash || 0)} | CashApp: ${formatCurrency(stats.paymentMethodBreakdown.cashApp || 0)}`
+                    ) : ''}
+                  </dd>
                 </dl>
               </div>
             </div>
@@ -202,6 +207,130 @@ export default function Dashboard() {
           )}
         </div>
       )}
+
+      {/* Payment Tracking Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Pending Payments */}
+        <Card className="shadow-material">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+              <Clock className="h-5 w-5 mr-2 text-warning-500" />
+              Pending Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {statsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="text-2xl font-bold text-warning-600">
+                  {stats?.pendingPaymentsCount || 0}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Total: {formatCurrency(stats?.pendingPaymentsAmount || 0)}
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Overdue: {stats?.overduePaymentsCount || 0}</span>
+                  <span className="text-error-600">
+                    {formatCurrency(stats?.overduePaymentsAmount || 0)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Methods Breakdown */}
+        <Card className="shadow-material">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-success-500" />
+              Payment Methods (Today)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {statsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8" />
+                <Skeleton className="h-8" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium">Cash</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">{formatCurrency(stats?.paymentMethodBreakdown?.cash || 0)}</div>
+                    <div className="text-xs text-gray-500">{stats?.todayCashPayments || 0} payments</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium">Cash App</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">{formatCurrency(stats?.paymentMethodBreakdown?.cashApp || 0)}</div>
+                    <div className="text-xs text-gray-500">{stats?.todayCashAppPayments || 0} payments</div>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="text-xs text-gray-500 mb-1">Cash App payments go to:</div>
+                  <div className="text-sm font-medium text-purple-600">$selarazmami</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Revenue Trends */}
+        <Card className="shadow-material">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-primary-500" />
+              Revenue Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {statsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8" />
+                <Skeleton className="h-8" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm text-gray-600">This Week</div>
+                  <div className="text-xl font-bold text-primary-600">
+                    {formatCurrency(stats?.weeklyRevenue || 0)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {stats?.weeklyGrowth ? (
+                      <span className={stats.weeklyGrowth >= 0 ? 'text-success-600' : 'text-error-600'}>
+                        {stats.weeklyGrowth >= 0 ? '+' : ''}{stats.weeklyGrowth.toFixed(1)}% vs last week
+                      </span>
+                    ) : 'No comparison data'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">This Month</div>
+                  <div className="text-lg font-medium text-gray-900">
+                    {formatCurrency(stats?.monthlyRevenue || 0)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Average: {formatCurrency((stats?.monthlyRevenue || 0) / new Date().getDate())} per day
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Recent Activities & Cleaning Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -282,34 +411,86 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* System Status */}
+        {/* Payment Alerts & System Status */}
         <Card className="shadow-material">
           <CardHeader className="border-b border-gray-200">
             <CardTitle className="text-lg font-medium text-gray-900">
-              System Status
+              Payment Alerts & System Status
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-success-50 border border-success-200 rounded-lg">
-                <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-success-500 mr-3" />
-                  <span className="font-medium text-success-800">All Systems Operational</span>
-                </div>
-              </div>
+              {/* Payment Alerts */}
+              {statsLoading ? (
+                <Skeleton className="h-16" />
+              ) : (
+                <>
+                  {(stats?.overduePaymentsCount || 0) > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-error-50 border border-error-200 rounded-lg">
+                      <div className="flex items-center">
+                        <AlertTriangle className="h-5 w-5 text-error-500 mr-3" />
+                        <div>
+                          <div className="font-medium text-error-800">
+                            {stats?.overduePaymentsCount} Overdue Payment{(stats?.overduePaymentsCount || 0) > 1 ? 's' : ''}
+                          </div>
+                          <div className="text-sm text-error-600">
+                            Total: {formatCurrency(stats?.overduePaymentsAmount || 0)}
+                          </div>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" className="border-error-300 text-error-700">
+                        Review
+                      </Button>
+                    </div>
+                  )}
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Database</span>
-                  <span className="text-success-600 font-medium">Online</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Authentication</span>
-                  <span className="text-success-600 font-medium">Active</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Last Backup</span>
-                  <span className="text-gray-600">2 hours ago</span>
+                  {(stats?.pendingPaymentsCount || 0) > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-warning-50 border border-warning-200 rounded-lg">
+                      <div className="flex items-center">
+                        <Clock className="h-5 w-5 text-warning-500 mr-3" />
+                        <div>
+                          <div className="font-medium text-warning-800">
+                            {stats?.pendingPaymentsCount} Pending Payment{(stats?.pendingPaymentsCount || 0) > 1 ? 's' : ''}
+                          </div>
+                          <div className="text-sm text-warning-600">
+                            Total: {formatCurrency(stats?.pendingPaymentsAmount || 0)}
+                          </div>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" className="border-warning-300 text-warning-700">
+                        Process
+                      </Button>
+                    </div>
+                  )}
+
+                  {(stats?.overduePaymentsCount || 0) === 0 && (stats?.pendingPaymentsCount || 0) === 0 && (
+                    <div className="flex items-center justify-between p-3 bg-success-50 border border-success-200 rounded-lg">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-5 w-5 text-success-500 mr-3" />
+                        <span className="font-medium text-success-800">All Payments Up to Date</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* System Status */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Payment System</span>
+                    <span className="text-success-600 font-medium">Active</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Cash App Integration</span>
+                    <span className="text-success-600 font-medium">$selarazmami</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Last Payment</span>
+                    <span className="text-gray-600">
+                      {stats?.lastPaymentTime ? new Date(stats.lastPaymentTime).toLocaleTimeString() : 'N/A'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -317,7 +498,7 @@ export default function Dashboard() {
                 <div className="pt-4 border-t border-gray-200">
                   <Button variant="outline" size="sm" className="w-full" data-testid="button-view-reports">
                     <AlertTriangle className="h-4 w-4 mr-2" />
-                    View System Reports
+                    View Payment Reports
                   </Button>
                 </div>
               )}
@@ -326,8 +507,58 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Quick Payment Recording */}
+      {(user.role === 'admin' || user.role === 'manager') && (
+        <div className="mt-8 mb-8">
+          <Card className="shadow-material bg-gradient-to-r from-success-50 to-primary-50 border-success-200">
+            <CardHeader className="border-b border-success-200">
+              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-success-600" />
+                Quick Payment Actions
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Fast access to common payment tasks
+              </p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button 
+                  className="bg-success-500 hover:bg-success-600 text-white h-12"
+                  onClick={() => window.location.href = '/payments'}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Record Payment
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-warning-300 text-warning-700 hover:bg-warning-50 h-12"
+                  onClick={() => window.location.href = '/payments#pending'}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  View Pending ({stats?.pendingPaymentsCount || 0})
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-primary-300 text-primary-700 hover:bg-primary-50 h-12"
+                  onClick={() => window.location.href = '/analytics'}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Payment Analytics
+                </Button>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600 flex items-center justify-center">
+                  <span className="mr-2">💡 Tip:</span>
+                  <span>Cash App payments go to <strong className="text-purple-600">$selarazmami</strong></span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Front Door Code Management - Visible to all users */}
-      <div className="mt-8">
+      <div className="mt-8"></div>
         {propertiesLoading ? (
           <Card className="shadow-material">
             <CardHeader className="border-b border-gray-200">

@@ -3,6 +3,20 @@ export interface DashboardStats {
   activeBookings: number;
   pendingTasks: number;
   todayRevenue: number;
+  weeklyRevenue: number;
+  monthlyRevenue: number;
+  weeklyGrowth: number;
+  paymentMethodBreakdown: {
+    cash: number;
+    cashApp: number;
+  };
+  todayCashPayments: number;
+  todayCashAppPayments: number;
+  pendingPaymentsCount: number;
+  pendingPaymentsAmount: number;
+  overduePaymentsCount: number;
+  overduePaymentsAmount: number;
+  lastPaymentTime?: string;
 }
 
 export interface RoomWithDetails {

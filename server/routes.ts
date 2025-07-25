@@ -569,19 +569,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeBookings = bookings.length;
       const pendingTasks = cleaningTasks.filter(task => task.status === 'pending').length;
 
-      // Calculate revenue (simplified)
+      // Enhanced payment calculations
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const weekStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastWeekStart = new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const lastWeekEnd = new Date(weekStart.getTime() - 1);
+
       const payments = await storage.getPayments();
-      const todayRevenue = payments
-        .filter(payment => payment.dateReceived >= todayStart)
-        .reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const allBookings = await storage.getBookings();
+
+      // Today's revenue breakdown
+      const todayPayments = payments.filter(payment => payment.dateReceived >= todayStart);
+      const todayRevenue = todayPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      
+      const todayCashPayments = todayPayments.filter(p => p.method === 'cash').length;
+      const todayCashAppPayments = todayPayments.filter(p => p.method === 'cash_app').length;
+      
+      const paymentMethodBreakdown = {
+        cash: todayPayments.filter(p => p.method === 'cash').reduce((sum, p) => sum + parseFloat(p.amount), 0),
+        cashApp: todayPayments.filter(p => p.method === 'cash_app').reduce((sum, p) => sum + parseFloat(p.amount), 0)
+      };
+
+      // Weekly and monthly revenue
+      const weeklyPayments = payments.filter(payment => payment.dateReceived >= weekStart);
+      const weeklyRevenue = weeklyPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      
+      const lastWeekPayments = payments.filter(payment => 
+        payment.dateReceived >= lastWeekStart && payment.dateReceived <= lastWeekEnd
+      );
+      const lastWeekRevenue = lastWeekPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      
+      const weeklyGrowth = lastWeekRevenue > 0 ? ((weeklyRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : 0;
+
+      const monthlyPayments = payments.filter(payment => payment.dateReceived >= monthStart);
+      const monthlyRevenue = monthlyPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+      // Pending payments analysis
+      const pendingBookings = allBookings.filter(booking => booking.paymentStatus === 'pending');
+      const overdueBookings = allBookings.filter(booking => booking.paymentStatus === 'overdue');
+      
+      const pendingPaymentsCount = pendingBookings.length;
+      const pendingPaymentsAmount = pendingBookings.reduce((sum, booking) => sum + parseFloat(booking.totalAmount), 0);
+      
+      const overduePaymentsCount = overdueBookings.length;
+      const overduePaymentsAmount = overdueBookings.reduce((sum, booking) => sum + parseFloat(booking.totalAmount), 0);
 
       res.json({
         availableRooms,
         activeBookings,
         pendingTasks,
-        todayRevenue
+        todayRevenue,
+        weeklyRevenue,
+        monthlyRevenue,
+        weeklyGrowth,
+        paymentMethodBreakdown,
+        todayCashPayments,
+        todayCashAppPayments,
+        pendingPaymentsCount,
+        pendingPaymentsAmount,
+        overduePaymentsCount,
+        overduePaymentsAmount
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch dashboard stats' });
