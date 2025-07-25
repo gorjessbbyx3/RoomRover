@@ -406,6 +406,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update booking payment status
       await storage.updateBooking(payment.bookingId, { paymentStatus: 'paid' });
 
+      // If it's a Cash App payment, automatically add to admin's Cash App drawer
+      if (paymentData.method === 'cash_app') {
+        await storage.createAdminDrawerTransaction({
+          type: 'cashapp_received',
+          amount: parseFloat(paymentData.amount),
+          source: 'Customer Payment',
+          description: `Cash App payment received from customer (Booking: ${paymentData.bookingId.slice(-8)})`,
+          createdBy: req.user.id
+        });
+      }
+
       // Create audit log for payment receipt
       await storage.createAuditLog({
         userId: req.user.id,
@@ -495,6 +506,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch cash drawer stats' });
+    }
+  });
+
+  // Admin Cash Drawer endpoints
+  app.get("/api/admin/cash-drawer", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const transactions = await storage.getAdminDrawerTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch admin cash drawer transactions' });
+    }
+  });
+
+  app.get("/api/admin/cash-drawer/stats", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const stats = await storage.getAdminDrawerStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch admin cash drawer stats' });
+    }
+  });
+
+  app.post("/api/admin/bank-deposit", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { type, amount, description } = req.body;
+
+      if (!type || !amount || amount <= 0) {
+        return res.status(400).json({ error: 'Valid type and amount are required' });
+      }
+
+      if (!['bank_deposit_cash', 'bank_deposit_cashapp'].includes(type)) {
+        return res.status(400).json({ error: 'Invalid deposit type' });
+      }
+
+      // Get current holdings to validate deposit amount
+      const stats = await storage.getAdminDrawerStats();
+      const maxAmount = type === 'bank_deposit_cash' ? stats.currentCashHolding : stats.currentCashAppHolding;
+
+      if (amount > maxAmount) {
+        return res.status(400).json({ 
+          error: `Cannot deposit more than current holding ($${maxAmount.toFixed(2)})` 
+        });
+      }
+
+      const transaction = await storage.createAdminDrawerTransaction({
+        type: type as 'bank_deposit_cash' | 'bank_deposit_cashapp',
+        amount: parseFloat(amount),
+        description: description || `Bank deposit - ${type === 'bank_deposit_cash' ? 'Cash' : 'Cash App'}`,
+        createdBy: req.user.id
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'bank_deposit',
+        details: `Admin ${req.user.name} made bank deposit: ${type === 'bank_deposit_cash' ? 'Cash' : 'Cash App'} $${amount}`
+      });
+
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to record bank deposit' });
+    }
+  });
+
+  // Auto-record Cash App payments into admin drawer
+  app.post("/api/admin/record-cashapp-payment", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { paymentId, amount } = req.body;
+
+      const transaction = await storage.createAdminDrawerTransaction({
+        type: 'cashapp_received',
+        amount: parseFloat(amount),
+        source: 'Customer Payment',
+        description: `Cash App payment received from customer`,
+        createdBy: req.user.id
+      });
+
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to record Cash App payment' });
     }
   });
 

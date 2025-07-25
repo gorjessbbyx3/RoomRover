@@ -756,6 +756,9 @@ export class MemStorage implements IStorage {
 
   // Cash Turn-In tracking
   private cashTurnIns: Map<string, any> = new Map();
+  
+  // Admin Cash Drawer tracking
+  private adminCashDrawer: Map<string, any> = new Map();
 
   async getCashTurnIns(): Promise<any[]> {
     return Array.from(this.cashTurnIns.values());
@@ -781,7 +784,89 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.cashTurnIns.set(id, turnIn);
+    
+    // When manager turns in cash, add it to admin's cash drawer
+    if (data.receivedBy) {
+      await this.createAdminDrawerTransaction({
+        type: 'cash_received',
+        amount: data.amount,
+        source: data.managerName,
+        description: `Cash received from ${data.managerName} (${data.property})`,
+        createdBy: data.receivedBy
+      });
+    }
+    
     return turnIn;
+  }
+
+  // Admin Cash Drawer methods
+  async getAdminDrawerTransactions(): Promise<any[]> {
+    return Array.from(this.adminCashDrawer.values());
+  }
+
+  async createAdminDrawerTransaction(data: {
+    type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp';
+    amount: number;
+    source?: string;
+    description: string;
+    createdBy: string;
+  }): Promise<any> {
+    const id = randomUUID();
+    const transaction = {
+      id,
+      ...data,
+      transactionDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.adminCashDrawer.set(id, transaction);
+    return transaction;
+  }
+
+  async getAdminDrawerStats(): Promise<any> {
+    const transactions = Array.from(this.adminCashDrawer.values());
+    const cashAppPayments = Array.from(this.payments.values()).filter(p => p.method === 'cash_app');
+    
+    // Calculate cash holdings
+    const cashReceived = transactions
+      .filter(t => t.type === 'cash_received')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const cashDeposited = transactions
+      .filter(t => t.type === 'bank_deposit_cash')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    // Calculate Cash App holdings (from payments received)
+    const cashAppReceived = cashAppPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+    
+    const cashAppDeposited = transactions
+      .filter(t => t.type === 'bank_deposit_cashapp')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    // Get last deposits
+    const cashDeposits = transactions
+      .filter(t => t.type === 'bank_deposit_cash')
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+    
+    const cashAppDeposits = transactions
+      .filter(t => t.type === 'bank_deposit_cashapp')
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+    
+    return {
+      currentCashHolding: Math.max(0, cashReceived - cashDeposited),
+      currentCashAppHolding: Math.max(0, cashAppReceived - cashAppDeposited),
+      totalCashReceived: cashReceived,
+      totalCashAppReceived: cashAppReceived,
+      totalCashDeposited: cashDeposited,
+      totalCashAppDeposited: cashAppDeposited,
+      lastCashDeposit: cashDeposits[0] ? {
+        amount: cashDeposits[0].amount,
+        date: cashDeposits[0].transactionDate
+      } : null,
+      lastCashAppDeposit: cashAppDeposits[0] ? {
+        amount: cashAppDeposits[0].amount,
+        date: cashAppDeposits[0].transactionDate
+      } : null
+    };
   }
 
   async getCashDrawerStats(): Promise<any[]> {

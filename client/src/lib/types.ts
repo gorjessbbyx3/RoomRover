@@ -43,6 +43,34 @@ export interface CashTurnIn {
   createdAt: Date;
 }
 
+export interface AdminCashDrawer {
+  id: string;
+  type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp';
+  amount: number;
+  source?: string; // Manager name or transaction source
+  description: string;
+  transactionDate: Date;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface AdminDrawerStats {
+  currentCashHolding: number;
+  currentCashAppHolding: number;
+  totalCashReceived: number;
+  totalCashAppReceived: number;
+  totalCashDeposited: number;
+  totalCashAppDeposited: number;
+  lastCashDeposit?: {
+    amount: number;
+    date: Date;
+  };
+  lastCashAppDeposit?: {
+    amount: number;
+    date: Date;
+  };
+}
+
 export interface PaymentWithStaff {
   id: string;
   bookingId: string;

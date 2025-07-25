@@ -21,6 +21,7 @@ import {
   Users
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
+import AdminCashDrawer from '@/components/admin-cash-drawer';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -560,14 +561,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Cash Drawer Monitoring - Admin Only */}
+      {/* Manager Cash Drawer Monitoring - Admin Only */}
       {user.role === 'admin' && (
         <div className="mt-8 mb-8">
           <Card className="shadow-material bg-gradient-to-r from-yellow-50 to-green-50 border-yellow-200">
             <CardHeader className="border-b border-yellow-200">
               <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
                 <HandCoins className="h-5 w-5 mr-2 text-yellow-600" />
-                Cash Drawer Monitoring
+                Manager Cash Drawer Monitoring
               </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
                 Real-time tracking of manager cash holdings and turn-ins
@@ -686,6 +687,14 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Admin Cash Drawer Management - Admin Only */}
+      {user.role === 'admin' && (
+        <div className="mt-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Cash Drawer Management</h2>
+          <AdminCashDrawer />
         </div>
       )}
 
