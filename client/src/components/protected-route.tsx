@@ -5,11 +5,15 @@ import { useLocation } from 'wouter';
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRoles?: string[];
+  allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, requiredRoles, allowedRoles }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Use either requiredRoles or allowedRoles (they're the same thing)
+  const roles = requiredRoles || allowedRoles;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -39,46 +43,11 @@ export default function ProtectedRoute({ children, requiredRoles }: ProtectedRou
     );
   }
 
-  if (requiredRoles && !requiredRoles.includes(user.role)) {
+  if (roles && !roles.includes(user.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-import { ReactNode } from 'react';
-import { useAuth } from '@/lib/auth';
-import { useLocation } from 'wouter';
-
-interface ProtectedRouteProps {
-  children: ReactNode;
-  allowedRoles?: string[];
-}
-
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    setLocation('/login');
-    return null;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
           <p className="text-gray-600">You don't have permission to access this page.</p>
         </div>
       </div>

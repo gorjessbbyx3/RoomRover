@@ -97,37 +97,37 @@ function AppRouter() {
           </ProtectedRoute>
         )} />
         <Route path="/user-management" component={() => (
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute requiredRoles={['admin']}>
             <UserManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/inventory-management" component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'manager']}>
+          <ProtectedRoute requiredRoles={['admin', 'manager']}>
             <InventoryManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/maintenance-management" component={() => (
-          <ProtectedRoute allowedRoles={['admin', 'manager']}>
+          <ProtectedRoute requiredRoles={['admin', 'manager']}>
             <MaintenanceManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/banned-users-management" component={() => (
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute requiredRoles={['admin']}>
             <BannedUsersManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/master-codes-management" component={() => (
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute requiredRoles={['admin']}>
             <MasterCodesManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/analytics" component={() => (
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute requiredRoles={['admin']}>
             <Analytics />
           </ProtectedRoute>
         )} />
