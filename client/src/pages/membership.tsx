@@ -116,7 +116,7 @@ export default function Membership() {
           
           {/* P1 ClubHouse */}
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P1 ClubHouse</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P1 - Queen ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
               
               {/* P1 Daily */}
@@ -213,7 +213,7 @@ export default function Membership() {
 
           {/* P2 ClubHouse */}
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P2 ClubHouse</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P2 - Kapahulu ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
               
               {/* P2 Daily */}
@@ -382,8 +382,8 @@ export default function Membership() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="p1">P1 ClubHouse</SelectItem>
-                            <SelectItem value="p2">P2 ClubHouse (Premium)</SelectItem>
+                            <SelectItem value="p1">P1 - Queen ClubHouse</SelectItem>
+                            <SelectItem value="p2">P2 - Kapahulu ClubHouse (Premium)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

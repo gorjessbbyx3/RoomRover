@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Component Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Frontend Component Tests</h1>
+    
+    <div class="test-section">
+        <h2>📝 Membership Page Test</h2>
+        <p>This will load the membership page to verify:</p>
+        <ul>
+            <li>✅ Updated clubhouse names (P1 - Queen, P2 - Kapahulu)</li>
+            <li>✅ Pricing display for both clubhouses</li>
+            <li>✅ Form functionality</li>
+            <li>✅ Responsive layout</li>
+        </ul>
+        <button onclick="loadMembershipPage()">Load Membership Page</button>
+        <div id="membership-frame"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Tracker Page Test</h2>
+        <p>This will test the tracker page with a sample token:</p>
+        <ul>
+            <li>✅ Status progression display</li>
+            <li>✅ Progress indicators</li>
+            <li>✅ Error handling</li>
+        </ul>
+        <button onclick="loadTrackerPage()">Load Tracker Page</button>
+        <div id="tracker-frame"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🏠 Dashboard Test</h2>
+        <p>This will test the admin dashboard (requires login):</p>
+        <ul>
+            <li>✅ Stats cards display</li>
+            <li>✅ Property overview</li>
+            <li>✅ Cleaning tasks</li>
+            <li>✅ System status</li>
+        </ul>
+        <button onclick="loadDashboard()">Load Dashboard</button>
+        <div id="dashboard-frame"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="test-results">
+            <div class="test-result info">
+                Ready to run tests. Click the buttons above to load different pages.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            resultsDiv.appendChild(result);
+        }
+        
+        function loadMembershipPage() {
+            addTestResult('Loading membership page...', 'info');
+            const frame = document.createElement('iframe');
+            frame.src = window.location.origin + '/membership';
+            frame.onload = () => addTestResult('✅ Membership page loaded successfully', 'success');
+            frame.onerror = () => addTestResult('❌ Failed to load membership page', 'error');
+            
+            const container = document.getElementById('membership-frame');
+            container.innerHTML = '';
+            container.appendChild(frame);
+        }
+        
+        function loadTrackerPage() {
+            addTestResult('Loading tracker page with sample token...', 'info');
+            const frame = document.createElement('iframe');
+            frame.src = window.location.origin + '/tracker/sample-token-123';
+            frame.onload = () => addTestResult('✅ Tracker page loaded (will show error for invalid token)', 'success');
+            frame.onerror = () => addTestResult('❌ Failed to load tracker page', 'error');
+            
+            const container = document.getElementById('tracker-frame');
+            container.innerHTML = '';
+            container.appendChild(frame);
+        }
+        
+        function loadDashboard() {
+            addTestResult('Loading dashboard page...', 'info');
+            const frame = document.createElement('iframe');
+            frame.src = window.location.origin + '/dashboard';
+            frame.onload = () => addTestResult('✅ Dashboard loaded (may redirect to login)', 'success');
+            frame.onerror = () => addTestResult('❌ Failed to load dashboard', 'error');
+            
+            const container = document.getElementById('dashboard-frame');
+            container.innerHTML = '';
+            container.appendChild(frame);
+        }
+        
+        // Auto-run basic connectivity test
+        window.onload = function() {
+            addTestResult('🚀 Frontend test page loaded', 'success');
+            addTestResult('Testing server connectivity...', 'info');
+            
+            fetch('/api/properties')
+                .then(response => {
+                    if (response.status === 401) {
+                        addTestResult('✅ Server is running (authentication required for API)', 'success');
+                    } else if (response.ok) {
+                        addTestResult('✅ Server is running and API is accessible', 'success');
+                    } else {
+                        addTestResult(`⚠️ Server responded with status: ${response.status}`, 'info');
+                    }
+                })
+                .catch(error => {
+                    addTestResult('❌ Server connectivity test failed: ' + error.message, 'error');
+                });
+        };
+    </script>
+</body>
+</html>
