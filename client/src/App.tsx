@@ -3,7 +3,8 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/lib/auth";
+import { useAuth } from '@/lib/auth';
+import ProtectedRoute from '@/components/protected-route';
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
@@ -105,31 +106,31 @@ function AppRouter() {
           </ProtectedRoute>
         )} />
         <Route path="/user-management" component={() => (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <UserManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/inventory-management" component={() => (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'manager']}>
             <InventoryManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/maintenance-management" component={() => (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'manager']}>
             <MaintenanceManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/banned-users-management" component={() => (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <BannedUsersManagement />
           </ProtectedRoute>
         )} />
 
         <Route path="/master-codes-management" component={() => (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <MasterCodesManagement />
           </ProtectedRoute>
         )} />

@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAuditLog({
         userId: req.user.id,
         action: 'banned_user',
-        details: `Banned user: ${bannedUser.email}`
+        details: `Banned user: ${bannedUser.name} - ${bannedUser.email || bannedUser.phone}`
       });
 
       res.status(201).json(bannedUser);
