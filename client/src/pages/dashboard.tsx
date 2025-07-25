@@ -23,18 +23,54 @@ export default function Dashboard() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/dashboard/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+      return response.json();
+    }
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
     queryKey: ['/api/rooms'],
+    queryFn: async () => {
+      const response = await fetch('/api/rooms', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch rooms');
+      return response.json();
+    }
   });
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<PropertyWithRooms[]>({
     queryKey: ['/api/properties'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    }
   });
 
   const { data: cleaningTasks, isLoading: tasksLoading } = useQuery<CleaningTaskWithDetails[]>({
     queryKey: ['/api/cleaning-tasks'],
+    queryFn: async () => {
+      const response = await fetch('/api/cleaning-tasks', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch cleaning tasks');
+      return response.json();
+    }
   });
 
   if (!user) return null;
