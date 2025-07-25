@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { InquiryStatus } from '@/lib/types';
 import { 
@@ -58,6 +59,19 @@ export default function Tracker({ params }: TrackerProps) {
       return 'pending';
     } else {
       return 'waiting';
+    }
+  };
+
+  const getProgressPercentage = (status: string) => {
+    switch (status) {
+      case 'received':
+        return 33;
+      case 'payment_confirmed':
+        return 66;
+      case 'booking_confirmed':
+        return 100;
+      default:
+        return 0;
     }
   };
 
@@ -175,6 +189,30 @@ export default function Tracker({ params }: TrackerProps) {
             </div>
           </div>
         </div>
+
+        {/* Progress Bar */}
+        <Card className="shadow-material-lg mb-6">
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Progress Status</h3>
+                <span className="text-sm text-gray-600">
+                  {getProgressPercentage(inquiry.status)}% Complete
+                </span>
+              </div>
+              <Progress 
+                value={getProgressPercentage(inquiry.status)} 
+                className="h-3 bg-gray-200"
+                data-testid="progress-bar"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Request Received</span>
+                <span>Payment Confirmed</span>
+                <span>Booking Complete</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Status Tracker */}
         <Card className="shadow-material-lg mb-8">
