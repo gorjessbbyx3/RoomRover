@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AdminCashDrawer from '@/components/admin-cash-drawer';
+import HouseBankManager from '@/components/house-bank-manager';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -695,6 +696,14 @@ export default function Dashboard() {
         <div className="mt-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Cash Drawer Management</h2>
           <AdminCashDrawer />
+        </div>
+      )}
+
+      {/* HouseBank Management - Admin Only */}
+      {user.role === 'admin' && (
+        <div className="mt-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">HouseBank - Operational Budget</h2>
+          <HouseBankManager />
         </div>
       )}
 

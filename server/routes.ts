@@ -604,6 +604,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // HouseBank endpoints
+  app.get("/api/admin/house-bank", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const transactions = await storage.getHouseBankTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch house bank transactions' });
+    }
+  });
+
+  app.get("/api/admin/house-bank/stats", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const stats = await storage.getHouseBankStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch house bank stats' });
+    }
+  });
+
+  app.post("/api/admin/house-bank/transfer", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { amount, description } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Valid amount is required' });
+      }
+
+      // Get current cash holdings to validate transfer amount
+      const drawerStats = await storage.getAdminDrawerStats();
+      const totalAvailable = drawerStats.currentCashHolding + drawerStats.currentCashAppHolding;
+
+      if (amount > totalAvailable) {
+        return res.status(400).json({ 
+          error: `Cannot transfer more than available funds ($${totalAvailable.toFixed(2)})` 
+        });
+      }
+
+      // Create cash drawer debit transaction
+      await storage.createAdminDrawerTransaction({
+        type: 'house_bank_transfer',
+        amount: -Math.abs(amount), // Negative amount for debit
+        description: description || `Transfer to HouseBank for operational expenses`,
+        createdBy: req.user.id
+      });
+
+      // Create house bank credit transaction
+      const houseBankTransaction = await storage.createHouseBankTransaction({
+        type: 'transfer_in',
+        amount: parseFloat(amount),
+        category: 'other',
+        description: description || `Transfer from cash drawer for operational budget`,
+        createdBy: req.user.id
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'house_bank_transfer',
+        details: `Admin ${req.user.name} transferred $${amount} to HouseBank for operational expenses`
+      });
+
+      res.status(201).json(houseBankTransaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to transfer funds to HouseBank' });
+    }
+  });
+
+  app.post("/api/admin/house-bank/expense", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { amount, category, vendor, description, receiptUrl } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Valid amount is required' });
+      }
+
+      if (!category || !['supplies', 'contractors', 'maintenance', 'utilities', 'other'].includes(category)) {
+        return res.status(400).json({ error: 'Valid category is required' });
+      }
+
+      // Check if sufficient funds in HouseBank
+      const houseBankStats = await storage.getHouseBankStats();
+      if (amount > houseBankStats.currentBalance) {
+        return res.status(400).json({ 
+          error: `Insufficient funds in HouseBank ($${houseBankStats.currentBalance.toFixed(2)} available)` 
+        });
+      }
+
+      const expenseType = `expense_${category === 'contractors' ? 'contractor' : category}` as 
+        'expense_supplies' | 'expense_contractor' | 'expense_maintenance' | 'expense_other';
+
+      const transaction = await storage.createHouseBankTransaction({
+        type: expenseType,
+        amount: parseFloat(amount),
+        category: category as 'supplies' | 'contractors' | 'maintenance' | 'utilities' | 'other',
+        vendor,
+        description: description || `${category.charAt(0).toUpperCase() + category.slice(1)} expense`,
+        receiptUrl,
+        createdBy: req.user.id
+      });
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'house_bank_expense',
+        details: `Admin ${req.user.name} recorded $${amount} ${category} expense${vendor ? ` to ${vendor}` : ''}`
+      });
+
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to record expense' });
+    }
+  });
+
   // Cleaning task routes
   app.get("/api/cleaning-tasks", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {

@@ -768,6 +768,9 @@ export class MemStorage implements IStorage {
   
   // Admin Cash Drawer tracking
   private adminCashDrawer: Map<string, any> = new Map();
+  
+  // HouseBank tracking
+  private houseBankTransactions: Map<string, any> = new Map();
 
   async getCashTurnIns(): Promise<any[]> {
     return Array.from(this.cashTurnIns.values());
@@ -814,7 +817,7 @@ export class MemStorage implements IStorage {
   }
 
   async createAdminDrawerTransaction(data: {
-    type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp';
+    type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp' | 'house_bank_transfer';
     amount: number;
     source?: string;
     description: string;
@@ -829,6 +832,73 @@ export class MemStorage implements IStorage {
     };
     this.adminCashDrawer.set(id, transaction);
     return transaction;
+  }
+
+  // HouseBank methods
+  async getHouseBankTransactions(): Promise<any[]> {
+    return Array.from(this.houseBankTransactions.values());
+  }
+
+  async createHouseBankTransaction(data: {
+    type: 'transfer_in' | 'expense_supplies' | 'expense_contractor' | 'expense_maintenance' | 'expense_other';
+    amount: number;
+    category: 'supplies' | 'contractors' | 'maintenance' | 'utilities' | 'other';
+    vendor?: string;
+    description: string;
+    receiptUrl?: string;
+    createdBy: string;
+  }): Promise<any> {
+    const id = randomUUID();
+    const transaction = {
+      id,
+      ...data,
+      transactionDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.houseBankTransactions.set(id, transaction);
+    return transaction;
+  }
+
+  async getHouseBankStats(): Promise<any> {
+    const transactions = Array.from(this.houseBankTransactions.values());
+    
+    const transfersIn = transactions
+      .filter(t => t.type === 'transfer_in')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const expenses = transactions
+      .filter(t => t.type.startsWith('expense_'))
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const expensesByCategory = {
+      supplies: transactions
+        .filter(t => t.category === 'supplies')
+        .reduce((sum, t) => sum + t.amount, 0),
+      contractors: transactions
+        .filter(t => t.category === 'contractors')
+        .reduce((sum, t) => sum + t.amount, 0),
+      maintenance: transactions
+        .filter(t => t.category === 'maintenance')
+        .reduce((sum, t) => sum + t.amount, 0),
+      utilities: transactions
+        .filter(t => t.category === 'utilities')
+        .reduce((sum, t) => sum + t.amount, 0),
+      other: transactions
+        .filter(t => t.category === 'other')
+        .reduce((sum, t) => sum + t.amount, 0),
+    };
+    
+    const recentTransactions = transactions
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime())
+      .slice(0, 10);
+    
+    return {
+      currentBalance: Math.max(0, transfersIn - expenses),
+      totalTransfersIn: transfersIn,
+      totalExpenses: expenses,
+      expensesByCategory,
+      recentTransactions
+    };
   }
 
   async getAdminDrawerStats(): Promise<any> {

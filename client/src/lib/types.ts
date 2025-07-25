@@ -45,13 +45,40 @@ export interface CashTurnIn {
 
 export interface AdminCashDrawer {
   id: string;
-  type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp';
+  type: 'cash_received' | 'cashapp_received' | 'bank_deposit_cash' | 'bank_deposit_cashapp' | 'house_bank_transfer';
   amount: number;
   source?: string; // Manager name or transaction source
   description: string;
   transactionDate: Date;
   createdBy: string;
   createdAt: Date;
+}
+
+export interface HouseBankTransaction {
+  id: string;
+  type: 'transfer_in' | 'expense_supplies' | 'expense_contractor' | 'expense_maintenance' | 'expense_other';
+  amount: number;
+  category: 'supplies' | 'contractors' | 'maintenance' | 'utilities' | 'other';
+  vendor?: string;
+  description: string;
+  receiptUrl?: string;
+  transactionDate: Date;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface HouseBankStats {
+  currentBalance: number;
+  totalTransfersIn: number;
+  totalExpenses: number;
+  expensesByCategory: {
+    supplies: number;
+    contractors: number;
+    maintenance: number;
+    utilities: number;
+    other: number;
+  };
+  recentTransactions: HouseBankTransaction[];
 }
 
 export interface AdminDrawerStats {
