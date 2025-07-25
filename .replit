@@ -84,6 +84,10 @@ args = "pkill -f \"tsx.*server\" || true"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "pkill -f \"npm run dev\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "sleep 3"
 
 [[workflows.workflow.tasks]]
