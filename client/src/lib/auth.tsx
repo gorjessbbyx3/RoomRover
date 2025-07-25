@@ -64,15 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await apiRequest('POST', '/api/auth/login', {
-        username,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
       });
 
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Login failed');
+      }
+
       const data = await response.json();
-      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('token', data.token);
       setUser(data.user);
+      setToken(data.token);
+
+      // Ensure queryClient is aware of the new auth state
+      queryClient.invalidateQueries();
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   };

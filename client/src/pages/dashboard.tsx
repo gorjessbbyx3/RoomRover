@@ -22,19 +22,19 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['/api/dashboard/stats'],
+    queryKey: ['dashboard', 'stats'],
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
-    queryKey: ['/api/rooms'],
+    queryKey: ['rooms'],
   });
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<PropertyWithRooms[]>({
-    queryKey: ['/api/properties'],
+    queryKey: ['properties'],
   });
 
   const { data: cleaningTasks, isLoading: tasksLoading } = useQuery<CleaningTaskWithDetails[]>({
-    queryKey: ['/api/cleaning-tasks'],
+    queryKey: ['cleaning-tasks'],
   });
 
   if (!user) return null;

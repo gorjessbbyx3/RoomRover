@@ -44,14 +44,76 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error: any) => {
+        // Don't retry on auth errors
+        if (error?.message?.includes('401') || error?.message?.includes('Authentication failed')) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      queryFn: async ({ queryKey }) => {
+        let url = Array.isArray(queryKey) ? queryKey.join("/") : queryKey as string;
+
+        // Ensure the URL doesn't start with /api if it's already included in queryKey
+        if (!url.startsWith('/api/')) {
+          url = `/api/${url}`;
+        }
+
+        const token = localStorage.getItem("token");
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, {
+          headers,
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+            throw new Error("Authentication failed");
+          }
+          const errorData = await response.json().catch(() => ({ error: response.statusText }));
+          throw new Error(errorData.error || `Request failed: ${response.statusText}`);
+        }
+
+        return response.json();
+      },
     },
     mutations: {
-      retry: false,
+      mutationFn: async ({ url, options = {} }: { url: string; options?: RequestInit }) => {
+        const token = localStorage.getItem("token");
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/${url}`, {
+          ...options,
+          headers,
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+            throw new Error("Authentication failed");
+          }
+          const errorData = await response.json().catch(() => ({ error: response.statusText }));
+          throw new Error(errorData.error || `Request failed: ${response.statusText}`);
+        }
+
+        return response.json();
+      },
     },
   },
 });

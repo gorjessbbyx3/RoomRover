@@ -12,16 +12,24 @@ interface AuthenticatedRequest extends Request {
 
 // Authentication middleware
 const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  const token = authHeader.substring(7);
-
   try {
-    // In a real app, this would verify a JWT token
-    // For simplicity, we're using the user ID as the token
+    const authHeader = req.headers.authorization;
+    let token = null;
+
+    if (authHeader) {
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      } else {
+        token = authHeader;
+      }
+    }
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // In a real app, verify JWT token
+    // For now, just use the token as user ID
     const user = await storage.getUser(token);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -30,7 +38,8 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
     req.user = user;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
+    console.error('Authentication error:', error);
+    res.status(401).json({ error: 'Invalid token' });
   }
 };
 
@@ -678,7 +687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const start = new Date(startDate);
       const end = new Date(endDate);
       const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       let totalAmount = 0;
       if (plan === 'monthly') {
         totalAmount = rates.monthly;
