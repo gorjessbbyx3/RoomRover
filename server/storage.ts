@@ -526,6 +526,15 @@ export class MemStorage implements IStorage {
     return this.cleaningTasks.get(id);
   }
 
+  async updateCleaningTask(id: string, updates: Partial<CleaningTask>): Promise<CleaningTask | undefined> {
+    const task = this.cleaningTasks.get(id);
+    if (!task) return undefined;
+
+    const updatedTask = { ...task, ...updates };
+    this.cleaningTasks.set(id, updatedTask);
+    return updatedTask;
+  }
+
   async createCleaningTask(insertTask: InsertCleaningTask): Promise<CleaningTask> {
     const id = randomUUID();
     const task: CleaningTask = {
