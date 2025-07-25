@@ -876,6 +876,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory management endpoints
+  app.post("/api/inventory", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const inventoryData = req.body;
+      const item = await storage.createInventoryItem(inventoryData);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create inventory item' });
+    }
+  });
+
+  app.put("/api/inventory/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const updatedItem = await storage.updateInventoryItem(req.params.id, req.body);
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Inventory item not found' });
+      }
+      res.json(updatedItem);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update inventory item' });
+    }
+  });
+
+  // Maintenance management endpoints
+  app.post("/api/maintenance", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const maintenanceData = req.body;
+      const item = await storage.createMaintenanceItem(maintenanceData);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create maintenance item' });
+    }
+  });
+
+  app.put("/api/maintenance/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const updatedItem = await storage.updateMaintenanceItem(req.params.id, req.body);
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Maintenance item not found' });
+      }
+      res.json(updatedItem);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update maintenance item' });
+    }
+  });
+
+  // Banned users management endpoints
+  app.delete("/api/banned-users/:id", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const deleted = await storage.deleteBannedUser(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Banned user not found' });
+      }
+
+      // Log the action
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'unbanned_user',
+        details: `Unbanned user with ID: ${req.params.id}`
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to unban user' });
+    }
+  });
+
+  // Master codes endpoints
+  app.get("/api/master-codes", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const masterCodes = await storage.getMasterCodes();
+      res.json(masterCodes);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch master codes' });
+    }
+  });
+
+  app.post("/api/master-codes", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const masterCodeData = req.body;
+      const masterCode = await storage.addMasterCode(masterCodeData);
+      
+      // Log the action
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'added_master_code',
+        details: `Added master code for property: ${masterCode.property}`
+      });
+
+      res.status(201).json(masterCode);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to add master code' });
+    }
+  });
+
   // Update front door code
   app.put("/api/properties/:id/front-door-code", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {

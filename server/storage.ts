@@ -718,6 +718,37 @@ export class MemStorage implements IStorage {
     this.properties.set(propertyId, updatedProperty);
     return updatedProperty;
   }
+
+  // Audit Log methods
+  async createAuditLog(data: { userId: string; action: string; details: string }) {
+    const id = randomUUID();
+    const auditLog = {
+      id,
+      ...data,
+      timestamp: new Date(),
+    };
+    // In memory storage - in production this would go to database
+    return auditLog;
+  }
+
+  async getBannedUsers() {
+    return Array.from(this.bannedList.values());
+  }
+
+  async createBannedUser(data: { name: string; phone?: string; email?: string; reason: string; bannedBy: string }) {
+    const id = randomUUID();
+    const bannedUser = {
+      id,
+      ...data,
+      bannedDate: new Date(),
+    };
+    this.bannedList.set(id, bannedUser);
+    return bannedUser;
+  }
+
+  async deleteBannedUser(id: string) {
+    return this.bannedList.delete(id);
+  }
 }
 
 export const storage = new MemStorage();
