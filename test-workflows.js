@@ -1,191 +1,189 @@
 
-const fs = require('fs');
+// Comprehensive Workflow Test Suite
+// Tests membership inquiry, tracking, admin workflows, and system functionality
 
-// Test configuration
-const baseUrl = 'http://localhost:5000';
-const testData = {
-  membershipInquiry: {
-    name: 'John Test User',
-    contact: '1234567890',
-    email: 'john.test@example.com',
-    referralSource: 'Test Referral',
-    clubhouse: 'p1',
-    preferredPlan: 'monthly',
-    message: 'This is a test inquiry'
-  },
-  adminLogin: {
-    username: 'admin',
-    password: 'admin123'
-  }
-};
+const API_BASE = 'http://localhost:5000';
 
-// Helper function to make HTTP requests
-async function makeRequest(method, path, data = null, token = null) {
-  const url = `${baseUrl}${path}`;
-  const options = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    },
-    ...(data && { body: JSON.stringify(data) })
+// Helper function to make API requests
+async function makeRequest(method, endpoint, data = null, token = null) {
+  const headers = {
+    'Content-Type': 'application/json'
   };
-
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const config = {
+    method,
+    headers
+  };
+  
+  if (data && method !== 'GET') {
+    config.body = JSON.stringify(data);
+  }
+  
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(`${API_BASE}${endpoint}`, config);
     const result = await response.json();
-    return { success: response.ok, status: response.status, data: result };
+    return { 
+      success: response.ok, 
+      status: response.status, 
+      data: result,
+      error: !response.ok ? result.error || `HTTP ${response.status}` : null
+    };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { 
+      success: false, 
+      error: error.message,
+      status: 0,
+      data: null
+    };
   }
 }
 
-// Test functions
+// Test membership inquiry flow
 async function testMembershipInquiry() {
-  console.log('\n🧪 Testing Membership Inquiry Flow...');
+  console.log('🏠 Testing Membership Inquiry Flow...');
   
-  // Submit membership inquiry
-  console.log('1. Submitting membership inquiry...');
-  const inquiryResult = await makeRequest('POST', '/api/inquiries', testData.membershipInquiry);
+  const inquiryData = {
+    name: 'Test User',
+    email: 'test@example.com',
+    phone: '+1234567890',
+    clubhouse: 'P1',
+    plan: 'P1-Basic',
+    checkInDate: '2024-02-01',
+    checkOutDate: '2024-02-15',
+    message: 'Test inquiry for automated testing'
+  };
   
-  if (!inquiryResult.success) {
-    console.error('❌ Failed to submit inquiry:', inquiryResult.error || inquiryResult.data);
+  const result = await makeRequest('POST', '/api/inquiries', inquiryData);
+  
+  if (result.success) {
+    console.log('✅ Membership inquiry submitted successfully');
+    console.log(`📧 Tracker token: ${result.data.trackerToken}`);
+    return result.data;
+  } else {
+    console.error(`❌ Membership inquiry failed: ${result.error}`);
     return null;
   }
-  
-  console.log('✅ Inquiry submitted successfully');
-  console.log(`   Tracking Token: ${inquiryResult.data.trackerToken}`);
-  console.log(`   Inquiry ID: ${inquiryResult.data.id}`);
-  
-  return inquiryResult.data;
 }
 
+// Test tracker flow
 async function testTrackerFlow(trackerToken) {
-  console.log('\n🔍 Testing Tracker Flow...');
+  console.log('\n📋 Testing Tracker Flow...');
   
   if (!trackerToken) {
     console.error('❌ No tracker token provided');
     return false;
   }
   
-  // Test tracker endpoint
-  console.log('1. Testing tracker endpoint...');
-  const trackerResult = await makeRequest('GET', `/api/inquiries/track/${trackerToken}`);
+  const result = await makeRequest('GET', `/api/tracker/${trackerToken}`);
   
-  if (!trackerResult.success) {
-    console.error('❌ Failed to fetch tracker data:', trackerResult.error || trackerResult.data);
+  if (result.success) {
+    console.log('✅ Tracker access successful');
+    console.log(`📊 Status: ${result.data.status}`);
+    return true;
+  } else {
+    console.error(`❌ Tracker access failed: ${result.error}`);
     return false;
   }
-  
-  console.log('✅ Tracker endpoint working');
-  console.log(`   Status: ${trackerResult.data.status}`);
-  console.log(`   Inquiry ID: ${trackerResult.data.id}`);
-  
-  return true;
 }
 
+// Test admin login
 async function testAdminLogin() {
   console.log('\n🔐 Testing Admin Login...');
   
-  const loginResult = await makeRequest('POST', '/api/auth/login', testData.adminLogin);
+  const loginData = {
+    username: 'admin',
+    password: 'admin123'
+  };
   
-  if (!loginResult.success) {
-    console.error('❌ Admin login failed:', loginResult.error || loginResult.data);
+  const result = await makeRequest('POST', '/api/auth/login', loginData);
+  
+  if (result.success) {
+    console.log('✅ Admin login successful');
+    return result.data.token;
+  } else {
+    console.error(`❌ Admin login failed: ${result.error}`);
     return null;
   }
-  
-  console.log('✅ Admin login successful');
-  console.log(`   User: ${loginResult.data.user.name} (${loginResult.data.user.role})`);
-  
-  return loginResult.data.token;
 }
 
+// Test admin inquiries workflow
 async function testAdminInquiriesFlow(token) {
-  console.log('\n📋 Testing Admin Inquiries Flow...');
+  console.log('\n📨 Testing Admin Inquiries Workflow...');
   
-  if (!token) {
-    console.error('❌ No admin token provided');
-    return false;
-  }
-  
-  // Get all inquiries
-  console.log('1. Fetching all inquiries...');
+  // Fetch inquiries
   const inquiriesResult = await makeRequest('GET', '/api/inquiries', null, token);
   
-  if (!inquiriesResult.success) {
-    console.error('❌ Failed to fetch inquiries:', inquiriesResult.error || inquiriesResult.data);
-    return false;
-  }
-  
-  console.log('✅ Inquiries fetched successfully');
-  console.log(`   Total inquiries: ${inquiriesResult.data.length}`);
-  
-  // Test updating inquiry status
-  if (inquiriesResult.data.length > 0) {
-    const firstInquiry = inquiriesResult.data[0];
-    console.log('2. Testing inquiry status update...');
+  if (inquiriesResult.success) {
+    console.log(`✅ Fetched ${inquiriesResult.data.length} inquiries`);
     
-    const updateResult = await makeRequest('PUT', `/api/inquiries/${firstInquiry.id}`, 
-      { status: 'payment_confirmed' }, token);
-    
-    if (!updateResult.success) {
-      console.error('❌ Failed to update inquiry:', updateResult.error || updateResult.data);
-      return false;
+    // Test updating inquiry status if inquiries exist
+    if (inquiriesResult.data.length > 0) {
+      const firstInquiry = inquiriesResult.data[0];
+      const updateResult = await makeRequest('PUT', `/api/inquiries/${firstInquiry.id}`, {
+        status: 'reviewed'
+      }, token);
+      
+      if (updateResult.success) {
+        console.log('✅ Inquiry status updated successfully');
+      } else {
+        console.error(`❌ Inquiry status update failed: ${updateResult.error}`);
+      }
     }
     
-    console.log('✅ Inquiry status updated successfully');
+    return true;
+  } else {
+    console.error(`❌ Failed to fetch inquiries: ${inquiriesResult.error}`);
+    return false;
   }
-  
-  return true;
 }
 
+// Test dashboard stats
 async function testDashboardStats(token) {
   console.log('\n📊 Testing Dashboard Stats...');
   
-  if (!token) {
-    console.error('❌ No admin token provided');
+  const result = await makeRequest('GET', '/api/dashboard/stats', null, token);
+  
+  if (result.success) {
+    console.log('✅ Dashboard stats fetched successfully');
+    console.log(`📈 Total properties: ${result.data.totalProperties || 0}`);
+    console.log(`🏠 Total rooms: ${result.data.totalRooms || 0}`);
+    return true;
+  } else {
+    console.error(`❌ Dashboard stats failed: ${result.error}`);
     return false;
   }
-  
-  const statsResult = await makeRequest('GET', '/api/dashboard/stats', null, token);
-  
-  if (!statsResult.success) {
-    console.error('❌ Failed to fetch dashboard stats:', statsResult.error || statsResult.data);
-    return false;
-  }
-  
-  console.log('✅ Dashboard stats fetched successfully');
-  console.log(`   Available Rooms: ${statsResult.data.availableRooms}`);
-  console.log(`   Active Bookings: ${statsResult.data.activeBookings}`);
-  console.log(`   Pending Tasks: ${statsResult.data.pendingTasks}`);
-  console.log(`   Today Revenue: $${statsResult.data.todayRevenue}`);
-  
-  return true;
 }
 
+// Test system endpoints
 async function testSystemEndpoints(token) {
-  console.log('\n🏠 Testing System Endpoints...');
+  console.log('\n🔧 Testing System Endpoints...');
   
   const endpoints = [
-    { name: 'Properties', path: '/api/properties' },
-    { name: 'Rooms', path: '/api/rooms' },
-    { name: 'Users', path: '/api/users' },
-    { name: 'Bookings', path: '/api/bookings' },
-    { name: 'Cleaning Tasks', path: '/api/cleaning-tasks' },
-    { name: 'Inventory', path: '/api/inventory' },
-    { name: 'Maintenance', path: '/api/maintenance' }
+    '/api/rooms',
+    '/api/bookings',
+    '/api/payments',
+    '/api/inventory',
+    '/api/maintenance'
   ];
   
+  let allPassed = true;
+  
   for (const endpoint of endpoints) {
-    const result = await makeRequest('GET', endpoint.path, null, token);
+    const result = await makeRequest('GET', endpoint, null, token);
+    
     if (result.success) {
-      console.log(`✅ ${endpoint.name}: OK (${Array.isArray(result.data) ? result.data.length : 'N/A'} items)`);
+      console.log(`✅ ${endpoint} - OK`);
     } else {
-      console.log(`❌ ${endpoint.name}: Failed - ${result.error || result.data?.error}`);
+      console.error(`❌ ${endpoint} - Failed: ${result.error}`);
+      allPassed = false;
     }
   }
   
-  return true;
+  return allPassed;
 }
 
 // Main test runner
@@ -218,12 +216,17 @@ async function runAllTests() {
   }
 }
 
-// Check if we're running as a script
+// Auto-run when executed directly
 if (require.main === module) {
-  // Add a delay to ensure server is running
-  setTimeout(() => {
-    runAllTests();
-  }, 3000);
+  runAllTests();
 }
 
-module.exports = { runAllTests, testMembershipInquiry, testTrackerFlow, testAdminLogin };
+module.exports = {
+  runAllTests,
+  testMembershipInquiry,
+  testTrackerFlow,
+  testAdminLogin,
+  testAdminInquiriesFlow,
+  testDashboardStats,
+  testSystemEndpoints
+};

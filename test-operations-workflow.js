@@ -2,7 +2,7 @@
 // Operations Dashboard User Workflow Test Suite
 // Tests all user interactions, CRUD operations, and database functionality
 
-const API_BASE = window.location.origin;
+const API_BASE = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
 
 class OperationsDashboardWorkflowTester {
   constructor() {

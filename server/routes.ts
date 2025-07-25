@@ -146,14 +146,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id/password", authenticateUser, requireRole(['admin']), async (req, res) => {
     try {
       const { newPassword } = req.body;
-      
+
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters long' });
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       const updated = await storage.updateUserPassword(req.params.id, hashedPassword);
-      
+
       if (!updated) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id/privileges", authenticateUser, requireRole(['admin']), async (req, res) => {
     try {
       const { role, property } = req.body;
-      
+
       if (!role || !['admin', 'manager', 'helper'].includes(role)) {
         return res.status(400).json({ error: 'Invalid role specified' });
       }
@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updated = await storage.updateUserPrivileges(req.params.id, { role, property });
-      
+
       if (!updated) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create enhanced audit log for payment receipt
       let auditDetails = `${req.user.name} recorded ${paymentData.method} payment of $${finalAmount} for booking ${paymentData.bookingId}`;
-      
+
       if (payment.discountAmount && parseFloat(payment.discountAmount) > 0) {
         auditDetails += ` (discount: $${payment.discountAmount})`;
       }
@@ -453,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const payments = await storage.getPayments();
       const users = await storage.getAllUsers();
-      
+
       const paymentsWithStaff = payments.map(payment => {
         const staff = users.find(user => user.id === payment.receivedBy);
         return {
@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cash-turnins", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       let turnIns;
-      
+
       if (req.user.role === 'admin') {
         turnIns = await storage.getCashTurnIns();
       } else {
@@ -885,10 +885,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Today's revenue breakdown
       const todayPayments = payments.filter(payment => payment.dateReceived >= todayStart);
       const todayRevenue = todayPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-      
+
       const todayCashPayments = todayPayments.filter(p => p.method === 'cash').length;
       const todayCashAppPayments = todayPayments.filter(p => p.method === 'cash_app').length;
-      
+
       const paymentMethodBreakdown = {
         cash: todayPayments.filter(p => p.method === 'cash').reduce((sum, p) => sum + parseFloat(p.amount), 0),
         cashApp: todayPayments.filter(p => p.method === 'cash_app').reduce((sum, p) => sum + parseFloat(p.amount), 0)
@@ -897,12 +897,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Weekly and monthly revenue
       const weeklyPayments = payments.filter(payment => payment.dateReceived >= weekStart);
       const weeklyRevenue = weeklyPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-      
+
       const lastWeekPayments = payments.filter(payment => 
         payment.dateReceived >= lastWeekStart && payment.dateReceived <= lastWeekEnd
       );
       const lastWeekRevenue = lastWeekPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-      
+
       const weeklyGrowth = lastWeekRevenue > 0 ? ((weeklyRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : 0;
 
       const monthlyPayments = payments.filter(payment => payment.dateReceived >= monthStart);
@@ -911,10 +911,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pending payments analysis
       const pendingBookings = allBookings.filter(booking => booking.paymentStatus === 'pending');
       const overdueBookings = allBookings.filter(booking => booking.paymentStatus === 'overdue');
-      
+
       const pendingPaymentsCount = pendingBookings.length;
       const pendingPaymentsAmount = pendingBookings.reduce((sum, booking) => sum + parseFloat(booking.totalAmount), 0);
-      
+
       const overduePaymentsCount = overdueBookings.length;
       const overduePaymentsAmount = overdueBookings.reduce((sum, booking) => sum + parseFloat(booking.totalAmount), 0);
 
@@ -964,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: 'blocked_inquiry',
           details: `Blocked inquiry from banned email: ${email}`
         });
-        
+
         return res.status(403).json({ 
           error: "Unable to process inquiry", 
           reason: "blocked" 
@@ -1198,11 +1198,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Data freshness validation
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
+
       const staleInventory = lowStockItems.filter(item => 
         new Date(item.lastUpdated) < sevenDaysAgo
       );
-      
+
       const staleMaintenance = openMaintenance.filter(item => 
         new Date(item.dateReported) < sevenDaysAgo
       );
@@ -1269,9 +1269,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         bannedBy: req.user.id
       };
-      
+
       const bannedUser = await storage.createBannedUser(bannedUserData);
-      
+
       // Log the action
       await storage.createAuditLog({
         userId: req.user.id,
@@ -1386,7 +1386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const masterCodeData = req.body;
       const masterCode = await storage.addMasterCode(masterCodeData);
-      
+
       // Log the action
       await storage.createAuditLog({
         userId: req.user.id,
@@ -1450,7 +1450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const { range = '30d' } = req.query;
-      
+
       // Get comprehensive analytics data
       const [bookings, payments, rooms, inventory, maintenance] = await Promise.all([
         storage.getBookings(),
@@ -1464,19 +1464,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const daysBack = range === '7d' ? 7 : range === '30d' ? 30 : range === '90d' ? 90 : 365;
       const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
-      
+
       const recentPayments = payments.filter(p => new Date(p.dateReceived) >= startDate);
       const totalRevenue = recentPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-      
+
       // Calculate occupancy trends
       const totalRooms = rooms.length;
       const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
       const currentOccupancy = (occupiedRooms / totalRooms) * 100;
-      
+
       // Calculate operational metrics
       const avgCleaningTime = 45; // This would come from cleaning task completion times
       const avgMaintenanceResponse = 24; // Hours to respond to maintenance
-      
+
       // Generate insights using AI (if available)
       const insights = {
         revenue: {
@@ -1536,12 +1536,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/pricing-optimization", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const { roomId, dateRange } = req.body;
-      
+
       // Get room and market data
       const room = await storage.getRoom(roomId);
       const bookings = await storage.getBookings();
       const payments = await storage.getPayments();
-      
+
       // In a real implementation, this would call the AI engine
       const recommendations = {
         currentRate: 85,
@@ -1562,7 +1562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/inventory-predictions", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const inventory = await storage.getInventory();
-      
+
       // AI-powered inventory optimization
       const predictions = inventory.map(item => ({
         id: item.id,
@@ -1588,10 +1588,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/guest-response", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const { inquiry, guestId, context } = req.body;
-      
+
       // In production, this would use the AI engine
       const response = `Thank you for your inquiry. I'd be happy to help with ${inquiry}. Based on your stay details, I can provide personalized assistance. Please let me know if you need immediate support or if this can wait for our next check-in.`;
-      
+
       res.json({ 
         suggestedResponse: response,
         tone: "professional",
@@ -1609,7 +1609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const roomId = req.params.roomId;
       const room = await storage.getRoom(roomId);
       const maintenance = await storage.getMaintenanceByRoom?.(roomId) || [];
-      
+
       // AI-powered maintenance predictions
       const predictions = [
         {

@@ -765,10 +765,10 @@ export class MemStorage implements IStorage {
 
   // Cash Turn-In tracking
   private cashTurnIns: Map<string, any> = new Map();
-  
+
   // Admin Cash Drawer tracking
   private adminCashDrawer: Map<string, any> = new Map();
-  
+
   // HouseBank tracking
   private houseBankTransactions: Map<string, any> = new Map();
 
@@ -796,7 +796,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.cashTurnIns.set(id, turnIn);
-    
+
     // When manager turns in cash, add it to admin's cash drawer
     if (data.receivedBy) {
       await this.createAdminDrawerTransaction({
@@ -807,7 +807,7 @@ export class MemStorage implements IStorage {
         createdBy: data.receivedBy
       });
     }
-    
+
     return turnIn;
   }
 
@@ -861,15 +861,15 @@ export class MemStorage implements IStorage {
 
   async getHouseBankStats(): Promise<any> {
     const transactions = Array.from(this.houseBankTransactions.values());
-    
+
     const transfersIn = transactions
       .filter(t => t.type === 'transfer_in')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const expenses = transactions
       .filter(t => t.type.startsWith('expense_'))
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const expensesByCategory = {
       supplies: transactions
         .filter(t => t.category === 'supplies')
@@ -887,11 +887,11 @@ export class MemStorage implements IStorage {
         .filter(t => t.category === 'other')
         .reduce((sum, t) => sum + t.amount, 0),
     };
-    
+
     const recentTransactions = transactions
       .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime())
       .slice(0, 10);
-    
+
     return {
       currentBalance: Math.max(0, transfersIn - expenses),
       totalTransfersIn: transfersIn,
@@ -904,32 +904,32 @@ export class MemStorage implements IStorage {
   async getAdminDrawerStats(): Promise<any> {
     const transactions = Array.from(this.adminCashDrawer.values());
     const cashAppPayments = Array.from(this.payments.values()).filter(p => p.method === 'cash_app');
-    
+
     // Calculate cash holdings
     const cashReceived = transactions
       .filter(t => t.type === 'cash_received')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const cashDeposited = transactions
       .filter(t => t.type === 'bank_deposit_cash')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     // Calculate Cash App holdings (from payments received)
     const cashAppReceived = cashAppPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-    
+
     const cashAppDeposited = transactions
       .filter(t => t.type === 'bank_deposit_cashapp')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     // Get last deposits
     const cashDeposits = transactions
       .filter(t => t.type === 'bank_deposit_cash')
       .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
-    
+
     const cashAppDeposits = transactions
       .filter(t => t.type === 'bank_deposit_cashapp')
       .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
-    
+
     return {
       currentCashHolding: Math.max(0, cashReceived - cashDeposited),
       currentCashAppHolding: Math.max(0, cashAppReceived - cashAppDeposited),
@@ -959,25 +959,25 @@ export class MemStorage implements IStorage {
         p.receivedBy === manager.id && 
         p.method === 'cash'
       );
-      
+
       const todayPayments = managerPayments.filter(p => 
         new Date(p.dateReceived).toDateString() === today
       );
-      
+
       const totalCashCollectedToday = todayPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-      
+
       const managerTurnIns = turnIns.filter(t => t.managerId === manager.id);
       const lastTurnIn = managerTurnIns.sort((a, b) => 
         new Date(b.turnInDate).getTime() - new Date(a.turnInDate).getTime()
       )[0];
-      
+
       const todayTurnIns = managerTurnIns.filter(t => 
         new Date(t.turnInDate).toDateString() === today
       );
       const todayTurnInAmount = todayTurnIns.reduce((sum, t) => sum + t.amount, 0);
-      
+
       const currentCashHolding = Math.max(0, totalCashCollectedToday - todayTurnInAmount);
-      
+
       return {
         managerId: manager.id,
         managerName: manager.name,
