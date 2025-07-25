@@ -18,7 +18,7 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
   }
 
   const token = authHeader.substring(7);
-  
+
   try {
     // In a real app, this would verify a JWT token
     // For simplicity, we're using the user ID as the token
@@ -26,7 +26,7 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
+
     req.user = user;
     next();
   } catch (error) {
@@ -45,12 +45,12 @@ const requireRole = (roles: string[]) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({ error: 'Username and password required' });
       }
@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // In a real app, generate a proper JWT token
       const token = user.id;
-      
+
       res.json({ 
         token, 
         user: { 
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
-      
+
       res.status(201).json({
         id: user.id,
         username: user.username,
@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rooms", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       let rooms;
-      
+
       if (req.user.role === 'admin') {
         rooms = await storage.getRooms();
       } else if (req.user.role === 'manager' && req.user.property) {
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         rooms = await storage.getRooms(); // Helpers can see all rooms for cleaning
       }
-      
+
       res.json(rooms);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch rooms' });
@@ -220,10 +220,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { duration = 'monthly' } = req.body;
-      
+
       // Generate 4-digit code
       const doorCode = Math.floor(1000 + Math.random() * 9000).toString();
-      
+
       // Set expiry based on duration
       const expiry = new Date();
       switch (duration) {
@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       let bookings;
-      
+
       if (req.user.role === 'admin') {
         bookings = await storage.getBookings();
       } else if (req.user.role === 'manager' && req.user.property) {
@@ -289,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         bookings = [];
       }
-      
+
       res.json(bookings);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch bookings' });
@@ -299,12 +299,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const bookingData = insertBookingSchema.parse(req.body);
-      
+
       // Validate that the booking is at least 30 days for compliance
       const startDate = new Date(bookingData.startDate);
       const endDate = new Date(bookingData.endDate);
       const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysDiff < 30 && bookingData.plan !== 'monthly') {
         return res.status(400).json({ error: 'Bookings must be at least 30 days for compliance' });
       }
@@ -318,10 +318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const booking = await storage.createBooking(bookingData);
-      
+
       // Update room status to occupied
       await storage.updateRoom(bookingData.roomId, { status: 'occupied' });
-      
+
       res.status(201).json(booking);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -347,12 +347,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...insertPaymentSchema.parse(req.body),
         receivedBy: req.user.id
       };
-      
+
       const payment = await storage.createPayment(paymentData);
-      
+
       // Update booking payment status
       await storage.updateBooking(payment.bookingId, { paymentStatus: 'paid' });
-      
+
       res.status(201).json(payment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cleaning-tasks", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       let tasks;
-      
+
       if (req.user.role === 'admin') {
         tasks = await storage.getCleaningTasks();
       } else if (req.user.role === 'manager' && req.user.property) {
@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         tasks = [];
       }
-      
+
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch cleaning tasks' });
@@ -407,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role === 'manager' && req.user.property !== task.propertyId) {
         return res.status(403).json({ error: 'Access denied' });
       }
-      
+
       if (req.user.role === 'helper' && task.assignedTo !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
       }
@@ -416,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.status === 'completed') {
         updates.completedAt = new Date();
         updates.completedBy = req.user.id;
-        
+
         // Update room status if it's a room cleaning task
         if (task.roomId && task.type === 'room_cleaning') {
           await storage.updateRoom(task.roomId, { 
@@ -439,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/inventory", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       let inventory;
-      
+
       if (req.user.role === 'admin') {
         inventory = await storage.getInventory();
       } else if (req.user.role === 'manager' && req.user.property) {
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         inventory = await storage.getInventory(); // Helpers can see all for cleaning supplies
       }
-      
+
       res.json(inventory);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch inventory' });
@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/maintenance", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       let maintenance;
-      
+
       if (req.user.role === 'admin') {
         maintenance = await storage.getMaintenance();
       } else if (req.user.role === 'manager' && req.user.property) {
@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         maintenance = [];
       }
-      
+
       res.json(maintenance);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch maintenance items' });
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/stats", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       let rooms, bookings, cleaningTasks;
-      
+
       if (req.user.role === 'admin') {
         rooms = await storage.getRooms();
         bookings = await storage.getActiveBookings();
@@ -515,7 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const availableRooms = rooms.filter(room => room.status === 'available').length;
       const activeBookings = bookings.length;
       const pendingTasks = cleaningTasks.filter(task => task.status === 'pending').length;
-      
+
       // Calculate revenue (simplified)
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -538,9 +538,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public inquiry routes (no authentication required)
   app.post("/api/inquiries", async (req, res) => {
     try {
-      const inquiryData = insertInquirySchema.parse(req.body);
-      const inquiry = await storage.createInquiry(inquiryData);
-      
+      const { name, contact, email, referralSource, plan, message } = req.body;
+
+      if (!name || !contact || !email || !plan) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Check if email is banned
+      const bannedUser = await storage.checkBannedUser(email);
+      if (bannedUser) {
+        return res.status(403).json({ 
+          error: "Unable to process inquiry", 
+          reason: "blocked" 
+        });
+      }
+
+      const inquiry = await storage.createInquiry({
+        name,
+        contact,
+        email,
+        referralSource,
+        plan,
+        message
+      });
+
       res.status(201).json({ 
         id: inquiry.id,
         trackerToken: inquiry.trackerToken,

@@ -96,6 +96,14 @@ export interface IStorage {
   getInquiryByToken(token: string): Promise<Inquiry | undefined>;
   createInquiry(inquiry: InsertInquiry): Promise<Inquiry>;
   updateInquiry(id: string, updates: Partial<InsertInquiry>): Promise<Inquiry | undefined>;
+
+    // Banned Users
+  checkBannedUser(email: string): Promise<any>;
+  addToBannedList(data: {name: string; phone?: string; email?: string; reason: string;}): Promise<any>;
+
+  // Master Codes
+  getMasterCodes(): Promise<any[]>;
+  addMasterCode(data: {property: string; masterCode: string; notes?: string;}): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -109,6 +117,8 @@ export class MemStorage implements IStorage {
   private inventory: Map<string, Inventory> = new Map();
   private maintenance: Map<string, Maintenance> = new Map();
   private inquiries: Map<string, Inquiry> = new Map();
+  private bannedList: Map<string, any> = new Map();
+  private masterCodes: Map<string, any> = new Map();
 
   constructor() {
     this.initializeData();
@@ -316,7 +326,7 @@ export class MemStorage implements IStorage {
     if (updates.password) {
       updatedUser.password = await bcrypt.hash(updates.password, 10);
     }
-    
+
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -624,7 +634,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const trackerToken = randomUUID();
     const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
+
     const inquiry: Inquiry = {
       ...insertInquiry,
       id,
@@ -643,6 +653,45 @@ export class MemStorage implements IStorage {
     const updatedInquiry = { ...inquiry, ...updates };
     this.inquiries.set(id, updatedInquiry);
     return updatedInquiry;
+  }
+
+  async checkBannedUser(email: string) {
+    return Array.from(this.bannedList.values()).find(bannedUser => bannedUser.email === email);
+  }
+
+  async addToBannedList(data: {
+    name: string;
+    phone?: string;
+    email?: string;
+    reason: string;
+  }) {
+    const id = randomUUID();
+    const bannedUser = {
+      id,
+      ...data,
+      bannedDate: new Date(),
+    };
+    this.bannedList.set(id, bannedUser);
+    return bannedUser;
+  }
+
+  async getMasterCodes() {
+    return Array.from(this.masterCodes.values());
+  }
+
+  async addMasterCode(data: {
+    property: string;
+    masterCode: string;
+    notes?: string;
+  }) {
+    const id = randomUUID();
+    const masterCode = {
+      id,
+      ...data,
+      lastUpdated: new Date(),
+    };
+    this.masterCodes.set(id, masterCode);
+    return masterCode;
   }
 }
 

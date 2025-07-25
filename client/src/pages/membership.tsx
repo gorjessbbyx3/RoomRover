@@ -25,6 +25,7 @@ import {
 const inquirySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   contact: z.string().min(1, 'Contact information is required'),
+  email: z.string().email('Please enter a valid email address'),
   referralSource: z.string().optional(),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
   message: z.string().optional(),
@@ -41,6 +42,7 @@ export default function Membership() {
     defaultValues: {
       name: '',
       contact: '',
+      email: '',
       referralSource: '',
       preferredPlan: 'monthly',
       message: '',
@@ -57,7 +59,7 @@ export default function Membership() {
         title: 'Inquiry Submitted',
         description: 'Your membership request has been received. You will be redirected to track your status.',
       });
-      
+
       // Redirect to tracker page
       setTimeout(() => {
         setLocation(`/tracker/${data.trackerToken}`);
@@ -79,7 +81,7 @@ export default function Membership() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4" data-testid="page-title">
@@ -108,7 +110,7 @@ export default function Membership() {
 
         {/* Membership Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          
+
           {/* Daily Access */}
           <Card className="shadow-material border border-gray-200 overflow-hidden">
             <CardHeader className="bg-gray-50 border-b border-gray-200">
@@ -248,7 +250,7 @@ export default function Membership() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="contact"
@@ -262,8 +264,27 @@ export default function Membership() {
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="your.email@example.com" 
+                          {...field} 
+                          data-testid="input-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -287,7 +308,7 @@ export default function Membership() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="referralSource"
