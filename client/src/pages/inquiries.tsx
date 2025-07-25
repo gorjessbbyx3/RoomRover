@@ -44,6 +44,18 @@ export default function Inquiries() {
     queryKey: ['/api/inquiries'],
   });
 
+  const { data: properties } = useQuery({
+    queryKey: ['/api/properties'],
+  });
+
+  // Filter inquiries for managers to only show those relevant to their property
+  const filteredInquiries = user?.role === 'manager' && user.property
+    ? inquiries?.filter(inquiry => {
+        // For managers, we'll show all inquiries but they can only assign to their property
+        return true;
+      })
+    : inquiries;
+
   const updateInquiryMutation = useMutation({
     mutationFn: async ({ inquiryId, status }: { inquiryId: string; status: string }) => {
       const response = await apiRequest('PUT', `/api/inquiries/${inquiryId}`, { status });
@@ -105,14 +117,24 @@ export default function Inquiries() {
     );
   }
 
+  const canManageInquiries = user.role === 'admin' || user.role === 'manager';
+
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">
           Inquiry Management
+          {user.role === 'manager' && user.property && (
+            <span className="text-lg font-normal text-gray-600 ml-2">
+              - {properties?.find(p => p.id === user.property)?.name || user.property}
+            </span>
+          )}
         </h1>
         <p className="text-gray-600 mt-2">
-          Manage member inquiries and room assignments.
+          {user.role === 'manager' 
+            ? `Manage member inquiries and assign rooms for ${properties?.find(p => p.id === user.property)?.name || 'your property'}.`
+            : 'Manage member inquiries and room assignments.'
+          }
         </p>
       </div>
 
@@ -149,7 +171,7 @@ export default function Inquiries() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inquiries?.map((inquiry) => (
+                  {filteredInquiries?.map((inquiry) => (
                     <TableRow key={inquiry.id} className="hover:bg-gray-50" data-testid={`inquiry-row-${inquiry.id}`}>
                       <TableCell>
                         <div className="flex items-start space-x-3">
@@ -209,7 +231,7 @@ export default function Inquiries() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          {!inquiry.bookingId && inquiry.status !== 'booking_confirmed' && (
+                          {!inquiry.bookingId && inquiry.status !== 'booking_confirmed' && canManageInquiries && (
                             <AutoAssignRoom
                               inquiryId={inquiry.id}
                               inquiryName={inquiry.name}

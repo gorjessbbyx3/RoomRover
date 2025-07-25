@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,8 +22,9 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const defaultPropertyId = user?.property || '';
   const [formData, setFormData] = useState({
-    propertyId: user?.property || '',
+    propertyId: defaultPropertyId,
     plan: 'monthly',
     startDate: new Date().toISOString().split('T')[0],
     endDate: ''
@@ -71,7 +71,7 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
 
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
-    
+
     if (endDate <= startDate) {
       toast({
         variant: 'destructive',
@@ -98,10 +98,10 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
   // Calculate default end date based on plan
   const updateEndDate = (plan: string, startDate: string) => {
     if (!startDate) return;
-    
+
     const start = new Date(startDate);
     let endDate = new Date(start);
-    
+
     switch (plan) {
       case 'daily':
         endDate.setDate(start.getDate() + 1);
@@ -113,7 +113,7 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
         endDate.setMonth(start.getMonth() + 1);
         break;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       endDate: endDate.toISOString().split('T')[0]
@@ -151,20 +151,26 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
           <div>
             <Label htmlFor="property">Property</Label>
             <Select 
-              value={formData.propertyId} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select property" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredProperties?.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                value={formData.propertyId} 
+                onValueChange={(value) => setFormData({...formData, propertyId: value})}
+                disabled={user?.role === 'manager'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select property" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredProperties?.map((property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      {property.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {user?.role === 'manager' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  You can only assign rooms at your managed property
+                </p>
+              )}
           </div>
 
           <div>
