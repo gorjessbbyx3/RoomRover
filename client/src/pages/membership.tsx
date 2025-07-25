@@ -26,7 +26,7 @@ const inquirySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   contact: z.string().min(10, 'Phone number is required (minimum 10 digits)'),
   email: z.string().email('Please enter a valid email address'),
-  referralSource: z.string().min(1, 'Please tell us how you heard about this page'),
+  referralSource: z.string().min(1, 'Please provide who referred you to this site'),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
   message: z.string().optional(),
 });
@@ -315,10 +315,10 @@ export default function Membership() {
                     name="referralSource"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>How did you hear about this page? *</FormLabel>
+                        <FormLabel>Who referred you to this site? *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Tell us how you found out about this page" 
+                            placeholder="Enter the name of who referred you to this site" 
                             {...field} 
                             data-testid="input-referral"
                           />
