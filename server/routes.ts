@@ -630,6 +630,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto assign room to inquiry
+  app.post("/api/inquiries/:id/assign-room", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const inquiry = await storage.getInquiry(req.params.id);
+      if (!inquiry) {
+        return res.status(404).json({ error: 'Inquiry not found' });
+      }
+
+      const { propertyId, plan, startDate, endDate } = req.body;
+
+      // Get available rooms for the property
+      const rooms = await storage.getRoomsByProperty(propertyId);
+      const availableRoom = rooms.find(room => room.status === 'available');
+
+      if (!availableRoom) {
+        return res.status(400).json({ error: 'No available rooms in selected property' });
+      }
+
+      // Create guest first
+      const guest = await storage.createGuest({
+        name: inquiry.name,
+        contact: inquiry.contact,
+        contactType: inquiry.contact.includes('@') ? 'email' : 'phone',
+        referralSource: inquiry.referralSource || null,
+        notes: inquiry.message || null
+      });
+
+      // Generate door codes
+      const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+      const codeExpiry = new Date();
+      codeExpiry.setDate(codeExpiry.getDate() + 35); // 35 days
+
+      // Get property for front door code
+      const property = await storage.getProperty(propertyId);
+      if (!property) {
+        return res.status(404).json({ error: 'Property not found' });
+      }
+
+      // Calculate total amount based on plan
+      const rates = {
+        daily: parseFloat(property.rateDaily),
+        weekly: parseFloat(property.rateWeekly),
+        monthly: parseFloat(property.rateMonthly)
+      };
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let totalAmount = 0;
+      if (plan === 'monthly') {
+        totalAmount = rates.monthly;
+      } else if (plan === 'weekly') {
+        totalAmount = rates.weekly;
+      } else {
+        totalAmount = rates.daily * days;
+      }
+
+      // Create booking
+      const booking = await storage.createBooking({
+        roomId: availableRoom.id,
+        guestId: guest.id,
+        plan,
+        startDate: start,
+        endDate: end,
+        totalAmount: totalAmount.toString(),
+        doorCode: roomCode,
+        frontDoorCode: property.frontDoorCode || null,
+        codeExpiry,
+        notes: null
+      });
+
+      // Update room to occupied and assign door code
+      await storage.updateRoom(availableRoom.id, { 
+        status: 'occupied',
+        doorCode: roomCode,
+        codeExpiry
+      });
+
+      // Update inquiry with booking
+      await storage.updateInquiry(req.params.id, {
+        status: 'booking_confirmed',
+        bookingId: booking.id
+      });
+
+      res.json({
+        booking,
+        guest,
+        room: availableRoom,
+        inquiry: await storage.getInquiry(req.params.id)
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to assign room' });
+    }
+  });
+
+  // Update front door code
+  app.put("/api/properties/:id/front-door-code", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const property = await storage.getProperty(req.params.id);
+      if (!property) {
+        return res.status(404).json({ error: 'Property not found' });
+      }
+
+      // Check if manager has access to this property
+      if (req.user.role === 'manager' && req.user.property !== req.params.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const { frontDoorCode, duration = 'monthly' } = req.body;
+
+      if (!frontDoorCode) {
+        return res.status(400).json({ error: 'Front door code is required' });
+      }
+
+      // Set expiry based on duration
+      const expiry = new Date();
+      switch (duration) {
+        case 'daily':
+          expiry.setDate(expiry.getDate() + 2);
+          break;
+        case 'weekly':
+          expiry.setDate(expiry.getDate() + 10);
+          break;
+        case 'monthly':
+        default:
+          expiry.setDate(expiry.getDate() + 35);
+          break;
+      }
+
+      const updatedProperty = await storage.updatePropertyFrontDoorCode(req.params.id, frontDoorCode, expiry);
+
+      res.json({ 
+        property: updatedProperty,
+        frontDoorCode,
+        codeExpiry: expiry
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update front door code' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

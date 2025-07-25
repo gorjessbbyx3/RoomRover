@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/lib/auth';
 import PropertyOverview from '@/components/property-overview';
 import StatusBadge from '@/components/status-badge';
 import { DashboardStats, RoomWithDetails, CleaningTaskWithDetails, PropertyWithRooms } from '@/lib/types';
@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
+import FrontDoorManager from '@/components/front-door-manager';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -259,7 +260,7 @@ export default function Dashboard() {
                   <span className="font-medium text-success-800">All Systems Operational</span>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Database</span>
@@ -287,6 +288,13 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+       {/* Front Door Code Management - Only for Admin and Managers */}
+       {(user.role === 'admin' || user.role === 'manager') && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <FrontDoorManager properties={properties || []} />
+          </div>
+        )}
     </div>
   );
 }

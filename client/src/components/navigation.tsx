@@ -9,7 +9,8 @@ import {
   CreditCard, 
   FileText, 
   LogOut,
-  Users
+  Users,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ const navigationItems = [
   { href: '/cleaning', label: 'Cleaning', icon: Fan, roles: ['admin', 'manager', 'helper'] },
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
+  { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
 ];
 
 export default function Navigation() {
@@ -45,7 +47,7 @@ export default function Navigation() {
                 {filteredItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location === item.href;
-                  
+
                   return (
                     <Link key={item.href} href={item.href}>
                       <a 

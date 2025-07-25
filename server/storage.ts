@@ -104,6 +104,9 @@ export interface IStorage {
   // Master Codes
   getMasterCodes(): Promise<any[]>;
   addMasterCode(data: {property: string; masterCode: string; notes?: string;}): Promise<any>;
+
+  // Front Door Code Management
+  updatePropertyFrontDoorCode(propertyId: string, code: string, expiry?: Date): Promise<Property | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -692,6 +695,19 @@ export class MemStorage implements IStorage {
     };
     this.masterCodes.set(id, masterCode);
     return masterCode;
+  }
+
+  async updatePropertyFrontDoorCode(propertyId: string, code: string, expiry?: Date): Promise<Property | undefined> {
+    const property = this.properties.get(propertyId);
+    if (!property) return undefined;
+
+    const updatedProperty = { 
+      ...property, 
+      frontDoorCode: code,
+      codeExpiry: expiry || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days default
+    };
+    this.properties.set(propertyId, updatedProperty);
+    return updatedProperty;
   }
 }
 

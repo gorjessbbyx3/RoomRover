@@ -16,6 +16,7 @@ import Membership from "@/pages/membership";
 import Tracker from "@/pages/tracker";
 import Navigation from "@/components/navigation";
 import ProtectedRoute from "@/components/protected-route";
+import Inquiries from "./pages/inquiries";
 
 function Router() {
   return (
@@ -24,7 +25,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/membership" component={Membership} />
       <Route path="/tracker/:token" component={Tracker} />
-      
+
       {/* Protected routes */}
       <Route path="/" component={() => <Dashboard />} />
       <Route path="/dashboard" component={() => (
@@ -35,6 +36,11 @@ function Router() {
       <Route path="/rooms" component={() => (
         <ProtectedRoute requiredRoles={['admin', 'manager']}>
           <Rooms />
+        </ProtectedRoute>
+      )} />
+       <Route path="/inquiries" component={() => (
+        <ProtectedRoute requiredRoles={['admin', 'manager']}>
+          <Inquiries />
         </ProtectedRoute>
       )} />
       <Route path="/bookings" component={() => (
@@ -57,7 +63,7 @@ function Router() {
           <Reports />
         </ProtectedRoute>
       )} />
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

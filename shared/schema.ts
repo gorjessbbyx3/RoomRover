@@ -125,6 +125,7 @@ export const inquiries = pgTable("inquiries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   contact: text("contact").notNull(),
+  email: text("email").notNull(),
   referralSource: text("referral_source"),
   preferredPlan: text("preferred_plan").notNull(), // daily, weekly, monthly
   message: text("message"),
