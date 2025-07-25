@@ -11,12 +11,20 @@ import {
   LogOut,
   Users,
   MessageSquare,
-  BarChart3,
-  Menu,
-  X
+  BarChart3
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/ui/sidebar';
 
 const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'manager', 'helper'] },
@@ -30,10 +38,9 @@ const navigationItems = [
   { href: '/users', label: 'Users', icon: Users, roles: ['admin'] },
 ];
 
-export default function Navigation() {
+function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!user) return null;
 
@@ -41,164 +48,97 @@ export default function Navigation() {
     item.roles.includes(user.role)
   );
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
   return (
-    <nav className="bg-primary-500 text-white shadow-material-lg relative z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-medium truncate mr-4" data-testid="nav-title">
-              Honolulu Private Residency Club
-            </h1>
-            {/* Desktop Navigation */}
-            <div className="hidden md:block ml-8">
-              <div className="flex space-x-4">
-                {filteredItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location === item.href;
-
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <span 
-                        className={cn(
-                          "px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors cursor-pointer",
-                          isActive 
-                            ? "bg-primary-600 text-white" 
-                            : "text-primary-100 hover:bg-primary-600 hover:text-white"
-                        )}
-                        data-testid={`nav-link-${item.href.substring(1)}`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          
-          {/* Desktop User Info */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm" data-testid="user-name">{user.name}</span>
+    <Sidebar>
+      <SidebarHeader className="bg-primary-500 text-white p-4">
+        <h1 className="text-lg font-medium" data-testid="nav-title">
+          Honolulu Private Residency Club
+        </h1>
+        <div className="mt-2 space-y-1">
+          <div className="text-sm" data-testid="user-name">{user.name}</div>
+          <div className="flex items-center gap-2">
+            <span 
+              className="px-2 py-1 bg-primary-600 text-xs rounded-full" 
+              data-testid="user-role"
+            >
+              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+            </span>
+            {user.property && (
               <span 
-                className="px-2 py-1 bg-primary-600 text-xs rounded-full" 
-                data-testid="user-role"
+                className="px-2 py-1 bg-primary-700 text-xs rounded-full"
+                data-testid="user-property"
               >
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {user.property}
               </span>
-              {user.property && (
-                <span 
-                  className="px-2 py-1 bg-primary-700 text-xs rounded-full"
-                  data-testid="user-property"
-                >
-                  {user.property}
-                </span>
-              )}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={logout}
-              className="text-white hover:bg-primary-600"
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:bg-white hover:text-primary-500 bg-primary-800 border-2 border-white p-3 min-w-[44px] min-h-[44px]"
-              data-testid="mobile-menu-button"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+            )}
           </div>
         </div>
+      </SidebarHeader>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-              onClick={closeMobileMenu}
-            />
-            {/* Menu */}
-            <div className="md:hidden absolute top-16 left-0 right-0 bg-primary-500 border-t border-primary-600 shadow-lg z-50">
-              <div className="px-2 pt-2 pb-3 space-y-1">
-              {filteredItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location === item.href;
+      <SidebarContent className="bg-primary-500">
+        <SidebarMenu>
+          {filteredItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location === item.href;
 
-                return (
-                  <Link key={item.href} href={item.href} onClick={closeMobileMenu}>
-                    <span 
-                      className={cn(
-                        "block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 transition-colors cursor-pointer",
-                        isActive 
-                          ? "bg-primary-600 text-white" 
-                          : "text-primary-100 hover:bg-primary-600 hover:text-white"
-                      )}
-                      data-testid={`mobile-nav-link-${item.href.substring(1)}`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </span>
+            return (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton 
+                  asChild
+                  isActive={isActive}
+                  className="text-white hover:bg-primary-600 data-[active=true]:bg-primary-600"
+                >
+                  <Link href={item.href}>
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
                   </Link>
-                );
-              })}
-              
-              {/* Mobile User Info */}
-              <div className="border-t border-primary-600 pt-4 mt-4">
-                <div className="px-3 py-2">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className="text-sm font-medium" data-testid="mobile-user-name">{user.name}</span>
-                    <span 
-                      className="px-2 py-1 bg-primary-600 text-xs rounded-full" 
-                      data-testid="mobile-user-role"
-                    >
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </span>
-                  </div>
-                  {user.property && (
-                    <div className="mb-3">
-                      <span 
-                        className="px-2 py-1 bg-primary-700 text-xs rounded-full"
-                        data-testid="mobile-user-property"
-                      >
-                        {user.property}
-                      </span>
-                    </div>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      logout();
-                      closeMobileMenu();
-                    }}
-                    className="text-white hover:bg-primary-600 w-full justify-start"
-                    data-testid="mobile-button-logout"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarContent>
+
+      <SidebarFooter className="bg-primary-500 p-4">
+        <Button 
+          variant="ghost" 
+          onClick={logout}
+          className="text-white hover:bg-primary-600 justify-start w-full"
+          data-testid="button-logout"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function TopBar() {
+  return (
+    <header className="flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+      <SidebarTrigger className="text-primary-500" />
+      <div className="flex-1" />
+    </header>
+  );
+}
+
+export default function Navigation({ children }: { children?: React.ReactNode }) {
+  const { user } = useAuth();
+
+  if (!user) return <>{children}</>;
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <TopBar />
+          <main className="flex-1 p-4">
+            {children}
+          </main>
+        </div>
       </div>
-    </nav>
+    </SidebarProvider>
   );
 }

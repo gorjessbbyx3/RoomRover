@@ -1,155 +1,114 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from '@/lib/auth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/lib/auth';
+import { Toaster } from '@/components/ui/toaster';
+import Navigation from '@/components/navigation';
 import ProtectedRoute from '@/components/protected-route';
-import NotFound from "@/pages/not-found";
-import Login from "@/pages/login";
-import Dashboard from "@/pages/dashboard";
-import Rooms from "@/pages/rooms";
-import Bookings from "@/pages/bookings";
-import Cleaning from "@/pages/cleaning";
-import Payments from "@/pages/payments";
-import Reports from "@/pages/reports";
-import Inquiries from "@/pages/inquiries";
-import Tracker from "@/pages/tracker";
-import Membership from "@/pages/membership";
-import UserManagement from '@/pages/user-management';
-import InventoryManagement from '@/pages/inventory-management';
-import MaintenanceManagement from '@/pages/maintenance-management';
-import BannedUsersManagement from '@/pages/banned-users-management';
-import MasterCodesManagement from '@/pages/master-codes-management';
+import { Route, Switch } from 'wouter';
+
+// Import all pages
+import Login from '@/pages/login';
+import Dashboard from '@/pages/dashboard';
+import Rooms from '@/pages/rooms';
+import Bookings from '@/pages/bookings';
+import Cleaning from '@/pages/cleaning';
+import Payments from '@/pages/payments';
+import Reports from '@/pages/reports';
 import Analytics from '@/pages/analytics';
+import Inquiries from '@/pages/inquiries';
+import UserManagement from '@/pages/user-management';
+import NotFound from '@/pages/not-found';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 function AppRouter() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Switch>
-        {/* Public routes */}
+        <Route path="/" component={Login} />
         <Route path="/login" component={Login} />
-        <Route path="/membership" component={Membership} />
-        <Route path="/tracker/:token" component={Tracker} />
-
-        {/* Protected routes */}
-        <Route path="/" component={() => (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        )} />
-        <Route path="/dashboard" component={() => (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        )} />
-        <Route path="/rooms" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Rooms />
-          </ProtectedRoute>
-        )} />
-        <Route path="/inquiries" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Inquiries />
-          </ProtectedRoute>
-        )} />
-        <Route path="/bookings" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Bookings />
-          </ProtectedRoute>
-        )} />
-        <Route path="/cleaning" component={() => (
-          <ProtectedRoute>
-            <Cleaning />
-          </ProtectedRoute>
-        )} />
-        <Route path="/payments" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Payments />
-          </ProtectedRoute>
-        )} />
-        <Route path="/reports" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-            <Reports />
-          </ProtectedRoute>
-        )} />
-        <Route path="/users" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
+        <Route path="/dashboard">
+          <Navigation>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/rooms">
+          <Navigation>
+            <ProtectedRoute roles={['admin', 'manager']}>
+              <Rooms />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/bookings">
+          <Navigation>
+            <ProtectedRoute roles={['admin', 'manager']}>
+              <Bookings />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/cleaning">
+          <Navigation>
+            <ProtectedRoute roles={['admin', 'manager', 'helper']}>
+              <Cleaning />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/payments">
+          <Navigation>
+            <ProtectedRoute roles={['admin', 'manager']}>
+              <Payments />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/reports">
+          <Navigation>
+            <ProtectedRoute roles={['admin']}>
+              <Reports />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/analytics">
+          <Navigation>
+            <ProtectedRoute roles={['admin']}>
+              <Analytics />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/inquiries">
+          <Navigation>
+            <ProtectedRoute roles={['admin', 'manager']}>
+              <Inquiries />
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
+        <Route path="/users">
+          <Navigation>
+            <ProtectedRoute roles={['admin']}>
               <UserManagement />
-          </ProtectedRoute>
-        )} />
-         <Route path="/inventory" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-              <InventoryManagement />
-          </ProtectedRoute>
-        )} />
-        <Route path="/user-management" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-            <UserManagement />
-          </ProtectedRoute>
-        )} />
-
-        <Route path="/inventory-management" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <InventoryManagement />
-          </ProtectedRoute>
-        )} />
-
-        <Route path="/maintenance-management" component={() => (
-          <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <MaintenanceManagement />
-          </ProtectedRoute>
-        )} />
-
-        <Route path="/banned-users-management" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-            <BannedUsersManagement />
-          </ProtectedRoute>
-        )} />
-
-        <Route path="/master-codes-management" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-            <MasterCodesManagement />
-          </ProtectedRoute>
-        )} />
-
-        <Route path="/analytics" component={() => (
-          <ProtectedRoute requiredRoles={['admin']}>
-            <Analytics />
-          </ProtectedRoute>
-        )} />
-
-        {/* Fallback to 404 */}
+            </ProtectedRoute>
+          </Navigation>
+        </Route>
         <Route component={NotFound} />
       </Switch>
-      <Toaster />
     </div>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <AppRouter />
-        </AuthProvider>
-      </TooltipProvider>
+      <AuthProvider>
+        <AppRouter />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;
