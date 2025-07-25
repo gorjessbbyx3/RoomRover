@@ -91,9 +91,24 @@ export default function FrontDoorManager({ properties }: FrontDoorManagerProps) 
     ? properties.filter(p => p.id === user.property)
     : properties;
 
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+  if (!user) {
     return null;
   }
+
+  const canEdit = user.role === 'admin' || user.role === 'manager';
+
+  const handleEditAttempt = (property: Property) => {
+    if (!canEdit) {
+      toast({
+        variant: 'destructive',
+        title: 'Access Denied',
+        description: "I'm sorry, you do not have this privilege. Please contact an admin if you think this is an error.",
+      });
+      return;
+    }
+    setSelectedProperty(property);
+    setDialogOpen(true);
+  };
 
   return (
     <Card className="shadow-material">
@@ -142,22 +157,21 @@ export default function FrontDoorManager({ properties }: FrontDoorManagerProps) 
                   </div>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-4"
+                onClick={() => handleEditAttempt(property)}
+                data-testid={`update-front-door-code-${property.id}`}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Update Code
+              </Button>
+              
               <Dialog open={dialogOpen && selectedProperty?.id === property.id} onOpenChange={(open) => {
                 setDialogOpen(open);
-                if (open) setSelectedProperty(property);
                 if (!open) setNewCode('');
               }}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="ml-4"
-                    data-testid={`update-front-door-code-${property.id}`}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Update Code
-                  </Button>
-                </DialogTrigger>
                 <DialogContent data-testid="dialog-update-front-door-code">
                   <DialogHeader>
                     <DialogTitle>Update Front Door Code - {property.name}</DialogTitle>

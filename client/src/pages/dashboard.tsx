@@ -289,12 +289,10 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Front Door Code Management - Only for Admin and Managers */}
-      {(user.role === 'admin' || user.role === 'manager') && (
-        <div className="mt-8">
-          <FrontDoorManager properties={properties || []} />
-        </div>
-      )}
+      {/* Front Door Code Management - Visible to all users */}
+      <div className="mt-8">
+        <FrontDoorManager properties={properties || []} />
+      </div>
     </div>
   );
 }
