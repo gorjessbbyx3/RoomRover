@@ -784,6 +784,15 @@ export class MemStorage implements IStorage {
   async deleteBannedUser(id: string) {
     return this.bannedList.delete(id);
   }
+
+  async updateUserPassword(id: string, hashedPassword: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+
+    user.password = hashedPassword;
+    this.users.set(id, user);
+    return true;
+  }
 }
 
 export const storage = new MemStorage();

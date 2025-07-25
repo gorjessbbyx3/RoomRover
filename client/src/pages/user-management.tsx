@@ -31,6 +31,9 @@ export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -108,6 +111,37 @@ export default function UserManagement() {
     }
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      const response = await fetch(`/api/users/${userId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ newPassword })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to change password');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Password Changed',
+        description: 'User password has been successfully updated.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to change password. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.name || !formData.password) {
@@ -129,6 +163,32 @@ export default function UserManagement() {
     }
 
     createUserMutation.mutate(formData);
+  };
+
+  const handlePasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser || !newPassword) {
+      toast({
+        title: 'Error',
+        description: 'New password is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({ 
+      userId: selectedUser.id, 
+      newPassword 
+    });
+    
+    setIsPasswordDialogOpen(false);
+    setSelectedUser(null);
+    setNewPassword('');
+  };
+
+  const openPasswordDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsPasswordDialogOpen(true);
   };
 
   const getRoleBadge = (role: string) => {
@@ -331,6 +391,50 @@ export default function UserManagement() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Change password for {selectedUser?.name} ({selectedUser?.username})
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <Label htmlFor="newPassword">New Password *</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsPasswordDialogOpen(false);
+                    setSelectedUser(null);
+                    setNewPassword('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={changePasswordMutation.isPending}
+                  className="bg-primary-500 hover:bg-primary-600"
+                >
+                  {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -357,6 +461,7 @@ export default function UserManagement() {
                   <TableHead>Property Access</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -376,6 +481,16 @@ export default function UserManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openPasswordDialog(user)}
+                        className="text-xs"
+                      >
+                        Change Password
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

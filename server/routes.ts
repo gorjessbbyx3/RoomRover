@@ -143,6 +143,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/users/:id/password", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const updated = await storage.updateUserPassword(req.params.id, hashedPassword);
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to change password' });
+    }
+  });
+
   // Property routes
   app.get("/api/properties", authenticateUser, async (req, res) => {
     try {
