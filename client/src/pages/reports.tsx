@@ -32,7 +32,6 @@ interface ReportsData {
     criticalAlerts: number;
     lowStockCount: number;
     openMaintenanceCount: number;
-    nonCompliantBookingsCount: number;
     pendingPaymentsCount: number;
     cleaningIssuesCount: number;
     monthlyRevenue: number;
@@ -41,7 +40,6 @@ interface ReportsData {
   details: {
     lowStockItems: any[];
     openMaintenance: any[];
-    nonCompliantBookings: any[];
     pendingPayments: any[];
     overduePayments: any[];
     inquirySummary: Record<string, number>;
@@ -122,7 +120,7 @@ export default function Reports() {
               System Reports
             </h1>
             <p className="text-gray-600 mt-2">
-              Comprehensive oversight and compliance monitoring
+              Comprehensive oversight and membership management
             </p>
           </div>
           <div className="mt-4 sm:mt-0 flex space-x-2">
@@ -195,19 +193,7 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-material border-l-4 border-l-warning-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Bill 41</p>
-                <p className="text-2xl font-bold text-warning-600">
-                  {summary.nonCompliantBookingsCount}
-                </p>
-              </div>
-              <FileText className="h-8 w-8 text-warning-600 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
+        
 
         <Card className="shadow-material border-l-4 border-l-warning-500">
           <CardContent className="p-4">
@@ -268,55 +254,7 @@ export default function Reports() {
 
       {/* Detailed Reports */}
       <div className="space-y-6">
-        {/* Bill 41 Compliance */}
-        {details.nonCompliantBookings.length > 0 && (
-          <Card className="shadow-material border-error-200">
-            <CardHeader className="border-b border-gray-200 bg-error-50">
-              <CardTitle className="text-lg font-medium text-error-800 flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Bill 41 Compliance Issues
-              </CardTitle>
-              <p className="text-sm text-error-600 mt-1">
-                Bookings under 30 days (potential violations)
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[100px]">Booking ID</TableHead>
-                      <TableHead className="min-w-[80px]">Room</TableHead>
-                      <TableHead className="min-w-[100px]">Guest</TableHead>
-                      <TableHead className="min-w-[80px]">Days</TableHead>
-                      <TableHead className="min-w-[80px]">Plan</TableHead>
-                      <TableHead className="min-w-[100px]">Start Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {details.nonCompliantBookings.map((booking) => {
-                      const days = Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24));
-                      return (
-                        <TableRow key={booking.id}>
-                          <TableCell className="font-mono text-xs">{booking.id.slice(0, 8)}...</TableCell>
-                          <TableCell>{booking.roomId}</TableCell>
-                          <TableCell className="truncate max-w-[100px]">{booking.guestId}</TableCell>
-                          <TableCell>
-                            <Badge variant="destructive" className="text-xs">
-                              {days} days
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="capitalize">{booking.plan}</TableCell>
-                          <TableCell className="text-xs">{formatDate(booking.startDate)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        
 
         {/* Inquiry Status Summary */}
         <Card className="shadow-material">

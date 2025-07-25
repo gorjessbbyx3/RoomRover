@@ -309,14 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookingData = insertBookingSchema.parse(req.body);
 
-      // Validate that the booking is at least 30 days for compliance
-      const startDate = new Date(bookingData.startDate);
-      const endDate = new Date(bookingData.endDate);
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (daysDiff < 30 && bookingData.plan !== 'monthly') {
-        return res.status(400).json({ error: 'Bookings must be at least 30 days for compliance' });
-      }
+      // No minimum booking length validation since advertising as memberships
 
       // Check if manager has access to this room's property
       if (req.user.role === 'manager') {
@@ -771,13 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getProperties()
       ]);
 
-      // Calculate compliance metrics (Bill 41 - minimum 30 days)
-      const nonCompliantBookings = bookings.filter(booking => {
-        const startDate = new Date(booking.startDate);
-        const endDate = new Date(booking.endDate);
-        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        return days < 30 && booking.plan !== 'monthly';
-      });
+      // Remove compliance monitoring since advertising as memberships
 
       // Payment status analysis
       const pendingPayments = bookings.filter(booking => booking.paymentStatus === 'pending');
@@ -830,7 +817,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           criticalAlerts: criticalMaintenance + outOfStock,
           lowStockCount: lowStockItems.length,
           openMaintenanceCount: openMaintenance.length,
-          nonCompliantBookingsCount: nonCompliantBookings.length,
           pendingPaymentsCount: pendingPayments.length,
           cleaningIssuesCount: cleaningIssues.length,
           monthlyRevenue,
@@ -839,7 +825,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: {
           lowStockItems,
           openMaintenance,
-          nonCompliantBookings,
           pendingPayments,
           overduePayments,
           inquirySummary,
