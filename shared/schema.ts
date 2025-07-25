@@ -227,21 +227,7 @@ export type Guest = typeof guests.$inferSelect;
 export type InsertGuest = z.infer<typeof insertGuestSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
-export type InsertBooking = z.object({
-  roomId: z.string(),
-  guestId: z.string(),
-  plan: z.enum(['daily', 'weekly', 'monthly']),
-  startDate: z.date(),
-  endDate: z.date().nullable().default(null),
-  totalAmount: z.string(),
-  paymentStatus: z.enum(['pending', 'paid', 'overdue']).default('pending'),
-  status: z.enum(['active', 'checked_out']).default('active'),
-  doorCode: z.string().nullable().default(null),
-  frontDoorCode: z.string().nullable().default(null),
-  codeExpiry: z.date().nullable().default(null),
-  notes: z.string().nullable().default(null),
-  isTenant: z.boolean().default(false),
-});
+export type InsertBooking = z.infer<typeof insertBookingSchema>;
 
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
