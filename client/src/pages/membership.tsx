@@ -26,7 +26,7 @@ const inquirySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   contact: z.string().min(10, 'Phone number is required (minimum 10 digits)'),
   email: z.string().email('Please enter a valid email address'),
-  referralSource: z.string().optional(),
+  referralSource: z.string().min(1, 'Please provide who referred you'),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
   message: z.string().optional(),
 });
@@ -315,20 +315,14 @@ export default function Membership() {
                     name="referralSource"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>How did you hear about us?</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-referral">
-                              <SelectValue placeholder="Select referral source" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="word-of-mouth">Word of mouth</SelectItem>
-                            <SelectItem value="friend">Friend/Family</SelectItem>
-                            <SelectItem value="online">Online search</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Who referred you? *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter the name of who referred you" 
+                            {...field} 
+                            data-testid="input-referral"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
