@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/verify", authenticateUser, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/auth/verify", authenticateUser, async (req: AuthenticatedRequest, res) => {
     res.json({ 
       user: { 
         id: req.user.id, 
