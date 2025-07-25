@@ -11,7 +11,11 @@ import {
   LogOut,
   Users,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  Package,
+  Wrench,
+  Shield,
+  Key
 } from 'lucide-react';
 import {
   Sidebar,
@@ -35,7 +39,11 @@ const navigationItems = [
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },
   { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
-  { href: '/users', label: 'Users', icon: Users, roles: ['admin'] },
+  { href: '/user-management', label: 'User Management', icon: Users, roles: ['admin'] },
+  { href: '/inventory-management', label: 'Inventory', icon: Package, roles: ['admin', 'manager'] },
+  { href: '/maintenance-management', label: 'Maintenance', icon: Wrench, roles: ['admin', 'manager'] },
+  { href: '/banned-users-management', label: 'Banned Users', icon: Shield, roles: ['admin'] },
+  { href: '/master-codes-management', label: 'Master Codes', icon: Key, roles: ['admin'] },
 ];
 
 function AppSidebar() {

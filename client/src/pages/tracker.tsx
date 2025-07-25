@@ -268,7 +268,7 @@ export default function Tracker({ params }: TrackerProps) {
                               <div>
                                 <p className="text-sm font-medium text-success-800">Stay Dates</p>
                                 <p className="text-sm text-success-700">
-                                  {formatDate(inquiry.booking.startDate)} - {formatDate(inquiry.booking.endDate)}
+                                  {formatDate(inquiry.booking.startDate)} - {inquiry.booking.endDate ? formatDate(inquiry.booking.endDate) : 'Ongoing (Tenant)'}
                                 </p>
                               </div>
                               <div>

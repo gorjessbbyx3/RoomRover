@@ -58,7 +58,7 @@ export default function Login() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -72,7 +72,7 @@ export default function Login() {
                 data-testid="input-username"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -86,7 +86,7 @@ export default function Login() {
                 data-testid="input-password"
               />
             </div>
-            
+
             <Button 
               type="submit" 
               className="w-full bg-primary-500 hover:bg-primary-600" 
@@ -103,7 +103,7 @@ export default function Login() {
               )}
             </Button>
           </form>
-          
+
           <div className="mt-6 text-sm text-gray-500">
             <div className="border-t pt-4">
               <p className="font-medium mb-2">Demo Accounts:</p>

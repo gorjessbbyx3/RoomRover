@@ -1,10 +1,11 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface AnalyticsData {
   revenue: {
@@ -42,8 +43,10 @@ interface AnalyticsData {
 }
 
 export default function Analytics() {
+  const { toast } = useToast();
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
-  
+
   const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['analytics', timeRange],
     queryFn: async () => {
@@ -101,11 +104,25 @@ export default function Analytics() {
                 <p className="text-sm text-gray-500">
                   {analytics?.revenue.projections.confidence}% confidence
                 </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMetric('revenue');
+                    toast({
+                      title: 'Revenue Details',
+                      description: 'Detailed revenue analytics loaded.',
+                    });
+                  }}
+                  className={selectedMetric === 'revenue' ? 'bg-primary-50 border-primary-200' : ''}
+                >
+                  View Details
+                </Button>
               </CardContent>
             </Card>
             {/* Add more revenue cards */}
           </div>
-          
+
           {/* Revenue chart would go here */}
           <Card>
             <CardHeader>
@@ -137,6 +154,20 @@ export default function Analytics() {
                   )}
                   {Math.abs(analytics?.occupancy.trend || 0)}% vs last period
                 </div>
+                 <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMetric('revenue');
+                    toast({
+                      title: 'Revenue Details',
+                      description: 'Detailed revenue analytics loaded.',
+                    });
+                  }}
+                  className={selectedMetric === 'revenue' ? 'bg-primary-50 border-primary-200' : ''}
+                >
+                  View Details
+                </Button>
               </CardContent>
             </Card>
             {/* Add more occupancy insights */}
@@ -156,6 +187,20 @@ export default function Analytics() {
                 <div className="text-2xl font-bold text-purple-600">
                   {analytics?.customerInsights.repeatCustomerRate}%
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMetric('revenue');
+                    toast({
+                      title: 'Revenue Details',
+                      description: 'Detailed revenue analytics loaded.',
+                    });
+                  }}
+                  className={selectedMetric === 'revenue' ? 'bg-primary-50 border-primary-200' : ''}
+                >
+                  View Details
+                </Button>
               </CardContent>
             </Card>
             {/* Add customer satisfaction, referral tracking, etc. */}
@@ -172,6 +217,20 @@ export default function Analytics() {
                 <div className="text-2xl font-bold text-orange-600">
                   {analytics?.operationalEfficiency.cleaningTime} min
                 </div>
+                 <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMetric('revenue');
+                    toast({
+                      title: 'Revenue Details',
+                      description: 'Detailed revenue analytics loaded.',
+                    });
+                  }}
+                  className={selectedMetric === 'revenue' ? 'bg-primary-50 border-primary-200' : ''}
+                >
+                  View Details
+                </Button>
               </CardContent>
             </Card>
             {/* Add operational efficiency metrics */}
@@ -218,6 +277,20 @@ export default function Analytics() {
                   </div>
                 ))}
               </div>
+               <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMetric('revenue');
+                    toast({
+                      title: 'Revenue Details',
+                      description: 'Detailed revenue analytics loaded.',
+                    });
+                  }}
+                  className={selectedMetric === 'revenue' ? 'bg-primary-50 border-primary-200' : ''}
+                >
+                  View Details
+                </Button>
             </CardContent>
           </Card>
         </TabsContent>

@@ -241,6 +241,15 @@ export default function UserManagement() {
     e.preventDefault();
     if (!selectedUser) return;
 
+    if (privilegeForm.role === 'manager' && !privilegeForm.property) {
+      toast({
+        title: 'Error',
+        description: 'Property is required for manager role.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     updateUserPrivilegesMutation.mutate({
       userId: selectedUser.id,
       role: privilegeForm.role,

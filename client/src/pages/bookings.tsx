@@ -79,7 +79,7 @@ const bookingSchema = z.object({
   isTenant: z.boolean().optional(),
 }).refine((data) => {
   // If not a tenant, end date is required
-  if (!data.isTenant && !data.endDate) {
+  if (!data.isTenant && (!data.endDate || data.endDate.trim() === '')) {
     return false;
   }
   return true;
@@ -666,7 +666,9 @@ export default function Bookings() {
                         <TableCell>
                           <div className="text-sm">
                             <div>{formatDate(booking.startDate)}</div>
-                            <div className="text-gray-500">to {formatDate(booking.endDate)}</div>
+                            <div className="text-gray-500">
+                              {booking.endDate ? `to ${formatDate(booking.endDate)}` : 'Tenant (No end date)'}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
