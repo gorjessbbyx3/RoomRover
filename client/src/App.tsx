@@ -16,6 +16,8 @@ import Reports from '@/pages/reports';
 import Analytics from '@/pages/analytics';
 import Inquiries from '@/pages/inquiries';
 import UserManagement from '@/pages/user-management';
+import Membership from '@/pages/membership';
+import Tracker from '@/pages/tracker';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -33,6 +35,8 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={Login} />
         <Route path="/login" component={Login} />
+        <Route path="/membership" component={Membership} />
+        <Route path="/tracker/:token" component={Tracker} />
         <Route path="/dashboard">
           <Navigation>
             <ProtectedRoute>
