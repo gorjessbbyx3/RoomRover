@@ -117,7 +117,7 @@ export default function Navigation() {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:bg-primary-600"
+              className="text-white hover:bg-primary-600 p-2"
               data-testid="mobile-menu-button"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -127,8 +127,15 @@ export default function Navigation() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-16 left-0 right-0 bg-primary-500 border-t border-primary-600 shadow-lg z-40">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+          <>
+            {/* Backdrop */}
+            <div 
+              className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+              onClick={closeMobileMenu}
+            />
+            {/* Menu */}
+            <div className="md:hidden absolute top-16 left-0 right-0 bg-primary-500 border-t border-primary-600 shadow-lg z-50">
+              <div className="px-2 pt-2 pb-3 space-y-1">
               {filteredItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location === item.href;
@@ -189,7 +196,7 @@ export default function Navigation() {
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </nav>
