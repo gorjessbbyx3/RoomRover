@@ -161,6 +161,7 @@ export default function FrontDoorManager({ properties }: FrontDoorManagerProps) 
                 <DialogContent data-testid="dialog-update-front-door-code">
                   <DialogHeader>
                     <DialogTitle>Update Front Door Code - {property.name}</DialogTitle>
+                    <p className="text-sm text-gray-500">Generate or set a new front door access code for this property.</p>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>

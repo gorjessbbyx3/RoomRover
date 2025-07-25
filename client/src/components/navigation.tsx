@@ -50,9 +50,9 @@ export default function Navigation() {
 
                   return (
                     <Link key={item.href} href={item.href}>
-                      <a 
+                      <span 
                         className={cn(
-                          "px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors",
+                          "px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors cursor-pointer",
                           isActive 
                             ? "bg-primary-600 text-white" 
                             : "text-primary-100 hover:bg-primary-600 hover:text-white"
@@ -61,7 +61,7 @@ export default function Navigation() {
                       >
                         <Icon className="h-4 w-4" />
                         <span>{item.label}</span>
-                      </a>
+                      </span>
                     </Link>
                   );
                 })}

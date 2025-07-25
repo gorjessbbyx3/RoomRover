@@ -263,6 +263,7 @@ export default function Rooms() {
         <DialogContent data-testid="dialog-generate-code">
           <DialogHeader>
             <DialogTitle>Generate Door Code</DialogTitle>
+            <p className="text-sm text-gray-500">Generate a new door access code for the selected room.</p>
           </DialogHeader>
           <div className="space-y-4">
             <div>
