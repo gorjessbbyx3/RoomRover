@@ -556,6 +556,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if email is banned
       const bannedUser = await storage.checkBannedUser(email);
       if (bannedUser) {
+        // Log the blocked attempt
+        await storage.createAuditLog({
+          userId: 'system',
+          action: 'blocked_inquiry',
+          details: `Blocked inquiry from banned email: ${email}`
+        });
+        
         return res.status(403).json({ 
           error: "Unable to process inquiry", 
           reason: "blocked" 
@@ -732,6 +739,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to assign room' });
+    }
+  });
+
+  // Enhanced reports endpoint
+  app.get("/api/reports", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      // Log admin access
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'accessed_reports',
+        details: `Admin ${req.user.username} accessed comprehensive reports`
+      });
+
+      // Get all data for comprehensive reporting
+      const [
+        lowStockItems,
+        openMaintenance,
+        payments,
+        bookings,
+        inquiries,
+        rooms,
+        properties
+      ] = await Promise.all([
+        storage.getLowStockItems(),
+        storage.getOpenMaintenance(),
+        storage.getPayments(),
+        storage.getBookings(),
+        storage.getInquiries(),
+        storage.getRooms(),
+        storage.getProperties()
+      ]);
+
+      // Calculate compliance metrics (Bill 41 - minimum 30 days)
+      const nonCompliantBookings = bookings.filter(booking => {
+        const startDate = new Date(booking.startDate);
+        const endDate = new Date(booking.endDate);
+        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        return days < 30 && booking.plan !== 'monthly';
+      });
+
+      // Payment status analysis
+      const pendingPayments = bookings.filter(booking => booking.paymentStatus === 'pending');
+      const overduePayments = bookings.filter(booking => booking.paymentStatus === 'overdue');
+
+      // Inquiry status breakdown
+      const inquirySummary = inquiries.reduce((acc, inquiry) => {
+        acc[inquiry.status] = (acc[inquiry.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Cleaning and linen issues
+      const cleaningIssues = rooms.filter(room => 
+        room.cleaningStatus !== 'clean' || room.linenStatus !== 'fresh'
+      );
+
+      // Expired door codes
+      const expiredCodes = rooms.filter(room => 
+        room.codeExpiry && new Date(room.codeExpiry) < new Date()
+      );
+
+      // Data freshness validation
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const staleInventory = lowStockItems.filter(item => 
+        new Date(item.lastUpdated) < sevenDaysAgo
+      );
+      
+      const staleMaintenance = openMaintenance.filter(item => 
+        new Date(item.dateReported) < sevenDaysAgo
+      );
+
+      // Revenue metrics
+      const thisMonth = new Date().getMonth();
+      const thisYear = new Date().getFullYear();
+      const monthlyRevenue = payments.filter(payment => {
+        const paymentDate = new Date(payment.dateReceived);
+        return paymentDate.getMonth() === thisMonth && paymentDate.getFullYear() === thisYear;
+      }).reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+      const totalRevenue = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+      // Critical alerts count
+      const criticalMaintenance = openMaintenance.filter(item => item.priority === 'critical').length;
+      const outOfStock = lowStockItems.filter(item => item.quantity === 0).length;
+
+      res.json({
+        summary: {
+          criticalAlerts: criticalMaintenance + outOfStock,
+          lowStockCount: lowStockItems.length,
+          openMaintenanceCount: openMaintenance.length,
+          nonCompliantBookingsCount: nonCompliantBookings.length,
+          pendingPaymentsCount: pendingPayments.length,
+          cleaningIssuesCount: cleaningIssues.length,
+          monthlyRevenue,
+          totalRevenue
+        },
+        details: {
+          lowStockItems,
+          openMaintenance,
+          nonCompliantBookings,
+          pendingPayments,
+          overduePayments,
+          inquirySummary,
+          cleaningIssues,
+          expiredCodes,
+          properties
+        },
+        dataQuality: {
+          staleInventory,
+          staleMaintenance,
+          lastUpdated: now.toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Reports error:', error);
+      res.status(500).json({ error: 'Failed to generate reports' });
+    }
+  });
+
+  // Banned users endpoint
+  app.get("/api/banned-users", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const bannedUsers = await storage.getBannedUsers();
+      res.json(bannedUsers);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch banned users' });
+    }
+  });
+
+  app.post("/api/banned-users", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bannedUserData = {
+        ...req.body,
+        bannedBy: req.user.id
+      };
+      
+      const bannedUser = await storage.createBannedUser(bannedUserData);
+      
+      // Log the action
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'banned_user',
+        details: `Banned user: ${bannedUser.email}`
+      });
+
+      res.status(201).json(bannedUser);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to ban user' });
     }
   });
 

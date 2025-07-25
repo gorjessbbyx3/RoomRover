@@ -129,12 +129,30 @@ export const inquiries = pgTable("inquiries", {
   referralSource: text("referral_source"),
   preferredPlan: text("preferred_plan").notNull(), // daily, weekly, monthly
   message: text("message"),
-  status: text("status").notNull().default("received"), // received, payment_confirmed, booking_confirmed
+  status: text("status").notNull().default("received"), // received, payment_confirmed, booking_confirmed, cancelled
   trackerToken: text("tracker_token").notNull().unique(),
   tokenExpiry: timestamp("token_expiry").notNull(),
   bookingId: varchar("booking_id").references(() => bookings.id),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const auditLog = pgTable("audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  details: text("details"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const bannedUsers = pgTable("banned_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name"),
+  phone: text("phone"),
+  email: text("email").notNull(),
+  reason: text("reason").notNull(),
+  bannedDate: timestamp("banned_date").defaultNow(),
+  bannedBy: varchar("banned_by").notNull().references(() => users.id),
 });
 
 // Insert Schemas
@@ -184,6 +202,16 @@ export const insertInquirySchema = createInsertSchema(inquiries).omit({
   tokenExpiry: true,
 });
 
+export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertBannedUserSchema = createInsertSchema(bannedUsers).omit({
+  id: true,
+  bannedDate: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -214,3 +242,9 @@ export type InsertMaintenance = z.infer<typeof insertMaintenanceSchema>;
 
 export type Inquiry = typeof inquiries.$inferSelect;
 export type InsertInquiry = z.infer<typeof insertInquirySchema>;
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export type BannedUser = typeof bannedUsers.$inferSelect;
+export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
