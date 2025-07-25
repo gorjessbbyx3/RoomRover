@@ -117,7 +117,7 @@ export default function Navigation() {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:bg-primary-600 p-2"
+              className="text-white hover:bg-primary-600 bg-primary-700 border border-primary-300 p-2"
               data-testid="mobile-menu-button"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
