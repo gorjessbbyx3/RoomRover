@@ -1,0 +1,649 @@
+import { 
+  type User, 
+  type InsertUser,
+  type Property,
+  type InsertProperty,
+  type Room,
+  type InsertRoom,
+  type Guest,
+  type InsertGuest,
+  type Booking,
+  type InsertBooking,
+  type Payment,
+  type InsertPayment,
+  type CleaningTask,
+  type InsertCleaningTask,
+  type Inventory,
+  type InsertInventory,
+  type Maintenance,
+  type InsertMaintenance,
+  type Inquiry,
+  type InsertInquiry
+} from "@shared/schema";
+import { randomUUID } from "crypto";
+import * as bcrypt from "bcrypt";
+
+export interface IStorage {
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+
+  // Properties
+  getProperties(): Promise<Property[]>;
+  getProperty(id: string): Promise<Property | undefined>;
+  createProperty(property: InsertProperty): Promise<Property>;
+  updateProperty(id: string, updates: Partial<InsertProperty>): Promise<Property | undefined>;
+
+  // Rooms
+  getRooms(): Promise<Room[]>;
+  getRoomsByProperty(propertyId: string): Promise<Room[]>;
+  getRoom(id: string): Promise<Room | undefined>;
+  createRoom(room: InsertRoom): Promise<Room>;
+  updateRoom(id: string, updates: Partial<InsertRoom>): Promise<Room | undefined>;
+
+  // Guests
+  getGuests(): Promise<Guest[]>;
+  getGuest(id: string): Promise<Guest | undefined>;
+  getGuestByContact(contact: string): Promise<Guest | undefined>;
+  createGuest(guest: InsertGuest): Promise<Guest>;
+  updateGuest(id: string, updates: Partial<InsertGuest>): Promise<Guest | undefined>;
+
+  // Bookings
+  getBookings(): Promise<Booking[]>;
+  getBookingsByRoom(roomId: string): Promise<Booking[]>;
+  getBookingsByGuest(guestId: string): Promise<Booking[]>;
+  getActiveBookings(): Promise<Booking[]>;
+  getBooking(id: string): Promise<Booking | undefined>;
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking | undefined>;
+
+  // Payments
+  getPayments(): Promise<Payment[]>;
+  getPaymentsByBooking(bookingId: string): Promise<Payment[]>;
+  getPayment(id: string): Promise<Payment | undefined>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+
+  // Cleaning Tasks
+  getCleaningTasks(): Promise<CleaningTask[]>;
+  getCleaningTasksByProperty(propertyId: string): Promise<CleaningTask[]>;
+  getCleaningTasksByAssignee(userId: string): Promise<CleaningTask[]>;
+  getPendingCleaningTasks(): Promise<CleaningTask[]>;
+  getCleaningTask(id: string): Promise<CleaningTask | undefined>;
+  createCleaningTask(task: InsertCleaningTask): Promise<CleaningTask>;
+  updateCleaningTask(id: string, updates: Partial<InsertCleaningTask>): Promise<CleaningTask | undefined>;
+
+  // Inventory
+  getInventory(): Promise<Inventory[]>;
+  getInventoryByProperty(propertyId: string): Promise<Inventory[]>;
+  getLowStockItems(): Promise<Inventory[]>;
+  getInventoryItem(id: string): Promise<Inventory | undefined>;
+  createInventoryItem(item: InsertInventory): Promise<Inventory>;
+  updateInventoryItem(id: string, updates: Partial<InsertInventory>): Promise<Inventory | undefined>;
+
+  // Maintenance
+  getMaintenance(): Promise<Maintenance[]>;
+  getMaintenanceByProperty(propertyId: string): Promise<Maintenance[]>;
+  getOpenMaintenance(): Promise<Maintenance[]>;
+  getMaintenanceItem(id: string): Promise<Maintenance | undefined>;
+  createMaintenanceItem(item: InsertMaintenance): Promise<Maintenance>;
+  updateMaintenanceItem(id: string, updates: Partial<InsertMaintenance>): Promise<Maintenance | undefined>;
+
+  // Inquiries
+  getInquiries(): Promise<Inquiry[]>;
+  getInquiry(id: string): Promise<Inquiry | undefined>;
+  getInquiryByToken(token: string): Promise<Inquiry | undefined>;
+  createInquiry(inquiry: InsertInquiry): Promise<Inquiry>;
+  updateInquiry(id: string, updates: Partial<InsertInquiry>): Promise<Inquiry | undefined>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
+  private properties: Map<string, Property> = new Map();
+  private rooms: Map<string, Room> = new Map();
+  private guests: Map<string, Guest> = new Map();
+  private bookings: Map<string, Booking> = new Map();
+  private payments: Map<string, Payment> = new Map();
+  private cleaningTasks: Map<string, CleaningTask> = new Map();
+  private inventory: Map<string, Inventory> = new Map();
+  private maintenance: Map<string, Maintenance> = new Map();
+  private inquiries: Map<string, Inquiry> = new Map();
+
+  constructor() {
+    this.initializeData();
+  }
+
+  private async initializeData() {
+    // Create default admin user
+    const adminPassword = await bcrypt.hash("admin123", 10);
+    const admin: User = {
+      id: randomUUID(),
+      username: "admin",
+      password: adminPassword,
+      role: "admin",
+      property: null,
+      name: "Admin User",
+      createdAt: new Date(),
+    };
+    this.users.set(admin.id, admin);
+
+    // Create property managers
+    const p1ManagerPassword = await bcrypt.hash("p1manager123", 10);
+    const p1Manager: User = {
+      id: randomUUID(),
+      username: "p1manager",
+      password: p1ManagerPassword,
+      role: "manager",
+      property: "P1",
+      name: "P1 Manager",
+      createdAt: new Date(),
+    };
+    this.users.set(p1Manager.id, p1Manager);
+
+    const p2ManagerPassword = await bcrypt.hash("p2manager123", 10);
+    const p2Manager: User = {
+      id: randomUUID(),
+      username: "p2manager",
+      password: p2ManagerPassword,
+      role: "manager",
+      property: "P2",
+      name: "P2 Manager",
+      createdAt: new Date(),
+    };
+    this.users.set(p2Manager.id, p2Manager);
+
+    // Create helper user
+    const helperPassword = await bcrypt.hash("helper123", 10);
+    const helper: User = {
+      id: randomUUID(),
+      username: "helper",
+      password: helperPassword,
+      role: "helper",
+      property: null,
+      name: "Cleaning Helper",
+      createdAt: new Date(),
+    };
+    this.users.set(helper.id, helper);
+
+    // Create properties
+    const p1: Property = {
+      id: "P1",
+      name: "Premium Location",
+      description: "8 Rooms • Premium location with higher rates",
+      frontDoorCode: "1234",
+      codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      rateDaily: "100.00",
+      rateWeekly: "500.00",
+      rateMonthly: "2000.00",
+    };
+    this.properties.set(p1.id, p1);
+
+    const p2: Property = {
+      id: "P2",
+      name: "Value Location",
+      description: "10 Rooms • Value location with competitive rates",
+      frontDoorCode: "5678",
+      codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      rateDaily: "60.00",
+      rateWeekly: "300.00",
+      rateMonthly: "1200.00",
+    };
+    this.properties.set(p2.id, p2);
+
+    // Create rooms for P1 (8 rooms)
+    for (let i = 1; i <= 8; i++) {
+      const room: Room = {
+        id: `P1-R${i}`,
+        propertyId: "P1",
+        roomNumber: i,
+        status: "available",
+        doorCode: null,
+        codeExpiry: null,
+        cleaningStatus: "clean",
+        linenStatus: "fresh",
+        lastCleaned: new Date(),
+        lastLinenChange: new Date(),
+        notes: null,
+      };
+      this.rooms.set(room.id, room);
+    }
+
+    // Create rooms for P2 (10 rooms)
+    for (let i = 1; i <= 10; i++) {
+      const room: Room = {
+        id: `P2-R${i}`,
+        propertyId: "P2",
+        roomNumber: i,
+        status: "available",
+        doorCode: null,
+        codeExpiry: null,
+        cleaningStatus: "clean",
+        linenStatus: "fresh",
+        lastCleaned: new Date(),
+        lastLinenChange: new Date(),
+        notes: null,
+      };
+      this.rooms.set(room.id, room);
+    }
+
+    // Add some sample inventory items
+    const p1Inventory: Inventory[] = [
+      {
+        id: randomUUID(),
+        propertyId: "P1",
+        item: "Sheet Sets",
+        quantity: 20,
+        threshold: 10,
+        unit: "sets",
+        notes: null,
+        lastUpdated: new Date(),
+      },
+      {
+        id: randomUUID(),
+        propertyId: "P1",
+        item: "Towels",
+        quantity: 30,
+        threshold: 15,
+        unit: "pieces",
+        notes: null,
+        lastUpdated: new Date(),
+      },
+    ];
+
+    const p2Inventory: Inventory[] = [
+      {
+        id: randomUUID(),
+        propertyId: "P2",
+        item: "Sheet Sets",
+        quantity: 25,
+        threshold: 12,
+        unit: "sets",
+        notes: null,
+        lastUpdated: new Date(),
+      },
+      {
+        id: randomUUID(),
+        propertyId: "P2",
+        item: "Towels",
+        quantity: 35,
+        threshold: 18,
+        unit: "pieces",
+        notes: null,
+        lastUpdated: new Date(),
+      },
+    ];
+
+    [...p1Inventory, ...p2Inventory].forEach(item => {
+      this.inventory.set(item.id, item);
+    });
+  }
+
+  // User methods
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const user: User = {
+      id,
+      role: insertUser.role,
+      property: insertUser.property ?? null,
+      name: insertUser.name,
+      username: insertUser.username,
+      password: hashedPassword,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser = { ...user, ...updates };
+    if (updates.password) {
+      updatedUser.password = await bcrypt.hash(updates.password, 10);
+    }
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Property methods
+  async getProperties(): Promise<Property[]> {
+    return Array.from(this.properties.values());
+  }
+
+  async getProperty(id: string): Promise<Property | undefined> {
+    return this.properties.get(id);
+  }
+
+  async createProperty(insertProperty: InsertProperty): Promise<Property> {
+    const property: Property = {
+      id: insertProperty.id,
+      name: insertProperty.name,
+      description: insertProperty.description ?? null,
+      frontDoorCode: insertProperty.frontDoorCode ?? null,
+      codeExpiry: insertProperty.codeExpiry ?? null,
+      rateDaily: insertProperty.rateDaily,
+      rateWeekly: insertProperty.rateWeekly,
+      rateMonthly: insertProperty.rateMonthly,
+    };
+    this.properties.set(property.id, property);
+    return property;
+  }
+
+  async updateProperty(id: string, updates: Partial<InsertProperty>): Promise<Property | undefined> {
+    const property = this.properties.get(id);
+    if (!property) return undefined;
+
+    const updatedProperty = { ...property, ...updates };
+    this.properties.set(id, updatedProperty);
+    return updatedProperty;
+  }
+
+  // Room methods
+  async getRooms(): Promise<Room[]> {
+    return Array.from(this.rooms.values());
+  }
+
+  async getRoomsByProperty(propertyId: string): Promise<Room[]> {
+    return Array.from(this.rooms.values()).filter(room => room.propertyId === propertyId);
+  }
+
+  async getRoom(id: string): Promise<Room | undefined> {
+    return this.rooms.get(id);
+  }
+
+  async createRoom(insertRoom: InsertRoom): Promise<Room> {
+    const room: Room = {
+      id: insertRoom.id,
+      status: insertRoom.status ?? 'available',
+      codeExpiry: insertRoom.codeExpiry ?? null,
+      propertyId: insertRoom.propertyId,
+      roomNumber: insertRoom.roomNumber,
+      doorCode: insertRoom.doorCode ?? null,
+      cleaningStatus: insertRoom.cleaningStatus ?? 'clean',
+      linenStatus: insertRoom.linenStatus ?? 'clean',
+      lastCleaned: insertRoom.lastCleaned ?? null,
+      lastLinenChange: insertRoom.lastLinenChange ?? null,
+      notes: insertRoom.notes ?? null,
+    };
+    this.rooms.set(room.id, room);
+    return room;
+  }
+
+  async updateRoom(id: string, updates: Partial<InsertRoom>): Promise<Room | undefined> {
+    const room = this.rooms.get(id);
+    if (!room) return undefined;
+
+    const updatedRoom = { ...room, ...updates };
+    this.rooms.set(id, updatedRoom);
+    return updatedRoom;
+  }
+
+  // Guest methods
+  async getGuests(): Promise<Guest[]> {
+    return Array.from(this.guests.values());
+  }
+
+  async getGuest(id: string): Promise<Guest | undefined> {
+    return this.guests.get(id);
+  }
+
+  async getGuestByContact(contact: string): Promise<Guest | undefined> {
+    return Array.from(this.guests.values()).find(guest => guest.contact === contact);
+  }
+
+  async createGuest(insertGuest: InsertGuest): Promise<Guest> {
+    const id = randomUUID();
+    const guest: Guest = {
+      ...insertGuest,
+      id,
+      createdAt: new Date(),
+    };
+    this.guests.set(id, guest);
+    return guest;
+  }
+
+  async updateGuest(id: string, updates: Partial<InsertGuest>): Promise<Guest | undefined> {
+    const guest = this.guests.get(id);
+    if (!guest) return undefined;
+
+    const updatedGuest = { ...guest, ...updates };
+    this.guests.set(id, updatedGuest);
+    return updatedGuest;
+  }
+
+  // Booking methods
+  async getBookings(): Promise<Booking[]> {
+    return Array.from(this.bookings.values());
+  }
+
+  async getBookingsByRoom(roomId: string): Promise<Booking[]> {
+    return Array.from(this.bookings.values()).filter(booking => booking.roomId === roomId);
+  }
+
+  async getBookingsByGuest(guestId: string): Promise<Booking[]> {
+    return Array.from(this.bookings.values()).filter(booking => booking.guestId === guestId);
+  }
+
+  async getActiveBookings(): Promise<Booking[]> {
+    return Array.from(this.bookings.values()).filter(booking => booking.status === "active");
+  }
+
+  async getBooking(id: string): Promise<Booking | undefined> {
+    return this.bookings.get(id);
+  }
+
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const id = randomUUID();
+    const booking: Booking = {
+      ...insertBooking,
+      id,
+      createdAt: new Date(),
+    };
+    this.bookings.set(id, booking);
+    return booking;
+  }
+
+  async updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking | undefined> {
+    const booking = this.bookings.get(id);
+    if (!booking) return undefined;
+
+    const updatedBooking = { ...booking, ...updates };
+    this.bookings.set(id, updatedBooking);
+    return updatedBooking;
+  }
+
+  // Payment methods
+  async getPayments(): Promise<Payment[]> {
+    return Array.from(this.payments.values());
+  }
+
+  async getPaymentsByBooking(bookingId: string): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(payment => payment.bookingId === bookingId);
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const id = randomUUID();
+    const payment: Payment = {
+      ...insertPayment,
+      id,
+      createdAt: new Date(),
+    };
+    this.payments.set(id, payment);
+    return payment;
+  }
+
+  // Cleaning Task methods
+  async getCleaningTasks(): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values());
+  }
+
+  async getCleaningTasksByProperty(propertyId: string): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values()).filter(task => task.propertyId === propertyId);
+  }
+
+  async getCleaningTasksByAssignee(userId: string): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values()).filter(task => task.assignedTo === userId);
+  }
+
+  async getPendingCleaningTasks(): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values()).filter(task => task.status === "pending");
+  }
+
+  async getCleaningTask(id: string): Promise<CleaningTask | undefined> {
+    return this.cleaningTasks.get(id);
+  }
+
+  async createCleaningTask(insertTask: InsertCleaningTask): Promise<CleaningTask> {
+    const id = randomUUID();
+    const task: CleaningTask = {
+      ...insertTask,
+      id,
+      createdAt: new Date(),
+    };
+    this.cleaningTasks.set(id, task);
+    return task;
+  }
+
+  async updateCleaningTask(id: string, updates: Partial<InsertCleaningTask>): Promise<CleaningTask | undefined> {
+    const task = this.cleaningTasks.get(id);
+    if (!task) return undefined;
+
+    const updatedTask = { ...task, ...updates };
+    this.cleaningTasks.set(id, updatedTask);
+    return updatedTask;
+  }
+
+  // Inventory methods
+  async getInventory(): Promise<Inventory[]> {
+    return Array.from(this.inventory.values());
+  }
+
+  async getInventoryByProperty(propertyId: string): Promise<Inventory[]> {
+    return Array.from(this.inventory.values()).filter(item => item.propertyId === propertyId);
+  }
+
+  async getLowStockItems(): Promise<Inventory[]> {
+    return Array.from(this.inventory.values()).filter(item => item.quantity <= item.threshold);
+  }
+
+  async getInventoryItem(id: string): Promise<Inventory | undefined> {
+    return this.inventory.get(id);
+  }
+
+  async createInventoryItem(insertItem: InsertInventory): Promise<Inventory> {
+    const id = randomUUID();
+    const item: Inventory = {
+      ...insertItem,
+      id,
+      lastUpdated: new Date(),
+    };
+    this.inventory.set(id, item);
+    return item;
+  }
+
+  async updateInventoryItem(id: string, updates: Partial<InsertInventory>): Promise<Inventory | undefined> {
+    const item = this.inventory.get(id);
+    if (!item) return undefined;
+
+    const updatedItem = { ...item, ...updates, lastUpdated: new Date() };
+    this.inventory.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  // Maintenance methods
+  async getMaintenance(): Promise<Maintenance[]> {
+    return Array.from(this.maintenance.values());
+  }
+
+  async getMaintenanceByProperty(propertyId: string): Promise<Maintenance[]> {
+    return Array.from(this.maintenance.values()).filter(item => item.propertyId === propertyId);
+  }
+
+  async getOpenMaintenance(): Promise<Maintenance[]> {
+    return Array.from(this.maintenance.values()).filter(item => item.status === "open");
+  }
+
+  async getMaintenanceItem(id: string): Promise<Maintenance | undefined> {
+    return this.maintenance.get(id);
+  }
+
+  async createMaintenanceItem(insertItem: InsertMaintenance): Promise<Maintenance> {
+    const id = randomUUID();
+    const item: Maintenance = {
+      ...insertItem,
+      id,
+      dateReported: new Date(),
+    };
+    this.maintenance.set(id, item);
+    return item;
+  }
+
+  async updateMaintenanceItem(id: string, updates: Partial<InsertMaintenance>): Promise<Maintenance | undefined> {
+    const item = this.maintenance.get(id);
+    if (!item) return undefined;
+
+    const updatedItem = { ...item, ...updates };
+    this.maintenance.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  // Inquiry methods
+  async getInquiries(): Promise<Inquiry[]> {
+    return Array.from(this.inquiries.values());
+  }
+
+  async getInquiry(id: string): Promise<Inquiry | undefined> {
+    return this.inquiries.get(id);
+  }
+
+  async getInquiryByToken(token: string): Promise<Inquiry | undefined> {
+    return Array.from(this.inquiries.values()).find(inquiry => inquiry.trackerToken === token);
+  }
+
+  async createInquiry(insertInquiry: InsertInquiry): Promise<Inquiry> {
+    const id = randomUUID();
+    const trackerToken = randomUUID();
+    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    const inquiry: Inquiry = {
+      ...insertInquiry,
+      id,
+      trackerToken,
+      tokenExpiry,
+      createdAt: new Date(),
+    };
+    this.inquiries.set(id, inquiry);
+    return inquiry;
+  }
+
+  async updateInquiry(id: string, updates: Partial<InsertInquiry>): Promise<Inquiry | undefined> {
+    const inquiry = this.inquiries.get(id);
+    if (!inquiry) return undefined;
+
+    const updatedInquiry = { ...inquiry, ...updates };
+    this.inquiries.set(id, updatedInquiry);
+    return updatedInquiry;
+  }
+}
+
+export const storage = new MemStorage();
