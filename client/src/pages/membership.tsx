@@ -24,7 +24,7 @@ import {
 
 const inquirySchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  contact: z.string().min(1, 'Contact information is required'),
+  contact: z.string().min(10, 'Phone number is required (minimum 10 digits)'),
   email: z.string().email('Please enter a valid email address'),
   referralSource: z.string().optional(),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
@@ -57,13 +57,14 @@ export default function Membership() {
     onSuccess: (data) => {
       toast({
         title: 'Inquiry Submitted',
-        description: 'Your membership request has been received. You will be redirected to track your status.',
+        description: `Your membership request has been received. IMPORTANT: Save this tracking token for your records: ${data.trackerToken}`,
+        duration: 10000,
       });
 
       // Redirect to tracker page
       setTimeout(() => {
         setLocation(`/tracker/${data.trackerToken}`);
-      }, 2000);
+      }, 3000);
     },
     onError: (error: any) => {
       toast({
@@ -256,9 +257,9 @@ export default function Membership() {
                     name="contact"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Information *</FormLabel>
+                        <FormLabel>Phone Number *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Phone number or email" {...field} data-testid="input-contact" />
+                          <Input placeholder="Enter your phone number" {...field} data-testid="input-contact" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -381,6 +382,54 @@ export default function Membership() {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Tracking Access Link */}
+        <Card className="shadow-material mt-8">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
+              <Bell className="h-5 w-5 mr-2" />
+              Already Submitted an Inquiry?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-gray-600 mb-4">
+              If you've already submitted a membership request and have your tracking token, you can check your status here.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                const token = prompt('Please enter your tracking token:');
+                if (token && token.trim()) {
+                  setLocation(`/tracker/${token.trim()}`);
+                } else if (token === '') {
+                  toast({
+                    variant: 'destructive',
+                    title: 'Token Required',
+                    description: 'Please enter a valid tracking token.',
+                  });
+                }
+              }}
+              className="w-full sm:w-auto"
+            >
+              Track My Request Status
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Important Notice */}
+        <div className="mt-8 p-4 bg-warning-50 border border-warning-200 rounded-lg">
+          <div className="flex items-start">
+            <Shield className="h-5 w-5 text-warning-600 mr-3 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-medium text-warning-800 mb-1">Important: Save Your Tracking Token</h3>
+              <p className="text-sm text-warning-700">
+                After submitting your membership request, you'll receive a unique tracking token. 
+                <strong> Please save this token</strong> as you'll need it to check your membership status 
+                if you close your browser or need to return later.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500">
