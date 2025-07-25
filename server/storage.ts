@@ -555,6 +555,41 @@ export class MemStorage implements IStorage {
     return updatedTask;
   }
 
+  // Complete API coverage - missing methods
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async deleteBannedUser(id: string): Promise<boolean> {
+    return this.bannedList.delete(id);
+  }
+
+  async getMasterCodes(): Promise<any[]> {
+    return Array.from(this.masterCodes.values());
+  }
+
+  async addMasterCode(data: { property: string; masterCode: string; notes?: string }): Promise<any> {
+    const id = randomUUID();
+    const masterCode = {
+      id,
+      ...data,
+      createdAt: new Date(),
+    };
+    this.masterCodes.set(id, masterCode);
+    return masterCode;
+  }
+
+  async createAuditLog(data: { userId: string; action: string; details: string }): Promise<any> {
+    const id = randomUUID();
+    const auditLog = {
+      id,
+      ...data,
+      timestamp: new Date(),
+    };
+    // In production this would go to database
+    return auditLog;
+  }
+
   // Inventory methods
   async getInventory(): Promise<Inventory[]> {
     return Array.from(this.inventory.values());

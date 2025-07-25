@@ -953,6 +953,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE banned user endpoint (referenced in UI but missing)
+  app.delete("/api/banned-users/:id", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const deleted = await storage.deleteBannedUser(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Banned user not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'unbanned_user',
+        details: `Unbanned user ID: ${req.params.id}`
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to unban user' });
+    }
+  });
+
   app.post("/api/master-codes", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
     try {
       const masterCodeData = req.body;

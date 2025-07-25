@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from '@/lib/auth';
+import { AuthProvider, useAuth } from '@/lib/auth';
 import ProtectedRoute from '@/components/protected-route';
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
@@ -44,64 +44,54 @@ function AppRouter() {
         <Route path="/membership" component={Membership} />
         <Route path="/tracker/:token" component={Tracker} />
 
-        {/* Protected routes with navigation */}
+        {/* Protected routes */}
         <Route path="/" component={() => (
           <ProtectedRoute>
-            <Navigation />
             <Dashboard />
           </ProtectedRoute>
         )} />
         <Route path="/dashboard" component={() => (
           <ProtectedRoute>
-            <Navigation />
             <Dashboard />
           </ProtectedRoute>
         )} />
         <Route path="/rooms" component={() => (
           <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Navigation />
             <Rooms />
           </ProtectedRoute>
         )} />
         <Route path="/inquiries" component={() => (
           <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Navigation />
             <Inquiries />
           </ProtectedRoute>
         )} />
         <Route path="/bookings" component={() => (
           <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Navigation />
             <Bookings />
           </ProtectedRoute>
         )} />
         <Route path="/cleaning" component={() => (
           <ProtectedRoute>
-            <Navigation />
             <Cleaning />
           </ProtectedRoute>
         )} />
         <Route path="/payments" component={() => (
           <ProtectedRoute requiredRoles={['admin', 'manager']}>
-            <Navigation />
             <Payments />
           </ProtectedRoute>
         )} />
         <Route path="/reports" component={() => (
           <ProtectedRoute requiredRoles={['admin']}>
-            <Navigation />
             <Reports />
           </ProtectedRoute>
         )} />
         <Route path="/users" component={() => (
           <ProtectedRoute requiredRoles={['admin']}>
-            <Navigation />
               <UserManagement />
           </ProtectedRoute>
         )} />
          <Route path="/inventory" component={() => (
           <ProtectedRoute requiredRoles={['admin']}>
-            <Navigation />
               <InventoryManagement />
           </ProtectedRoute>
         )} />
@@ -149,8 +139,8 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <AppRouter />
-        </TooltipProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
