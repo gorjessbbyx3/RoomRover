@@ -344,7 +344,7 @@ export default function Membership() {
                       <FormControl>
                         <Textarea 
                           rows={4}
-                          placeholder="Any specific requirements or questions?" 
+                          placeholder="Any specific requirements or questions? Please indicate if you will be paying with cash or Cash App ($cashapp)." 
                           {...field} 
                           data-testid="textarea-message"
                         />
