@@ -136,8 +136,8 @@ function AppRouter() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
+      <TooltipProvider>
+        <AuthProvider>
           <AppRouter />
         </AuthProvider>
       </TooltipProvider>
