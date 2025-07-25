@@ -75,6 +75,16 @@ export const payments = pgTable("payments", {
   transactionId: text("transaction_id"), // for Cash App
   dateReceived: timestamp("date_received").notNull(),
   receivedBy: varchar("received_by").notNull().references(() => users.id),
+  // Discount and fee fields
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0.00"),
+  discountReason: text("discount_reason"),
+  hasSecurityDeposit: boolean("has_security_deposit").default(false),
+  securityDepositAmount: decimal("security_deposit_amount", { precision: 10, scale: 2 }).default("0.00"),
+  securityDepositDiscount: decimal("security_deposit_discount", { precision: 10, scale: 2 }).default("0.00"),
+  hasPetFee: boolean("has_pet_fee").default(false),
+  petFeeAmount: decimal("pet_fee_amount", { precision: 10, scale: 2 }).default("0.00"),
+  petFeeDiscount: decimal("pet_fee_discount", { precision: 10, scale: 2 }).default("0.00"),
+  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).notNull(), // Final amount after discounts
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });

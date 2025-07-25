@@ -499,6 +499,15 @@ export class MemStorage implements IStorage {
     const payment: Payment = {
       ...insertPayment,
       id,
+      discountAmount: insertPayment.discountAmount || '0.00',
+      discountReason: insertPayment.discountReason || null,
+      hasSecurityDeposit: insertPayment.hasSecurityDeposit || false,
+      securityDepositAmount: insertPayment.securityDepositAmount || '0.00',
+      securityDepositDiscount: insertPayment.securityDepositDiscount || '0.00',
+      hasPetFee: insertPayment.hasPetFee || false,
+      petFeeAmount: insertPayment.petFeeAmount || '0.00',
+      petFeeDiscount: insertPayment.petFeeDiscount || '0.00',
+      totalPaid: insertPayment.totalPaid || insertPayment.amount,
       createdAt: new Date(),
     };
     this.payments.set(id, payment);

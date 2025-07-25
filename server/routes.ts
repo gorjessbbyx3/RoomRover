@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const paymentData = {
-        ...insertPaymentSchema.parse(req.body),
+        ...req.body,
         receivedBy: req.user.id
       };
 
@@ -406,22 +406,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update booking payment status
       await storage.updateBooking(payment.bookingId, { paymentStatus: 'paid' });
 
+      // Use totalPaid amount for transactions
+      const finalAmount = parseFloat(payment.totalPaid || payment.amount);
+
       // If it's a Cash App payment, automatically add to admin's Cash App drawer
       if (paymentData.method === 'cash_app') {
         await storage.createAdminDrawerTransaction({
           type: 'cashapp_received',
-          amount: parseFloat(paymentData.amount),
+          amount: finalAmount,
           source: 'Customer Payment',
           description: `Cash App payment received from customer (Booking: ${paymentData.bookingId.slice(-8)})`,
           createdBy: req.user.id
         });
       }
 
-      // Create audit log for payment receipt
+      // Create enhanced audit log for payment receipt
+      let auditDetails = `${req.user.name} recorded ${paymentData.method} payment of $${finalAmount} for booking ${paymentData.bookingId}`;
+      
+      if (payment.discountAmount && parseFloat(payment.discountAmount) > 0) {
+        auditDetails += ` (discount: $${payment.discountAmount})`;
+      }
+      if (payment.hasSecurityDeposit) {
+        auditDetails += ` (security deposit: $${payment.securityDepositAmount})`;
+      }
+      if (payment.hasPetFee) {
+        auditDetails += ` (pet fee: $${payment.petFeeAmount})`;
+      }
+
       await storage.createAuditLog({
         userId: req.user.id,
         action: 'payment_received',
-        details: `${req.user.name} recorded ${paymentData.method} payment of $${paymentData.amount} for booking ${paymentData.bookingId}`
+        details: auditDetails
       });
 
       res.status(201).json(payment);

@@ -63,6 +63,17 @@ const paymentSchema = z.object({
   }),
   transactionId: z.string().optional(),
   dateReceived: z.string().min(1, 'Date received is required'),
+  // Discount fields
+  discountAmount: z.string().optional(),
+  discountReason: z.string().optional(),
+  // Security deposit fields
+  hasSecurityDeposit: z.boolean().default(false),
+  securityDepositAmount: z.string().optional(),
+  securityDepositDiscount: z.string().optional(),
+  // Pet fee fields
+  hasPetFee: z.boolean().default(false),
+  petFeeAmount: z.string().optional(),
+  petFeeDiscount: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -103,6 +114,14 @@ export default function Payments() {
       method: 'cash',
       transactionId: '',
       dateReceived: new Date().toISOString().split('T')[0],
+      discountAmount: '',
+      discountReason: '',
+      hasSecurityDeposit: false,
+      securityDepositAmount: '',
+      securityDepositDiscount: '',
+      hasPetFee: false,
+      petFeeAmount: '',
+      petFeeDiscount: '',
       notes: '',
     },
   });
@@ -135,7 +154,37 @@ export default function Payments() {
   });
 
   const onSubmitPayment = (data: PaymentFormData) => {
-    createPaymentMutation.mutate(data);
+    // Calculate total paid amount
+    const baseAmount = parseFloat(data.amount) || 0;
+    const discountAmount = parseFloat(data.discountAmount || '0');
+    
+    let totalPaid = baseAmount - discountAmount;
+    
+    // Add security deposit if applicable
+    if (data.hasSecurityDeposit) {
+      const depositAmount = parseFloat(data.securityDepositAmount || '0');
+      const depositDiscount = parseFloat(data.securityDepositDiscount || '0');
+      totalPaid += (depositAmount - depositDiscount);
+    }
+    
+    // Add pet fee if applicable
+    if (data.hasPetFee) {
+      const petFeeAmount = parseFloat(data.petFeeAmount || '0');
+      const petFeeDiscount = parseFloat(data.petFeeDiscount || '0');
+      totalPaid += (petFeeAmount - petFeeDiscount);
+    }
+    
+    const paymentData = {
+      ...data,
+      totalPaid: totalPaid.toString(),
+      discountAmount: data.discountAmount || '0',
+      securityDepositAmount: data.securityDepositAmount || '0',
+      securityDepositDiscount: data.securityDepositDiscount || '0',
+      petFeeAmount: data.petFeeAmount || '0',
+      petFeeDiscount: data.petFeeDiscount || '0',
+    };
+    
+    createPaymentMutation.mutate(paymentData);
   };
 
   const handleBookingChange = (bookingId: string) => {
@@ -143,6 +192,29 @@ export default function Payments() {
     if (booking) {
       paymentForm.setValue('amount', booking.totalAmount);
     }
+  };
+
+  // Calculate total payment amount in real-time
+  const watchedValues = paymentForm.watch();
+  const calculateTotal = () => {
+    const baseAmount = parseFloat(watchedValues.amount || '0');
+    const discountAmount = parseFloat(watchedValues.discountAmount || '0');
+    
+    let total = baseAmount - discountAmount;
+    
+    if (watchedValues.hasSecurityDeposit) {
+      const depositAmount = parseFloat(watchedValues.securityDepositAmount || '0');
+      const depositDiscount = parseFloat(watchedValues.securityDepositDiscount || '0');
+      total += (depositAmount - depositDiscount);
+    }
+    
+    if (watchedValues.hasPetFee) {
+      const petFeeAmount = parseFloat(watchedValues.petFeeAmount || '0');
+      const petFeeDiscount = parseFloat(watchedValues.petFeeDiscount || '0');
+      total += (petFeeAmount - petFeeDiscount);
+    }
+    
+    return Math.max(0, total);
   };
 
   const formatCurrency = (amount: string) => `$${parseFloat(amount).toFixed(0)}`;
@@ -455,6 +527,199 @@ export default function Payments() {
                       />
                     </div>
 
+                    {/* Discount Section */}
+                    <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+                      <h4 className="font-medium text-gray-900">Discount (Optional)</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={paymentForm.control}
+                          name="discountAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Discount Amount</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="0.00" 
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={paymentForm.control}
+                          name="discountReason"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Discount Reason</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Early payment, Loyalty..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Security Deposit Section */}
+                    <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+                      <FormField
+                        control={paymentForm.control}
+                        name="hasSecurityDeposit"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <input
+                                type="checkbox"
+                                checked={field.value}
+                                onChange={field.onChange}
+                                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">Security Deposit Collected</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {watchedValues.hasSecurityDeposit && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={paymentForm.control}
+                            name="securityDepositAmount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Deposit Amount</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0.00" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={paymentForm.control}
+                            name="securityDepositDiscount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Deposit Discount</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0.00" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pet Fee Section */}
+                    <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+                      <FormField
+                        control={paymentForm.control}
+                        name="hasPetFee"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <input
+                                type="checkbox"
+                                checked={field.value}
+                                onChange={field.onChange}
+                                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">Pet Fee Applied</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {watchedValues.hasPetFee && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={paymentForm.control}
+                            name="petFeeAmount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Pet Fee Amount</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0.00" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={paymentForm.control}
+                            name="petFeeDiscount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Pet Fee Discount</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0.00" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Total Calculation Display */}
+                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-primary-800">Total Amount to be Paid:</span>
+                        <span className="text-2xl font-bold text-primary-900">
+                          {formatCurrency(calculateTotal().toString())}
+                        </span>
+                      </div>
+                      {calculateTotal() !== parseFloat(watchedValues.amount || '0') && (
+                        <div className="text-sm text-primary-600 mt-2">
+                          Base Amount: {formatCurrency(watchedValues.amount || '0')}
+                          {parseFloat(watchedValues.discountAmount || '0') > 0 && (
+                            <span> - Discount: {formatCurrency(watchedValues.discountAmount || '0')}</span>
+                          )}
+                          {watchedValues.hasSecurityDeposit && parseFloat(watchedValues.securityDepositAmount || '0') > 0 && (
+                            <span> + Deposit: {formatCurrency((parseFloat(watchedValues.securityDepositAmount || '0') - parseFloat(watchedValues.securityDepositDiscount || '0')).toString())}</span>
+                          )}
+                          {watchedValues.hasPetFee && parseFloat(watchedValues.petFeeAmount || '0') > 0 && (
+                            <span> + Pet Fee: {formatCurrency((parseFloat(watchedValues.petFeeAmount || '0') - parseFloat(watchedValues.petFeeDiscount || '0')).toString())}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <FormField
                       control={paymentForm.control}
                       name="notes"
@@ -531,8 +796,13 @@ export default function Payments() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-success-800">
-                            {formatCurrency(payment.amount)}
+                            {formatCurrency(payment.totalPaid || payment.amount)}
                           </div>
+                          {payment.totalPaid && payment.totalPaid !== payment.amount && (
+                            <div className="text-xs text-success-600">
+                              Base: {formatCurrency(payment.amount)}
+                            </div>
+                          )}
                           <div className="text-xs text-success-600">
                             {formatDateTime(payment.createdAt)}
                           </div>
@@ -605,7 +875,23 @@ export default function Payments() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{formatCurrency(payment.amount)}</div>
+                          <div className="space-y-1">
+                            <div className="font-medium">{formatCurrency(payment.totalPaid || payment.amount)}</div>
+                            {payment.totalPaid && payment.totalPaid !== payment.amount && (
+                              <div className="text-xs text-gray-500">
+                                Base: {formatCurrency(payment.amount)}
+                                {payment.discountAmount && parseFloat(payment.discountAmount) > 0 && (
+                                  <span className="text-red-600"> (-{formatCurrency(payment.discountAmount)})</span>
+                                )}
+                                {payment.hasSecurityDeposit && parseFloat(payment.securityDepositAmount) > 0 && (
+                                  <span className="text-blue-600"> (+{formatCurrency((parseFloat(payment.securityDepositAmount) - parseFloat(payment.securityDepositDiscount || '0')).toString())} deposit)</span>
+                                )}
+                                {payment.hasPetFee && parseFloat(payment.petFeeAmount) > 0 && (
+                                  <span className="text-purple-600"> (+{formatCurrency((parseFloat(payment.petFeeAmount) - parseFloat(payment.petFeeDiscount || '0')).toString())} pet fee)</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge 
