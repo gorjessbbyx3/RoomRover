@@ -14,7 +14,8 @@ import {
   Plus,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Key
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 
@@ -327,7 +328,24 @@ export default function Dashboard() {
 
       {/* Front Door Code Management - Visible to all users */}
       <div className="mt-8">
-        <FrontDoorManager properties={properties || []} />
+        {propertiesLoading ? (
+          <Card className="shadow-material">
+            <CardHeader className="border-b border-gray-200">
+              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+                <Key className="h-5 w-5 mr-2" />
+                Front Door Code Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-20" />
+                <Skeleton className="h-20" />
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <FrontDoorManager properties={properties || []} />
+        )}
       </div>
     </div>
   );

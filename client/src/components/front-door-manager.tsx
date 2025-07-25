@@ -97,6 +97,29 @@ export default function FrontDoorManager({ properties }: FrontDoorManagerProps) 
 
   const canEdit = user.role === 'admin' || user.role === 'manager';
 
+  // Show loading state if properties are undefined or empty
+  if (!properties || properties.length === 0) {
+    return (
+      <Card className="shadow-material">
+        <CardHeader className="border-b border-gray-200">
+          <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+            <Key className="h-5 w-5 mr-2" />
+            Front Door Code Management
+          </CardTitle>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage front door access codes for properties
+          </p>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8 text-gray-500">
+            <Key className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>No properties available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const handleEditAttempt = (property: Property) => {
     if (!canEdit) {
       toast({
