@@ -21,6 +21,7 @@ import InventoryManagement from '@/pages/inventory-management';
 import MaintenanceManagement from '@/pages/maintenance-management';
 import BannedUsersManagement from '@/pages/banned-users-management';
 import MasterCodesManagement from '@/pages/master-codes-management';
+import Analytics from '@/pages/analytics';
 
 function AppRouter() {
   const { user, loading } = useAuth();
@@ -122,6 +123,12 @@ function AppRouter() {
         <Route path="/master-codes-management" component={() => (
           <ProtectedRoute allowedRoles={['admin']}>
             <MasterCodesManagement />
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/analytics" component={() => (
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Analytics />
           </ProtectedRoute>
         )} />
 

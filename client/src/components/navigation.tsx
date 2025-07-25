@@ -10,7 +10,8 @@ import {
   FileText, 
   LogOut,
   Users,
-  MessageSquare
+  MessageSquare,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const navigationItems = [
   { href: '/cleaning', label: 'Cleaning', icon: Fan, roles: ['admin', 'manager', 'helper'] },
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },
   { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
   { href: '/users', label: 'Users', icon: Users, roles: ['admin'] },
 ];
