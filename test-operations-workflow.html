@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Dashboard Workflow Tests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        .test-controls {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .test-button {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .test-button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .test-button.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .test-button.danger {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+        
+        .stat-item.passed {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+        
+        .stat-item.failed {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        
+        .stat-item.total {
+            background: #f8fafc;
+            border-color: #64748b;
+        }
+        
+        .stat-item.rate {
+            background: #fefbf3;
+            border-color: #f59e0b;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .console-section {
+            background: #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .console-header {
+            background: #334155;
+            padding: 15px 20px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .console-output {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .log-info {
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+        
+        .log-success {
+            color: #22c55e;
+            margin-bottom: 2px;
+        }
+        
+        .log-error {
+            color: #ef4444;
+            margin-bottom: 2px;
+        }
+        
+        .log-warning {
+            color: #f59e0b;
+            margin-bottom: 2px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .test-category {
+            margin-bottom: 30px;
+        }
+        
+        .test-category h3 {
+            margin-bottom: 15px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-icon {
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Operations Dashboard Workflow Tests</h1>
+            <p>Comprehensive testing suite for all user interactions, CRUD operations, and database functionality</p>
+        </div>
+
+        <div class="test-controls">
+            <div class="test-category">
+                <h3><span class="category-icon">🧪</span> Core Workflow Tests</h3>
+                <div class="button-grid">
+                    <button class="test-button primary" onclick="runAllTests()">
+                        🚀 Run All Tests
+                    </button>
+                    <button class="test-button secondary" onclick="runQuickTest()">
+                        ⚡ Quick Test
+                    </button>
+                    <button class="test-button secondary" onclick="clearResults()">
+                        🗑️ Clear Results
+                    </button>
+                </div>
+            </div>
+
+            <div class="test-category">
+                <h3><span class="category-icon">🔧</span> Individual Test Suites</h3>
+                <div class="button-grid">
+                    <button class="test-button secondary" onclick="testCRUDOperations()">
+                        📝 Test CRUD Operations
+                    </button>
+                    <button class="test-button secondary" onclick="testUserInteractions()">
+                        👆 Test User Interactions
+                    </button>
+                    <button class="test-button secondary" onclick="testDataRefresh()">
+                        🔄 Test Data Refresh
+                    </button>
+                    <button class="test-button secondary" onclick="testInputValidation()">
+                        ✅ Test Input Validation
+                    </button>
+                    <button class="test-button secondary" onclick="testRoleAccess()">
+                        👥 Test Role Access
+                    </button>
+                    <button class="test-button secondary" onclick="testErrorHandling()">
+                        🚨 Test Error Handling
+                    </button>
+                </div>
+            </div>
+
+            <div class="test-category">
+                <h3><span class="category-icon">⚠️</span> Stress & Security Tests</h3>
+                <div class="button-grid">
+                    <button class="test-button danger" onclick="runStressTest()">
+                        💪 Stress Test
+                    </button>
+                    <button class="test-button danger" onclick="runSecurityTest()">
+                        🔒 Security Test
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h2>📊 Test Results</h2>
+            <div id="workflow-stats">
+                <div class="stats-grid">
+                    <div class="stat-item total">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Ready to Test</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="console-section">
+            <div class="console-header">
+                <span>🖥️</span>
+                <span>Test Console Output</span>
+                <div style="margin-left: auto;">
+                    <button onclick="exportResults()" style="background: none; border: 1px solid #64748b; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        📤 Export
+                    </button>
+                </div>
+            </div>
+            <div class="console-output" id="workflow-console">
+                <div class="log-info">Operations Dashboard Workflow Tester ready. Click "Run All Tests" to begin comprehensive testing.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="test-operations-workflow.js"></script>
+    <script>
+        let currentTester = null;
+        let isTestRunning = false;
+
+        function updateProgress(percent) {
+            const progressFill = document.getElementById('progress-fill');
+            if (progressFill) {
+                progressFill.style.width = percent + '%';
+            }
+        }
+
+        function setButtonsDisabled(disabled) {
+            const buttons = document.querySelectorAll('.test-button');
+            buttons.forEach(btn => btn.disabled = disabled);
+        }
+
+        async function runAllTests() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            setButtonsDisabled(true);
+            
+            try {
+                currentTester = new OperationsDashboardWorkflowTester();
+                updateProgress(10);
+                await currentTester.runAllWorkflowTests();
+                updateProgress(100);
+            } catch (error) {
+                console.error('Test execution failed:', error);
+            } finally {
+                isTestRunning = false;
+                setButtonsDisabled(false);
+            }
+        }
+
+        async function runQuickTest() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            setButtonsDisabled(true);
+            
+            try {
+                currentTester = new OperationsDashboardWorkflowTester();
+                updateProgress(20);
+                
+                // Run just essential tests
+                const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+                if (token) {
+                    updateProgress(40);
+                    await currentTester.testInventoryCRUD(token);
+                    updateProgress(60);
+                    await currentTester.testRoomOperations(token);
+                    updateProgress(80);
+                    await currentTester.testDashboardRefresh(token);
+                    updateProgress(100);
+                }
+                
+                currentTester.updateResultsDisplay();
+            } catch (error) {
+                console.error('Quick test failed:', error);
+            } finally {
+                isTestRunning = false;
+                setButtonsDisabled(false);
+            }
+        }
+
+        async function testCRUDOperations() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testInventoryCRUD(token);
+                await currentTester.testMaintenanceCRUD(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function testUserInteractions() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testSearchAndFilter(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function testDataRefresh() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testDashboardRefresh(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function testInputValidation() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testInputValidation(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function testRoleAccess() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            await currentTester.testRoleBasedAccess();
+            currentTester.updateResultsDisplay();
+        }
+
+        async function testErrorHandling() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testErrorHandling(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function runStressTest() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            currentTester.log('🔥 Running stress test with 50 concurrent requests...');
+            
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                const promises = [];
+                for (let i = 0; i < 50; i++) {
+                    promises.push(currentTester.makeRequest('GET', '/api/inventory', null, token));
+                }
+                
+                const results = await Promise.all(promises);
+                const failures = results.filter(r => !r.success).length;
+                
+                currentTester.log(`Stress test completed: ${50 - failures}/50 requests succeeded`);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        async function runSecurityTest() {
+            if (isTestRunning) return;
+            
+            currentTester = new OperationsDashboardWorkflowTester();
+            const token = await currentTester.testLogin('admin', 'admin123', 'admin');
+            if (token) {
+                await currentTester.testInputValidation(token);
+                await currentTester.testErrorHandling(token);
+                currentTester.updateResultsDisplay();
+            }
+        }
+
+        function clearResults() {
+            const console = document.getElementById('workflow-console');
+            const stats = document.getElementById('workflow-stats');
+            
+            console.innerHTML = '<div class="log-info">Console cleared. Ready for new tests.</div>';
+            stats.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item total">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Ready to Test</span>
+                    </div>
+                </div>
+            `;
+            updateProgress(0);
+        }
+
+        function exportResults() {
+            if (!currentTester || !currentTester.testResults.length) {
+                alert('No test results to export');
+                return;
+            }
+            
+            const results = currentTester.testResults.map(r => r.message).join('\n');
+            const blob = new Blob([results], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `operations-dashboard-test-results-${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Operations Dashboard Workflow Tester Interface loaded');
+        });
+    </script>
+</body>
+</html>
