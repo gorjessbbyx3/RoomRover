@@ -2,7 +2,9 @@
 // Operations Dashboard User Workflow Test Suite
 // Tests all user interactions, CRUD operations, and database functionality
 
-const API_BASE = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+// Check if running in Node.js or browser environment
+const isNode = typeof window === 'undefined';
+const API_BASE = isNode ? 'http://localhost:5000' : window.location.origin;
 
 class OperationsDashboardWorkflowTester {
   constructor() {
@@ -42,14 +44,16 @@ class OperationsDashboardWorkflowTester {
     this.testResults.push({ message: logMessage, type });
     console.log(logMessage);
     
-    // Update HTML display if available
-    const consoleEl = document.getElementById('workflow-console');
-    if (consoleEl) {
-      const div = document.createElement('div');
-      div.className = `log-${type}`;
-      div.textContent = logMessage;
-      consoleEl.appendChild(div);
-      consoleEl.scrollTop = consoleEl.scrollHeight;
+    // Update HTML display if available (browser only)
+    if (!isNode && typeof document !== 'undefined') {
+      const consoleEl = document.getElementById('workflow-console');
+      if (consoleEl) {
+        const div = document.createElement('div');
+        div.className = `log-${type}`;
+        div.textContent = logMessage;
+        consoleEl.appendChild(div);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
     }
   }
 
@@ -72,7 +76,9 @@ class OperationsDashboardWorkflowTester {
     }
     
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, config);
+      // Use appropriate fetch implementation
+      const fetchFn = isNode ? (await import('node-fetch')).default : fetch;
+      const response = await fetchFn(`${API_BASE}${endpoint}`, config);
       const result = await response.json();
       return { 
         success: response.ok, 
@@ -646,8 +652,10 @@ class OperationsDashboardWorkflowTester {
         this.log('⚠️ Some tests failed - check logs above for details', 'warning');
       }
 
-      // Update HTML display
-      this.updateResultsDisplay();
+      // Update HTML display (browser only)
+      if (!isNode) {
+        this.updateResultsDisplay();
+      }
 
     } catch (error) {
       this.log(`💥 Test execution failed: ${error.message}`, 'error');
@@ -655,6 +663,8 @@ class OperationsDashboardWorkflowTester {
   }
 
   updateResultsDisplay() {
+    if (isNode || typeof document === 'undefined') return;
+    
     const statsEl = document.getElementById('workflow-stats');
     if (statsEl) {
       statsEl.innerHTML = `
@@ -681,11 +691,19 @@ class OperationsDashboardWorkflowTester {
   }
 }
 
-// Export for browser usage
-window.OperationsDashboardWorkflowTester = OperationsDashboardWorkflowTester;
-
-// Auto-run when loaded
-if (typeof document !== 'undefined') {
+// Export for both Node.js and browser environments
+if (isNode) {
+  // Node.js export
+  export { OperationsDashboardWorkflowTester };
+  
+  // Auto-run in Node.js
+  const tester = new OperationsDashboardWorkflowTester();
+  tester.runAllWorkflowTests().catch(console.error);
+} else {
+  // Browser export
+  window.OperationsDashboardWorkflowTester = OperationsDashboardWorkflowTester;
+  
+  // Auto-run when loaded in browser
   document.addEventListener('DOMContentLoaded', () => {
     window.workflowTester = new OperationsDashboardWorkflowTester();
     console.log('Operations Dashboard Workflow Tester loaded. Run workflowTester.runAllWorkflowTests() to start testing.');
