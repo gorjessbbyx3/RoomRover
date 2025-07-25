@@ -22,6 +22,7 @@ const navigationItems = [
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
   { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
+  { href: '/users', label: 'Users', icon: Users, roles: ['admin'] },
 ];
 
 export default function Navigation() {

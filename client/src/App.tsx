@@ -1,4 +1,3 @@
-
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -13,11 +12,11 @@ import Bookings from "@/pages/bookings";
 import Cleaning from "@/pages/cleaning";
 import Payments from "@/pages/payments";
 import Reports from "@/pages/reports";
-import Membership from "@/pages/membership";
+import Inquiries from "@/pages/inquiries";
 import Tracker from "@/pages/tracker";
-import Navigation from "@/components/navigation";
-import ProtectedRoute from "@/components/protected-route";
-import Inquiries from "./pages/inquiries";
+import Membership from "@/pages/membership";
+import UserManagement from '@/pages/user-management';
+import InventoryManagement from '@/pages/inventory-management';
 
 function AppRouter() {
   const { user, loading } = useAuth();
@@ -88,6 +87,18 @@ function AppRouter() {
           <ProtectedRoute requiredRoles={['admin']}>
             <Navigation />
             <Reports />
+          </ProtectedRoute>
+        )} />
+        <Route path="/users" component={() => (
+          <ProtectedRoute requiredRoles={['admin']}>
+            <Navigation />
+              <UserManagement />
+          </ProtectedRoute>
+        )} />
+         <Route path="/inventory" component={() => (
+          <ProtectedRoute requiredRoles={['admin']}>
+            <Navigation />
+              <InventoryManagement />
           </ProtectedRoute>
         )} />
 

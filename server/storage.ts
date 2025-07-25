@@ -749,6 +749,18 @@ export class MemStorage implements IStorage {
   async deleteBannedUser(id: string) {
     return this.bannedList.delete(id);
   }
+
+  // Missing createCleaningTask method (duplicate definition fix)
+  async createCleaningTask(insertTask: InsertCleaningTask): Promise<CleaningTask> {
+    const id = randomUUID();
+    const task: CleaningTask = {
+      ...insertTask,
+      id,
+      createdAt: new Date(),
+    };
+    this.cleaningTasks.set(id, task);
+    return task;
+  }
 }
 
 export const storage = new MemStorage();
