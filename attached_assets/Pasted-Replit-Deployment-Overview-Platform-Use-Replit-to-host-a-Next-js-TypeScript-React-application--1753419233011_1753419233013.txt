@@ -1,0 +1,98 @@
+Replit Deployment Overview
+•  Platform: Use Replit to host a Next.js (TypeScript/React) application for the CRM and public-facing membership page. Leverage Replit’s Node.js environment for backend logic, SQLite for local storage (to maintain discretion), and Replit’s hosting for both the CRM and public page.
+•  Security: Implement user authentication with a lightweight library like next-auth for separate logins (admin, property managers, helpers) with role-based access. Store sensitive data (e.g., passwords, codes) in an encrypted SQLite database and use environment variables (.env in Replit) for secrets.
+•  Discretion: Restrict CRM access with private routes and authentication. Host the public page on a separate Replit project (or route) to minimize exposure. Avoid STR platform integrations and use secure SMS (Twilio via Replit’s Node.js) for code delivery.
+•  Cost: Replit’s free tier supports small-scale hosting with 500 MB storage and limited compute, sufficient for your operation. Upgrade to Hacker plan ($7/month) for more resources if needed.
+•  Advantages over Vercel/Azure: Replit offers an all-in-one IDE and hosting environment, simplifying development and deployment for a single developer. It’s ideal for rapid prototyping and low-cost hosting, with less setup complexity than Vercel or Azure.
+•  Limitations: Replit has lower scalability (limited to 500 MB storage on free tier) and less robust security compared to Vercel (serverless functions) or Azure (VNet, Azure AD). However, it’s sufficient for your discreet, small-scale setup.
+Refined CRM Components for Replit Deployment
+Private CRM Components
+1.  Cleaning and Linen Management
+	•  Database: Store cleaning/linen status for 18 rooms (P1: 8, P2: 10) in an encrypted SQLite database (using better-sqlite3 in Node.js) with fields:
+		•  Room/Property ID (e.g., P1-R1, P2-R10)
+		•  Last Cleaned Date/Time
+		•  Linen Change Date/Time
+		•  Cleaning Status (Clean, Needs Cleaning, In Progress)
+		•  Linen Status (Fresh, Used, Needs Replacement)
+		•  Assigned Cleaner (Property Manager, Outside Helper)
+		•  Notes (e.g., “P1-R3 sanitized 7/24/2025, 18:52 HST”)
+	•  Workflow:
+		•  Log post-checkout cleaning (vacuum/sweep, sanitize, change linens) with a “Mark Complete” button, timestamp, and optional photo upload (stored in Replit’s file system).
+		•  Schedule common area cleaning every other day and trash pickup on Tuesdays/Fridays (e.g., “P2 Common Area: Clean by 7/25/2025, 12:00 HST”).
+		•  Assign tasks to property managers or helpers, with notifications via email (e.g., Nodemailer) or Twilio SMS (via Replit’s Node.js).
+	•  Linen Inventory: Track stock (e.g., “P1: 20 sheet sets; P2: 25 towels”) with low-stock alerts to admin.
+2.  Manual Door Code Management
+	•  Database: Store codes in SQLite with fields:
+		•  Room/Property ID
+		•  Room Code
+		•  Front Door Code (one per property: P1, P2)
+		•  Activation/Expiry Date
+		•  Guest Assigned
+		•  Payment Status
+		•  Cleaning Status
+		•  Notes (e.g., “P2-R5 code changed 7/24/2025”)
+	•  Workflow:
+		•  Generate 4-6 digit codes (Node.js crypto in TypeScript) for room and front door, manually entered into locks.
+		•  Confirm changes with a checklist (e.g., “Lock updated: Yes/No”) linked to cleaning/payment status.
+		•  Send reminders for code changes (daily: 1-2 days, weekly: 7-10 days, monthly: 30-35 days) via CRM dashboard or Twilio SMS.
+		•  Deliver codes via Twilio SMS or in-person, logged in the CRM.
+	•  Front Door Codes: Assign one code per property, changed monthly or on demand, included in booking confirmations.
+3.  Payment Management (Cash and Cash App)
+	•  Database: Log payments in SQLite with fields:
+		•  Guest Name
+		•  Room/Property
+		•  Membership Plan (P1: $100/day, $500/week, $2000/month; P2: $60/day, $300/week, $1200/month)
+		•  Payment Method
+		•  Amount
+		•  Date Received
+		•  Cash App Transaction ID/Memo
+		•  Notes (e.g., “P1-R7: $200 cash, 7/24/2025”)
+	•  Workflow: Verify payments (manual entry for cash, transaction ID for Cash App) before code generation and cleaning. Store screenshots in Replit’s file system.
+	•  Dashboard: Show paid/pending/overdue payments, filtered by property or plan.
+4.  Multi-Property and Room Management
+	•  Room Profiles: Store details for 18 rooms with rates, lock type, code, payment, and cleaning status.
+	•  Dashboard: Display availability, payments, codes, and cleaning status. Color-code (green: paid/clean/code active; red: unpaid/uncleaned/code unchanged).
+	•  Assignment: Suggest rooms based on plan, payment, cleaning, and code status.
+5.  Guest Management
+	•  Profiles: Store minimal data (name, contact, referral source, Cashtag, stay history) linked to payments, codes, and cleaning.
+	•  Check-In Workflow: Verify payment, confirm cleaning, suggest codes, log manual changes, deliver codes.
+6.  Booking and Membership Plan Tracking
+	•  System: Log bookings as membership plans with fields for room, duration, payment, code, and cleaning.
+	•  Compliance Alerts: Flag bookings under 30 days for Honolulu’s Bill 41 compliance (30+ day stays). Promote monthly plans.
+	•  Sync: Trigger cleaning, linen, code, and payment tasks.
+7.  Task and Maintenance Management
+	•  Scheduler: Automate reminders for cleaning, trash (Tuesdays/Fridays), code changes, payments, and lock maintenance.
+	•  Turnover Checklist: Include cleaning, linens, code changes, lock testing, and payment.
+	•  Maintenance Log: Track repairs and low supplies (e.g., “P1-R4: low towels”).
+8.  User Authentication and Roles
+	•  Next-Auth: Implement authentication with next-auth for:
+		•  Admin: Full access to all data, reports, and user management.
+		•  Property Managers (2): Access to their property (P1: 8 rooms, P2: 10 rooms) for bookings, payments, codes, cleaning, and maintenance.
+		•  Outside Helpers: Limited access to assigned cleaning tasks.
+	•  Security: Use role-based access with 2FA, storing credentials in .env.
+9.  Admin Reporting System
+	•  Reports: Generate alerts for low supplies (e.g., “P2: <10 sheet sets”) and repairs (e.g., “P1-R7: lock repair needed”) via Node.js scripts.
+	•  Delivery: Send to admin via email (Nodemailer), Twilio SMS, or CRM dashboard.
+10.  Compliance and Discretion
+	•  Hosting: Deploy on Replit with private routes for CRM access.
+	•  Compliance: Enforce 30+ day stays via alerts. Verify zoning via Honolulu Land Information System.
+	•  Discretion: Avoid STR integrations. Use Twilio for secure SMS.
+11.  Mobile and Offline Access
+	•  Interface: Build a Next.js/React app (TypeScript) for mobile access to bookings, payments, codes, cleaning, and reports.
+	•  Offline Mode: Cache data in SQLite with IndexedDB fallback.
+12.  Analytics
+	•  Track cleaning frequency, code changes, payments, and occupancy to optimize plans.
+Public-Facing Membership Page
+•  Design:
+	•  Title: “Honolulu Private Residency Club”
+	•  Content: Frame rentals as memberships:
+		•  Daily Access: $100/$60 (P1/P2, discouraged for compliance).
+		•  Weekly Residency: $500/$300.
+		•  Monthly Membership: $2000/$1200 (emphasized).
+	•  Features: List amenities (e.g., secure rooms, Wi-Fi) without photos/addresses.
+	•  Inquiry Form: Collect name, contact, referral source, and plan via a Next.js API route, stored in SQLite.
+	•  Tracker: Generate a temporary link (7-day expiry, via Next.js API) with a Domino’s-style tracker:
+		•  “Request Received”
+		•  “Payment Confirmed” (after admin verifies cash/Cash App)
+		•  “Booking Confirmed” (displays room and front door codes)
+	•  Implementation: Host as a separate route in the Next.js app or a second Replit project, using React for the tracker UI.
