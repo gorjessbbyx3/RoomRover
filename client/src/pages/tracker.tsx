@@ -166,8 +166,13 @@ export default function Tracker({ params }: TrackerProps) {
           <p className="text-gray-600">
             Track your request progress below
           </p>
-          <div className="mt-3 text-sm text-gray-500">
-            Request ID: <Badge variant="outline" className="font-mono ml-1" data-testid="request-id">{inquiry.id}</Badge>
+          <div className="mt-3 space-y-2">
+            <div className="text-sm text-gray-500">
+              Request ID: <Badge variant="outline" className="font-mono ml-1" data-testid="request-id">{inquiry.id}</Badge>
+            </div>
+            <div className="text-sm text-gray-500">
+              Tracking Token: <Badge variant="outline" className="font-mono ml-1 bg-primary-50 text-primary-700 border-primary-200" data-testid="tracking-token">{token}</Badge>
+            </div>
           </div>
         </div>
 
