@@ -86,7 +86,7 @@ export default function Membership() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4" data-testid="page-title">
-            Honolulu Private Residency Club
+            Honolulu ClubHouse
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Exclusive membership-based accommodations in the heart of Honolulu. Experience privacy, comfort, and convenience with our carefully curated residential properties.
