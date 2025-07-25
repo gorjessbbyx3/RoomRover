@@ -289,11 +289,26 @@ export default function Tracker({ params }: TrackerProps) {
 
                         {/* Special content for payment step */}
                         {step.id === 'payment_confirmed' && stepStatus === 'pending' && (
-                          <div className="mt-3 p-3 bg-warning-50 border border-warning-200 rounded-lg">
-                            <p className="text-sm text-warning-700 flex items-start">
-                              <Info className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                              We accept cash or Cash App payments. Instructions will be provided via your preferred contact method.
-                            </p>
+                          <div className="mt-3 space-y-3">
+                            <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg">
+                              <p className="text-sm text-warning-700 flex items-start">
+                                <Info className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                                We accept cash or Cash App payments. Instructions will be provided via your preferred contact method.
+                              </p>
+                            </div>
+                            <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-white font-bold text-sm">$</span>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-primary-800 mb-1">Cash App Payments</p>
+                                  <p className="text-sm text-primary-700">
+                                    Send payments to: <span className="font-mono font-bold text-green-600">$selarazmami</span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
 
