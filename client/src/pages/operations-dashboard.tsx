@@ -58,38 +58,111 @@ export default function OperationsDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch data based on user role
-  const { data: inventory = [] } = useQuery<InventoryItem[]>({
+  // Fetch data based on user role with comprehensive error handling
+  const { data: inventory = [], isLoading: inventoryLoading, error: inventoryError } = useQuery<InventoryItem[]>({
     queryKey: ['inventory'],
     queryFn: async () => {
       const response = await fetch('/api/inventory', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      if (!response.ok) throw new Error('Failed to fetch inventory');
-      return response.json();
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch inventory`);
+      }
+      const data = await response.json();
+      
+      // Validate inventory data structure
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid inventory data format - expected array');
+      }
+      
+      return data.map((item, index) => {
+        if (!item.id || !item.item || typeof item.quantity !== 'number') {
+          console.warn(`Invalid inventory item at index ${index}:`, item);
+        }
+        return {
+          ...item,
+          quantity: Math.max(0, Number(item.quantity) || 0),
+          threshold: Math.max(0, Number(item.threshold) || 5),
+          lastUpdated: item.lastUpdated || new Date().toISOString()
+        };
+      });
+    },
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: maintenance = [] } = useQuery<MaintenanceItem[]>({
+  const { data: maintenance = [], isLoading: maintenanceLoading, error: maintenanceError } = useQuery<MaintenanceItem[]>({
     queryKey: ['maintenance'],
     queryFn: async () => {
       const response = await fetch('/api/maintenance', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      if (!response.ok) throw new Error('Failed to fetch maintenance');
-      return response.json();
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch maintenance`);
+      }
+      const data = await response.json();
+      
+      // Validate maintenance data structure
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid maintenance data format - expected array');
+      }
+      
+      const validPriorities = ['low', 'medium', 'high', 'critical'];
+      const validStatuses = ['open', 'in_progress', 'completed'];
+      
+      return data.map((item, index) => {
+        if (!item.id || !item.issue) {
+          console.warn(`Invalid maintenance item at index ${index}:`, item);
+        }
+        return {
+          ...item,
+          priority: validPriorities.includes(item.priority) ? item.priority : 'medium',
+          status: validStatuses.includes(item.status) ? item.status : 'open',
+          dateReported: item.dateReported || new Date().toISOString()
+        };
+      });
+    },
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: rooms = [] } = useQuery<Room[]>({
+  const { data: rooms = [], isLoading: roomsLoading, error: roomsError } = useQuery<Room[]>({
     queryKey: ['rooms'],
     queryFn: async () => {
       const response = await fetch('/api/rooms', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      if (!response.ok) throw new Error('Failed to fetch rooms');
-      return response.json();
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch rooms`);
+      }
+      const data = await response.json();
+      
+      // Validate room data structure
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid rooms data format - expected array');
+      }
+      
+      const validStatuses = ['available', 'occupied', 'cleaning', 'maintenance'];
+      const validCleaningStatuses = ['clean', 'dirty', 'in_progress'];
+      
+      return data.map((room, index) => {
+        if (!room.id || !room.propertyId) {
+          console.warn(`Invalid room at index ${index}:`, room);
+        }
+        return {
+          ...room,
+          status: validStatuses.includes(room.status) ? room.status : 'available',
+          cleaningStatus: validCleaningStatuses.includes(room.cleaningStatus) ? room.cleaningStatus : 'clean',
+          roomNumber: Number(room.roomNumber) || index + 1,
+          lastCleaned: room.lastCleaned || null
+        };
+      });
+    },
+    retry: 2,
+    staleTime: 2 * 60 * 1000, // 2 minutes for rooms (more dynamic)
   });
 
   // Calculate key metrics
@@ -172,6 +245,58 @@ export default function OperationsDashboard() {
     </div>
   );
 
+  // Show loading state
+  if (inventoryLoading || maintenanceLoading || roomsLoading) {
+    return (
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
+          <p className="text-gray-600 mt-2">Loading operational data...</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  const hasErrors = inventoryError || maintenanceError || roomsError;
+  if (hasErrors) {
+    return (
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+              <div>
+                <h3 className="font-medium text-red-800">Data Loading Errors</h3>
+                <div className="mt-2 text-sm text-red-700 space-y-1">
+                  {inventoryError && <p>Inventory: {inventoryError.message}</p>}
+                  {maintenanceError && <p>Maintenance: {maintenanceError.message}</p>}
+                  {roomsError && <p>Rooms: {roomsError.message}</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="text-center py-8">
+          <Button onClick={() => window.location.reload()}>
+            Retry Loading Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
@@ -179,6 +304,12 @@ export default function OperationsDashboard() {
         <p className="text-gray-600 mt-2">
           Unified view of inventory, room status, and maintenance for {user?.property || 'all properties'}
         </p>
+        {/* Data freshness indicator */}
+        <div className="mt-2 text-xs text-gray-500">
+          Last updated: {new Date().toLocaleTimeString()} | 
+          Role: {user?.role} | 
+          Property: {user?.property || 'All'}
+        </div>
       </div>
 
       {/* Quick Actions Grid */}
@@ -248,6 +379,29 @@ export default function OperationsDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Data Quality Status */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-800">Data Quality Status</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="font-semibold text-blue-900">{inventory.length}</div>
+                  <div className="text-blue-700">Inventory Items</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-blue-900">{rooms.length}</div>
+                  <div className="text-blue-700">Rooms Tracked</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-blue-900">{maintenance.length}</div>
+                  <div className="text-blue-700">Maintenance Items</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
