@@ -55,7 +55,7 @@ export const bookings = pgTable("bookings", {
   guestId: varchar("guest_id").notNull().references(() => guests.id),
   plan: text("plan").notNull(), // daily, weekly, monthly
   startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  endDate: timestamp("end_date"),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, overdue
   status: text("status").notNull().default("active"), // active, completed, cancelled
@@ -64,6 +64,7 @@ export const bookings = pgTable("bookings", {
   codeExpiry: timestamp("code_expiry"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+  isTenant: boolean("is_tenant").default(false),
 });
 
 export const payments = pgTable("payments", {
@@ -226,7 +227,21 @@ export type Guest = typeof guests.$inferSelect;
 export type InsertGuest = z.infer<typeof insertGuestSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
-export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type InsertBooking = z.object({
+  roomId: z.string(),
+  guestId: z.string(),
+  plan: z.enum(['daily', 'weekly', 'monthly']),
+  startDate: z.date(),
+  endDate: z.date().nullable().default(null),
+  totalAmount: z.string(),
+  paymentStatus: z.enum(['pending', 'paid', 'overdue']).default('pending'),
+  status: z.enum(['active', 'checked_out']).default('active'),
+  doorCode: z.string().nullable().default(null),
+  frontDoorCode: z.string().nullable().default(null),
+  codeExpiry: z.date().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  isTenant: z.boolean().default(false),
+});
 
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
@@ -248,3 +263,21 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type BannedUser = typeof bannedUsers.$inferSelect;
 export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
+
+export type Booking = {
+  id: string;
+  roomId: string;
+  guestId: string;
+  plan: 'daily' | 'weekly' | 'monthly';
+  startDate: Date;
+  endDate: Date | null;
+  totalAmount: string;
+  paymentStatus: 'pending' | 'paid' | 'overdue';
+  status: 'active' | 'checked_out';
+  doorCode: string | null;
+  frontDoorCode: string | null;
+  codeExpiry: Date | null;
+  notes: string | null;
+  isTenant: boolean;
+  createdAt: Date;
+};

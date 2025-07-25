@@ -793,6 +793,19 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return true;
   }
+
+  async updateUserPrivileges(id: string, updates: { role: string; property: string | null }): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser = { 
+      ...user, 
+      role: updates.role as 'admin' | 'manager' | 'helper',
+      property: updates.property
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
 }
 
 export const storage = new MemStorage();

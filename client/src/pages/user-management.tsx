@@ -32,8 +32,13 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isPrivilegeDialogOpen, setIsPrivilegeDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [privilegeForm, setPrivilegeForm] = useState({
+    role: 'helper' as 'admin' | 'manager' | 'helper',
+    property: ''
+  });
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -142,6 +147,38 @@ export default function UserManagement() {
     }
   });
 
+  const updateUserPrivilegesMutation = useMutation({
+    mutationFn: async ({ userId, role, property }: { userId: string; role: string; property: string | null }) => {
+      const response = await fetch(`/api/users/${userId}/privileges`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ role, property })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update user privileges');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: 'Privileges Updated',
+        description: 'User privileges have been successfully updated.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update privileges. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.name || !formData.password) {
@@ -189,6 +226,29 @@ export default function UserManagement() {
   const openPasswordDialog = (user: User) => {
     setSelectedUser(user);
     setIsPasswordDialogOpen(true);
+  };
+
+  const openPrivilegeDialog = (user: User) => {
+    setSelectedUser(user);
+    setPrivilegeForm({
+      role: user.role,
+      property: user.property || ''
+    });
+    setIsPrivilegeDialogOpen(true);
+  };
+
+  const handlePrivilegeUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    updateUserPrivilegesMutation.mutate({
+      userId: selectedUser.id,
+      role: privilegeForm.role,
+      property: privilegeForm.property || null
+    });
+    
+    setIsPrivilegeDialogOpen(false);
+    setSelectedUser(null);
   };
 
   const getRoleBadge = (role: string) => {
@@ -435,6 +495,74 @@ export default function UserManagement() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isPrivilegeDialogOpen} onOpenChange={setIsPrivilegeDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update User Privileges</DialogTitle>
+              <DialogDescription>
+                Update role and permissions for {selectedUser?.name} ({selectedUser?.username})
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handlePrivilegeUpdate} className="space-y-4">
+              <div>
+                <Label htmlFor="role">Role *</Label>
+                <Select 
+                  value={privilegeForm.role} 
+                  onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, role: value as typeof privilegeForm.role }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin - Full access</SelectItem>
+                    <SelectItem value="manager">Manager - Property management</SelectItem>
+                    <SelectItem value="helper">Helper - Cleaning tasks</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {privilegeForm.role === 'manager' && (
+                <div>
+                  <Label htmlFor="property">Property *</Label>
+                  <Select 
+                    value={privilegeForm.property} 
+                    onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, property: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property to manage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.map((property: Property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsPrivilegeDialogOpen(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateUserPrivilegesMutation.isPending}
+                  className="bg-warning-500 hover:bg-warning-600"
+                >
+                  {updateUserPrivilegesMutation.isPending ? 'Updating...' : 'Update Privileges'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -483,14 +611,24 @@ export default function UserManagement() {
                       <Badge className="bg-green-100 text-green-800">Active</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => openPasswordDialog(user)}
-                        className="text-xs"
-                      >
-                        Change Password
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openPasswordDialog(user)}
+                          className="text-xs"
+                        >
+                          Change Password
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openPrivilegeDialog(user)}
+                          className="text-xs text-warning-600 hover:text-warning-800"
+                        >
+                          Edit Privileges
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

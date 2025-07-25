@@ -73,9 +73,19 @@ const bookingSchema = z.object({
   guestId: z.string().min(1, 'Guest is required'),
   plan: z.string().min(1, 'Plan is required'),
   startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required'),
+  endDate: z.string().optional(),
   totalAmount: z.string().min(1, 'Amount is required'),
   notes: z.string().optional(),
+  isTenant: z.boolean().optional(),
+}).refine((data) => {
+  // If not a tenant, end date is required
+  if (!data.isTenant && !data.endDate) {
+    return false;
+  }
+  return true;
+}, {
+  message: "End date is required for non-tenant bookings",
+  path: ["endDate"],
 });
 
 const guestSchema = z.object({
@@ -124,6 +134,7 @@ export default function Bookings() {
       endDate: '',
       totalAmount: '',
       notes: '',
+      isTenant: false,
     },
   });
 
@@ -141,7 +152,13 @@ export default function Bookings() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: BookingFormData) => {
-      const response = await apiRequest('POST', '/api/bookings', data);
+      const bookingData = {
+        ...data,
+        // Set end date to null for tenant bookings, or far future date
+        endDate: data.isTenant ? null : data.endDate,
+        isTenant: data.isTenant || false
+      };
+      const response = await apiRequest('POST', '/api/bookings', bookingData);
       return response.json();
     },
     onSuccess: () => {
@@ -503,15 +520,51 @@ export default function Bookings() {
                         name="endDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>End Date *</FormLabel>
+                            <FormLabel>
+                              End Date {!bookingForm.watch('isTenant') && '*'}
+                            </FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input 
+                                type="date" 
+                                {...field} 
+                                disabled={bookingForm.watch('isTenant')}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={bookingForm.control}
+                      name="isTenant"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={(e) => {
+                                field.onChange(e.target.checked);
+                                if (e.target.checked) {
+                                  bookingForm.setValue('endDate', '');
+                                }
+                              }}
+                              className="mt-2"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm font-normal">
+                              Tenant Booking
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Check this box for indefinite tenant bookings (no end date required)
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={bookingForm.control}

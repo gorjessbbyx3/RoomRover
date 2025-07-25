@@ -164,6 +164,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/users/:id/privileges", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const { role, property } = req.body;
+      
+      if (!role || !['admin', 'manager', 'helper'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role specified' });
+      }
+
+      if (role === 'manager' && !property) {
+        return res.status(400).json({ error: 'Property is required for manager role' });
+      }
+
+      const updated = await storage.updateUserPrivileges(req.params.id, { role, property });
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ success: true, user: updated });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update user privileges' });
+    }
+  });
+
   // Property routes
   app.get("/api/properties", authenticateUser, async (req, res) => {
     try {
@@ -328,9 +352,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      const bookingData = insertBookingSchema.parse(req.body);
+      // Parse dates from string format
+      const parsedData = {
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+        isTenant: req.body.isTenant || false
+      };
 
-      // No minimum booking length validation since advertising as memberships
+      const bookingData = insertBookingSchema.parse(parsedData);
 
       // Check if manager has access to this room's property
       if (req.user.role === 'manager') {
