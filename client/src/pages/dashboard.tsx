@@ -22,19 +22,19 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['dashboard', 'stats'],
+    queryKey: ['/api/dashboard/stats'],
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
-    queryKey: ['rooms'],
+    queryKey: ['/api/rooms'],
   });
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<PropertyWithRooms[]>({
-    queryKey: ['properties'],
+    queryKey: ['/api/properties'],
   });
 
   const { data: cleaningTasks, isLoading: tasksLoading } = useQuery<CleaningTaskWithDetails[]>({
-    queryKey: ['cleaning-tasks'],
+    queryKey: ['/api/cleaning-tasks'],
   });
 
   if (!user) return null;
@@ -289,12 +289,12 @@ export default function Dashboard() {
         </Card>
       </div>
 
-       {/* Front Door Code Management - Only for Admin and Managers */}
-       {(user.role === 'admin' || user.role === 'manager') && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <FrontDoorManager properties={properties || []} />
-          </div>
-        )}
+      {/* Front Door Code Management - Only for Admin and Managers */}
+      {(user.role === 'admin' || user.role === 'manager') && (
+        <div className="mt-8">
+          <FrontDoorManager properties={properties || []} />
+        </div>
+      )}
     </div>
   );
 }
