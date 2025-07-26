@@ -32,7 +32,7 @@ if (databaseUrl) {
     const { drizzle } = await import("drizzle-orm/neon-http");
     const { neon } = await import("@neondatabase/serverless");
     const schema = await import("../shared/schema");
-    
+
     // Verify we're not using localhost
     if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
       console.warn("DATABASE_URL is pointing to localhost. Using in-memory storage instead.");
@@ -106,6 +106,7 @@ export interface IStorage {
   getInventoryItem(id: string): Promise<Inventory | undefined>;
   createInventoryItem(item: InsertInventory): Promise<Inventory>;
   updateInventoryItem(id: string, updates: Partial<InsertInventory>): Promise<Inventory | undefined>;
+  deleteInventoryItem(id: string): Promise<boolean>;
 
   // Maintenance
   getMaintenance(): Promise<Maintenance[]>;
@@ -580,9 +581,9 @@ export class MemStorage implements IStorage {
     return updatedTask;
   }
 
-  
 
-  
+
+
 
   // Inventory methods
   async getInventory(): Promise<Inventory[]> {
@@ -619,6 +620,10 @@ export class MemStorage implements IStorage {
     const updatedItem = { ...item, ...updates, lastUpdated: new Date() };
     this.inventory.set(id, updatedItem);
     return updatedItem;
+  }
+
+  async deleteInventoryItem(id: string): Promise<boolean> {
+    return this.inventory.delete(id);
   }
 
   // Maintenance methods
@@ -741,7 +746,7 @@ export class MemStorage implements IStorage {
     return masterCode;
   }
 
-  
+
 
   async updatePropertyFrontDoorCode(propertyId: string, code: string, expiry?: Date): Promise<Property | undefined> {
     const property = this.properties.get(propertyId);
@@ -903,7 +908,7 @@ export class MemStorage implements IStorage {
 
     // Calculate cash holdings
     const cashReceived = transactions
-      .filter(t => t.type === 'cash_received')
+      .filter(t => t => t.type === 'cash_received')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const cashDeposited = transactions

@@ -28,6 +28,20 @@ export default function OperationsDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Inventory management state
+  const [inventoryProperty, setInventoryProperty] = useState('all');
+  const [showAddInventory, setShowAddInventory] = useState(false);
+  const [showEditInventory, setShowEditInventory] = useState(false);
+  const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
+  const [newInventoryItem, setNewInventoryItem] = useState({
+    propertyId: '',
+    item: '',
+    quantity: 0,
+    threshold: 5,
+    unit: 'pieces',
+    notes: ''
+  });
 
   // Fetch data based on user role with comprehensive error handling
   const { data: inventory = [], isLoading: inventoryLoading, error: inventoryError } = useQuery<InventoryItem[]>({
@@ -143,6 +157,103 @@ export default function OperationsDashboard() {
   const roomsNeedingCleaning = rooms.filter(room => room.cleaningStatus === 'dirty');
   const availableRooms = rooms.filter(room => room.status === 'available' && room.cleaningStatus === 'clean');
   const outOfOrderRooms = rooms.filter(room => room.status === 'maintenance');
+
+  // Inventory management handlers
+  const handleAddInventory = async () => {
+    if (!newInventoryItem.propertyId || !newInventoryItem.item) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(newInventoryItem)
+      });
+
+      if (response.ok) {
+        setShowAddInventory(false);
+        setNewInventoryItem({
+          propertyId: '',
+          item: '',
+          quantity: 0,
+          threshold: 5,
+          unit: 'pieces',
+          notes: ''
+        });
+        // Refresh inventory data
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to add inventory item:', error);
+    }
+  };
+
+  const handleUpdateInventory = async () => {
+    if (!editingInventory) return;
+
+    try {
+      const response = await fetch(`/api/inventory/${editingInventory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          item: editingInventory.item,
+          quantity: editingInventory.quantity,
+          threshold: editingInventory.threshold,
+          unit: editingInventory.unit,
+          notes: editingInventory.notes
+        })
+      });
+
+      if (response.ok) {
+        setShowEditInventory(false);
+        setEditingInventory(null);
+        // Refresh inventory data
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to update inventory item:', error);
+    }
+  };
+
+  const handleDeleteInventory = async () => {
+    if (!editingInventory) return;
+
+    if (confirm(`Are you sure you want to delete "${editingInventory.item}"?`)) {
+      try {
+        const response = await fetch(`/api/inventory/${editingInventory.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          setShowEditInventory(false);
+          setEditingInventory(null);
+          // Refresh inventory data
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Failed to delete inventory item:', error);
+      }
+    }
+  };
+
+  const handleReorderItem = (item: InventoryItem) => {
+    // Open edit modal with increased quantity
+    setEditingInventory({
+      ...item,
+      quantity: item.threshold * 3 // Suggest reordering 3x the threshold
+    });
+    setShowEditInventory(true);
+  };
 
   const getStatusColor = (status: string, type: 'maintenance' | 'inventory' | 'room') => {
     if (type === 'maintenance') {
@@ -534,61 +645,363 @@ export default function OperationsDashboard() {
                   <CardTitle>Supply Inventory</CardTitle>
                   <CardDescription>Track stock levels and get reorder alerts</CardDescription>
                 </div>
-                <Button>
-                  <Package className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
+                <div className="flex gap-2">
+                  <Select value={inventoryProperty} onValueChange={setInventoryProperty}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select property" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Properties</SelectItem>
+                      {rooms.reduce((acc, room) => {
+                        const property = room.propertyId;
+                        if (!acc.includes(property)) {
+                          acc.push(property);
+                        }
+                        return acc;
+                      }, [] as string[]).map(propertyId => (
+                        <SelectItem key={propertyId} value={propertyId}>
+                          Property {propertyId}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={() => setShowAddInventory(true)}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {inventory.map(item => {
-                  const isOutOfStock = item.quantity === 0;
-                  const isLowStock = item.quantity <= item.threshold && item.quantity > 0;
+              {/* Low Stock Alert Section */}
+              {lowStockItems.length > 0 && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+                    <h3 className="font-semibold text-yellow-800">Low Stock Alert</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {lowStockItems.map(item => (
+                      <div key={item.id} className="text-sm text-yellow-700">
+                        <span className="font-medium">{item.item}</span> - 
+                        <span className={item.quantity === 0 ? 'text-red-600 font-bold' : ''}>
+                          {item.quantity === 0 ? ' OUT OF STOCK' : ` ${item.quantity} ${item.unit} remaining`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Inventory Lists by Property */}
+              <div className="space-y-6">
+                {rooms.reduce((acc, room) => {
+                  const property = room.propertyId;
+                  if (!acc.includes(property)) {
+                    acc.push(property);
+                  }
+                  return acc;
+                }, [] as string[])
+                .filter(propertyId => inventoryProperty === 'all' || inventoryProperty === propertyId)
+                .map(propertyId => {
+                  const propertyInventory = inventory.filter(item => item.propertyId === propertyId);
+                  
+                  if (propertyInventory.length === 0) return null;
 
                   return (
-                    <div key={item.id} className={`border rounded-lg p-4 ${
-                      isOutOfStock ? 'border-red-200 bg-red-50' : 
-                      isLowStock ? 'border-yellow-200 bg-yellow-50' : 
-                      'border-gray-200'
-                    }`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{item.item}</h3>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className={`text-lg font-bold ${
-                              isOutOfStock ? 'text-red-600' : 
-                              isLowStock ? 'text-yellow-600' : 
-                              'text-green-600'
+                    <div key={propertyId} className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-lg mb-4 flex items-center">
+                        <Home className="h-5 w-5 mr-2" />
+                        Property {propertyId} Inventory ({propertyInventory.length} items)
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        {propertyInventory.map(item => {
+                          const isOutOfStock = item.quantity === 0;
+                          const isLowStock = item.quantity <= item.threshold && item.quantity > 0;
+
+                          return (
+                            <div key={item.id} className={`border rounded-lg p-4 ${
+                              isOutOfStock ? 'border-red-200 bg-red-50' : 
+                              isLowStock ? 'border-yellow-200 bg-yellow-50' : 
+                              'border-gray-200'
                             }`}>
-                              {item.quantity} {item.unit}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              Threshold: {item.threshold} {item.unit}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={
-                            isOutOfStock ? 'bg-red-100 text-red-800' :
-                            isLowStock ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }>
-                            {isOutOfStock ? 'OUT' : isLowStock ? 'LOW' : 'OK'}
-                          </Badge>
-                          {(isOutOfStock || isLowStock) && (
-                            <Button size="sm" variant="outline">
-                              Reorder
-                            </Button>
-                          )}
-                        </div>
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold">{item.item}</h4>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <span className={`text-lg font-bold ${
+                                      isOutOfStock ? 'text-red-600' : 
+                                      isLowStock ? 'text-yellow-600' : 
+                                      'text-green-600'
+                                    }`}>
+                                      {item.quantity} {item.unit}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      Threshold: {item.threshold} {item.unit}
+                                    </span>
+                                    {item.notes && (
+                                      <span className="text-sm text-gray-400 italic">
+                                        {item.notes}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={
+                                    isOutOfStock ? 'bg-red-100 text-red-800' :
+                                    isLowStock ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                  }>
+                                    {isOutOfStock ? 'OUT' : isLowStock ? 'LOW' : 'OK'}
+                                  </Badge>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingInventory(item);
+                                      setShowEditInventory(true);
+                                    }}
+                                  >
+                                    Edit
+                                  </Button>
+                                  {(isOutOfStock || isLowStock) && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                                      onClick={() => handleReorderItem(item)}
+                                    >
+                                      <ShoppingCart className="h-4 w-4 mr-1" />
+                                      Reorder
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {inventory.filter(item => 
+                inventoryProperty === 'all' || item.propertyId === inventoryProperty
+              ).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                  <p>No inventory items found for the selected property</p>
+                  <Button 
+                    className="mt-2" 
+                    variant="outline"
+                    onClick={() => setShowAddInventory(true)}
+                  >
+                    Add First Item
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Add Inventory Modal */}
+          {showAddInventory && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-lg font-semibold mb-4">Add Inventory Item</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Property
+                    </label>
+                    <Select value={newInventoryItem.propertyId} onValueChange={(value) => 
+                      setNewInventoryItem(prev => ({ ...prev, propertyId: value }))
+                    }>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms.reduce((acc, room) => {
+                          const property = room.propertyId;
+                          if (!acc.includes(property)) {
+                            acc.push(property);
+                          }
+                          return acc;
+                        }, [] as string[]).map(propertyId => (
+                          <SelectItem key={propertyId} value={propertyId}>
+                            Property {propertyId}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Item Name
+                    </label>
+                    <Input
+                      value={newInventoryItem.item}
+                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, item: e.target.value }))}
+                      placeholder="e.g., Toilet Paper, Towels"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Quantity
+                      </label>
+                      <Input
+                        type="number"
+                        value={newInventoryItem.quantity}
+                        onChange={(e) => setNewInventoryItem(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Unit
+                      </label>
+                      <Input
+                        value={newInventoryItem.unit}
+                        onChange={(e) => setNewInventoryItem(prev => ({ ...prev, unit: e.target.value }))}
+                        placeholder="pieces, rolls, etc."
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Low Stock Threshold
+                    </label>
+                    <Input
+                      type="number"
+                      value={newInventoryItem.threshold}
+                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, threshold: parseInt(e.target.value) || 5 }))}
+                      placeholder="5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
+                    <Input
+                      value={newInventoryItem.notes}
+                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Additional notes"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowAddInventory(false);
+                      setNewInventoryItem({
+                        propertyId: '',
+                        item: '',
+                        quantity: 0,
+                        threshold: 5,
+                        unit: 'pieces',
+                        notes: ''
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddInventory}>
+                    Add Item
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Inventory Modal */}
+          {showEditInventory && editingInventory && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-lg font-semibold mb-4">Edit Inventory Item</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Item Name
+                    </label>
+                    <Input
+                      value={editingInventory.item}
+                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, item: e.target.value }) : null)}
+                      placeholder="e.g., Toilet Paper, Towels"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Quantity
+                      </label>
+                      <Input
+                        type="number"
+                        value={editingInventory.quantity}
+                        onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, quantity: parseInt(e.target.value) || 0 }) : null)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Unit
+                      </label>
+                      <Input
+                        value={editingInventory.unit}
+                        onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, unit: e.target.value }) : null)}
+                        placeholder="pieces, rolls, etc."
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Low Stock Threshold
+                    </label>
+                    <Input
+                      type="number"
+                      value={editingInventory.threshold}
+                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, threshold: parseInt(e.target.value) || 5 }) : null)}
+                      placeholder="5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
+                    <Input
+                      value={editingInventory.notes || ''}
+                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, notes: e.target.value }) : null)}
+                      placeholder="Additional notes"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between mt-6">
+                  <Button 
+                    variant="destructive"
+                    onClick={handleDeleteInventory}
+                  >
+                    Delete Item
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowEditInventory(false);
+                        setEditingInventory(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateInventory}>
+                      Update Item
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">
