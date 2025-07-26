@@ -565,79 +565,158 @@ export default function OperationsDashboard() {
         </TabsContent>
 
         <TabsContent value="rooms" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Room Status Overview</CardTitle>
-                  <CardDescription>Real-time room availability and housekeeping status</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Search rooms..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-64"
-                  />
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Rooms</SelectItem>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rooms
-                  .filter(room => filterStatus === 'all' || room.status === filterStatus)
-                  .filter(room => room.id.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map(room => (
-                    <div key={room.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-semibold">{room.id}</h3>
-                          <p className="text-sm text-gray-600">Room {room.roomNumber}</p>
-                        </div>
-                        <Badge className={getStatusColor(room.status, 'room')}>
-                          {room.status}
-                        </Badge>
+          {/* Group rooms by property and display in PropertyOverview style */}
+          {properties
+            .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
+            .map(property => {
+              const propertyRooms = rooms
+                .filter(room => room.propertyId === property.id)
+                .filter(room => filterStatus === 'all' || room.status === filterStatus)
+                .filter(room => room.id.toLowerCase().includes(searchTerm.toLowerCase()));
+              
+              if (propertyRooms.length === 0) return null;
+              
+              const gridCols = property.id === 'P1' ? 'grid-cols-4' : 'grid-cols-5';
+              
+              return (
+                <Card key={property.id} className="shadow-material">
+                  <CardHeader className="border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle className="text-lg font-medium text-gray-900">
+                          {property.name} - Room Status Overview
+                        </CardTitle>
+                        <p className="text-sm text-gray-500">
+                          {property.description} • Real-time room availability and housekeeping status
+                        </p>
                       </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Cleaning:</span>
-                          <Badge 
-                            size="sm" 
-                            className={getStatusColor(room.cleaningStatus === 'clean' ? 'available' : 'cleaning', 'room')}
-                          >
-                            {room.cleaningStatus}
-                          </Badge>
-                        </div>
-                        {room.lastCleaned && (
-                          <p className="text-xs text-gray-500">
-                            Last cleaned: {new Date(room.lastCleaned).toLocaleDateString()}
-                          </p>
-                        )}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Search rooms..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-64"
+                        />
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Filter status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Rooms</SelectItem>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="occupied">Occupied</SelectItem>
+                            <SelectItem value="cleaning">Cleaning</SelectItem>
+                            <SelectItem value="maintenance">Maintenance</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-
-                      {room.cleaningStatus === 'dirty' && (
-                        <Button size="sm" className="w-full mt-3" variant="outline">
-                          Schedule Cleaning
-                        </Button>
-                      )}
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className={`grid ${gridCols} gap-3`} data-testid={`rooms-grid-${property.id}`}>
+                      {propertyRooms.map(room => {
+                        const getStatusColor = () => {
+                          switch (room.status) {
+                            case 'available':
+                              return room.cleaningStatus === 'clean' 
+                                ? 'bg-green-100 border-green-300 hover:bg-green-200' 
+                                : 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200';
+                            case 'occupied':
+                              return 'bg-blue-100 border-blue-300 hover:bg-blue-200';
+                            case 'cleaning':
+                              return 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200';
+                            case 'maintenance':
+                              return 'bg-red-100 border-red-300 hover:bg-red-200';
+                            default:
+                              return 'bg-gray-100 border-gray-300 hover:bg-gray-200';
+                          }
+                        };
+
+                        const getStatusTextColor = () => {
+                          switch (room.status) {
+                            case 'available':
+                              return room.cleaningStatus === 'clean' ? 'text-green-800' : 'text-yellow-800';
+                            case 'occupied':
+                              return 'text-blue-800';
+                            case 'cleaning':
+                              return 'text-yellow-800';
+                            case 'maintenance':
+                              return 'text-red-800';
+                            default:
+                              return 'text-gray-800';
+                          }
+                        };
+
+                        const getStatusDotColor = () => {
+                          switch (room.status) {
+                            case 'available':
+                              return room.cleaningStatus === 'clean' ? 'bg-green-500' : 'bg-yellow-500';
+                            case 'occupied':
+                              return 'bg-blue-500';
+                            case 'cleaning':
+                              return 'bg-yellow-500';
+                            case 'maintenance':
+                              return 'bg-red-500';
+                            default:
+                              return 'bg-gray-500';
+                          }
+                        };
+
+                        const statusLabel = room.status.charAt(0).toUpperCase() + room.status.slice(1);
+
+                        return (
+                          <Card 
+                            key={room.id}
+                            className={`border rounded-lg cursor-pointer transition-all hover:shadow-md p-4 ${getStatusColor()}`}
+                            onClick={() => console.log('Room clicked:', room.id)}
+                            data-testid={`room-card-${room.id}`}
+                          >
+                            <div className="text-center">
+                              <div className={`font-medium text-sm ${getStatusTextColor()}`}>
+                                {room.id}
+                              </div>
+                              <div className={`mt-1 text-sm ${getStatusTextColor()}`}>
+                                {statusLabel}
+                              </div>
+                              <div className={`rounded-full mx-auto mt-2 w-3 h-3 ${getStatusDotColor()}`}></div>
+                              
+                              {/* Additional room info */}
+                              <div className="mt-2 space-y-1">
+                                <div className={`text-xs ${getStatusTextColor()}`}>
+                                  Cleaning: {room.cleaningStatus}
+                                </div>
+                                {room.lastCleaned && (
+                                  <div className="text-xs text-gray-500">
+                                    Cleaned: {new Date(room.lastCleaned).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {room.cleaningStatus === 'dirty' && (
+                                <Button size="sm" className="w-full mt-2 text-xs" variant="outline">
+                                  Clean
+                                </Button>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          
+          {rooms.length === 0 && (
+            <Card>
+              <CardContent className="p-8">
+                <div className="text-center py-8 text-gray-500">
+                  <Home className="h-12 w-12 mx-auto mb-2" />
+                  No rooms found. Check your filters or contact administrator.
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-6">
