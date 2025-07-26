@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RoomWithDetails } from '@/lib/types';
-import { Trash2, Eye, Home } from 'lucide-react';
+import { Trash2, Eye, Home, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,8 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isViewingRoom, setIsViewingRoom] = useState(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
 
   const bookRoomMutation = useMutation({
     mutationFn: async (roomId: string) => {
@@ -211,19 +213,55 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
           getStatusDotColor(),
           size === 'sm' ? 'w-2 h-2' : 'w-3 h-3'
         )}></div>
-        
+
         {size !== 'sm' && (
           <div className="mt-4 flex gap-2 justify-center">
             <Button
               variant="outline"
               size="sm"
-              onClick={handleViewDetails}
+              disabled={isViewingRoom}
+              onClick={async () => {
+                setIsViewingRoom(true);
+                setRoomError(null);
+
+                try {
+                  // Validate room exists
+                  const response = await fetch(`/api/rooms/${room.id}`, {
+                    headers: {
+                      'Authorization': `Bearer ${user?.token}`
+                    }
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Room not found or unavailable');
+                  }
+
+                  // Navigate to room details
+                  window.location.href = `/rooms/${room.id}`;
+                } catch (error) {
+                  setRoomError(error.message);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'Unable to view room details. Please try again.',
+                  });
+                } finally {
+                  setIsViewingRoom(false);
+                }
+              }}
               className="flex-1"
             >
               <Eye className="h-3 w-3 mr-1" />
-              View
+              {isViewingRoom ? 'Loading...' : 'View'}
             </Button>
-            
+
+            {roomError && (
+              <div className="flex items-center text-red-600 text-xs mt-1">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {roomError}
+              </div>
+            )}
+
             {room.status === 'available' && (
               <Button
                 variant="default"
@@ -236,7 +274,7 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
                 {bookRoomMutation.isPending ? 'Booking...' : 'Book'}
               </Button>
             )}
-            
+
             {user && (user.role === 'admin' || user.role === 'manager') && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>

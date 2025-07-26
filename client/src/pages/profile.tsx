@@ -27,6 +27,8 @@ export default function Profile() {
     phone: ''
   });
   const [profilePicture, setProfilePicture] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -62,34 +64,51 @@ export default function Profile() {
     },
   });
 
+  const validateProfile = () => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name?.trim()) {
+      errors.name = "Name is required";
+    }
+
+    if (!formData.email?.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.phone?.trim()) {
+      errors.phone = "Phone number is required";
+    } else if (!/^\+?[\d\s\-\(\)]{10,}$/.test(formData.phone)) {
+      errors.phone = "Please enter a valid phone number";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof ProfileForm, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+
+    // Clear validation error for this field
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!validateProfile()) {
       toast({
-        variant: 'destructive',
-        title: 'Validation Error',
-        description: 'Name is required.',
-      });
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Validation Error',
-        description: 'Email is required.',
-      });
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast({
-        variant: 'destructive',
-        title: 'Validation Error',
-        description: 'Please enter a valid email address.',
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fix the errors below before saving.",
       });
       return;
     }
@@ -97,13 +116,10 @@ export default function Profile() {
     setIsLoading(true);
     try {
       await updateProfileMutation.mutateAsync(formData);
+      setHasUnsavedChanges(false);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (field: keyof ProfileForm, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   if (!user) {
@@ -172,7 +188,11 @@ export default function Profile() {
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter your full name"
                 required
+                className={validationErrors.name ? 'border-red-500' : ''}
               />
+              {validationErrors.name && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>
+              )}
             </div>
 
             <div>
@@ -184,7 +204,11 @@ export default function Profile() {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="Enter your email address"
                 required
+                className={validationErrors.email ? 'border-red-500' : ''}
               />
+               {validationErrors.email && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -195,17 +219,27 @@ export default function Profile() {
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="Enter your phone number"
+                className={validationErrors.phone ? 'border-red-500' : ''}
               />
+              {validationErrors.phone && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+              )}
             </div>
 
             <div className="pt-4">
               <Button 
                 type="submit"
-                disabled={isLoading || updateProfileMutation.isPending}
+                disabled={isLoading || updateProfileMutation.isPending || !hasUnsavedChanges}
                 className="w-full"
+                variant={hasUnsavedChanges ? "default" : "secondary"}
               >
-                {isLoading || updateProfileMutation.isPending ? 'Saving Changes...' : 'Save Changes'}
+                {isLoading || updateProfileMutation.isPending ? 'Saving Changes...' : hasUnsavedChanges ? 'Save Changes' : 'No Changes'}
               </Button>
+              {hasUnsavedChanges && (
+                <p className="text-amber-600 text-sm text-center mt-2">
+                  You have unsaved changes
+                </p>
+              )}
             </div>
           </form>
         </CardContent>

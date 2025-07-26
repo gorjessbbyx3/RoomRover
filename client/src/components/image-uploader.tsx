@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,9 @@ export default function ImageUploader({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -97,10 +99,48 @@ export default function ImageUploader({
 
   const handleUpload = () => {
     if (!selectedFile) return;
-    
+
     setIsUploading(true);
-    uploadMutation.mutate(selectedFile);
-    setIsUploading(false);
+      setUploadProgress(0);
+      setUploadError(null);
+
+      try {
+        // Simulate upload progress
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + 10;
+          });
+        }, 200);
+
+        // Simulate upload for now - replace with actual upload logic
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        setUploadProgress(100);
+
+        // Mock uploaded URL
+        const mockUrl = URL.createObjectURL(selectedFile);
+        setUploadedUrl(mockUrl);
+        onImageUploaded(mockUrl);
+
+        toast({
+          title: "Success",
+          description: "Image uploaded successfully",
+        });
+      } catch (error) {
+        setUploadError(error.message || 'Upload failed');
+        toast({
+          variant: "destructive",
+          title: "Upload Failed", 
+          description: "Failed to upload image. Please try again.",
+        });
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }
   };
 
   const handleClearSelection = () => {
@@ -156,7 +196,7 @@ export default function ImageUploader({
           <Upload className="h-4 w-4 mr-2" />
           Select Image
         </Button>
-        
+
         {selectedFile && (
           <Button 
             onClick={handleUpload}

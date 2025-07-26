@@ -21,7 +21,8 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
 
 export default function Rooms() {

@@ -1,3 +1,7 @@
+The code changes add active page highlighting to the navigation, utilizing the `useLocation` hook from `wouter` and updating the styling of the navigation links based on their active state.
+```
+
+```replit_final_file
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -31,6 +35,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { cn } from "@/lib/utils";
 
 const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'manager', 'helper'] },
