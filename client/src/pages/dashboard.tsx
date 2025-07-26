@@ -408,7 +408,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               {/* Quick Actions */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/bookings'}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/inhouse'}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
