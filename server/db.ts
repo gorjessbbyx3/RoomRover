@@ -20,7 +20,7 @@ const sql = postgres(databaseUrl, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
-  ssl: { rejectUnauthorized: false },
+  ssl: databaseUrl.includes('localhost') ? false : { rejectUnauthorized: false },
 });
 
 export const db = drizzle(sql, { schema });
