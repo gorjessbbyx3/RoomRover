@@ -1,0 +1,69 @@
+🔍 Issues & Errors Found:
+1. Supabase Client Misconfigurations
+The lib/supabaseClient.ts is hardcoded with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. If these env vars are missing or misconfigured, it silently fails.
+
+⚠️ Fix: Add a fallback or fail loudly when these are undefined.
+
+2. No Input Validation / Error Handling on Forms
+In your booking forms or sign-up forms, there's no try/catch for failed Supabase calls.
+
+❌ Example: If a user tries to book a room and the request fails (e.g., due to no internet), nothing tells the user what went wrong.
+
+3. Database Calls Not Optimized
+In pages/index.tsx, the Supabase query fetches data directly inside getServerSideProps. It does not paginate or filter.
+
+⚠️ Potential performance issue as listings grow.
+
+4. Image Uploading Incomplete
+File upload logic is referenced in the code (e.g., uploadImageToSupabase), but I couldn’t find a connected component that allows users to upload profile images or room photos.
+
+Missing drag-and-drop, file preview, and feedback UI.
+
+5. Profile & Listing Features Incomplete
+There's a stub or placeholder for a user profile, but it's not fully wired up.
+
+Example: /profile.tsx seems to expect Supabase data but doesn’t show error/loading states.
+
+6. Booking System Incomplete
+Booking logic (reserving a room, showing unavailable dates) isn't fully implemented.
+
+Calendar component seems missing or minimal.
+
+No logic for checking room availability or preventing double-booking.
+
+7. Missing Auth Guards
+Users can visit pages like /profile or /create-listing without being authenticated.
+
+Risk: Users who aren’t logged in can access protected pages.
+
+8. No Mobile Responsiveness in Some Pages
+Some components like the navbar, profile, and listing cards don’t scale well on smaller devices. No mobile drawer or collapsible sidebar.
+
+9. No Unit or Integration Tests
+No __tests__ directory or Jest/Cypress test scripts.
+
+⚠️ You should add tests for:
+
+Authentication flow
+
+Booking logic
+
+Database queries
+
+Component rendering (e.g., room card, filters)
+
+✨ Features Not Fully Implemented or Missing:
+Feature	Status
+Room Listings (Basic Info)	✅ Done
+Booking System	🚧 Incomplete
+Calendar & Availability	❌ Missing
+User Profiles (view/update)	🚧 Partially done
+Reviews/Ratings	❌ Not implemented
+Payment Integration (Stripe/PayPal)	❌ Missing
+Image Uploads	🚧 Incomplete
+Notifications / Emails (Resend?)	❌ Missing
+Favorites / Saved Rooms	❌ Missing
+Admin Panel / Moderation	❌ Not implemented
+Mobile Optimization	🚧 Needs improvement
+Filtering & Sorting Listings	❌ Not implemented
+Auth Guard / Protected Routes	🚧 Needs improvement
