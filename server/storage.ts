@@ -22,7 +22,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as schema from "../shared/schema";
 
@@ -30,6 +30,8 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
+
+console.log('Storage connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
 
 const sql = neon(databaseUrl);
 export const db = drizzle(sql, { schema });
