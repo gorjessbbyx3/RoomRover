@@ -11,8 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Rooms from "@/pages/rooms";
 import Bookings from "@/pages/bookings";
 import Payments from "@/pages/payments";
-import Cleaning from "@/pages/cleaning";
-
+//import Cleaning from "@/pages/cleaning"; // Cleaning page removed
 import BannedUsersManagement from "@/pages/banned-users-management";
 import MasterCodesManagement from "@/pages/master-codes-management";
 import UserManagement from "@/pages/user-management";
@@ -67,8 +66,8 @@ function AppRouter() {
           </Route>
 
           <Route path="/cleaning">
-            <ProtectedRoute>
-              <Cleaning />
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'helper']}>
+              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 

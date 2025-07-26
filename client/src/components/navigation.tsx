@@ -34,7 +34,6 @@ const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'manager', 'helper'] },
   { href: '/rooms', label: 'Rooms', icon: Bed, roles: ['admin', 'manager'] },
   { href: '/bookings', label: 'Bookings', icon: Calendar, roles: ['admin', 'manager'] },
-  { href: '/cleaning', label: 'Cleaning', icon: Fan, roles: ['admin', 'manager', 'helper'] },
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },

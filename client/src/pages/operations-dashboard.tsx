@@ -28,7 +28,8 @@ import {
   Edit,
   Trash2,
   RefreshCw,
-  Settings
+  Settings,
+  Fan
 } from 'lucide-react';
 import type { InventoryItem, MaintenanceItem, Room, Property } from '@/lib/types';
 
@@ -76,6 +77,20 @@ export default function OperationsDashboard() {
       if (!response.ok) throw new Error('Failed to fetch properties');
       return response.json();
     },
+  });
+
+  // Fetch cleaning tasks
+  const { data: cleaningTasks = [], isLoading: cleaningTasksLoading, error: cleaningTasksError } = useQuery({
+    queryKey: ['/api/cleaning-tasks'],
+    queryFn: async () => {
+      const response = await fetch('/api/cleaning-tasks', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch cleaning tasks');
+      return response.json();
+    },
+    retry: 2,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch data based on user role with comprehensive error handling
@@ -321,6 +336,11 @@ export default function OperationsDashboard() {
   const roomsNeedingCleaning = rooms.filter(room => room.cleaningStatus === 'dirty');
   const availableRooms = rooms.filter(room => room.status === 'available' && room.cleaningStatus === 'clean');
   const outOfOrderRooms = rooms.filter(room => room.status === 'maintenance');
+  
+  // Cleaning task metrics
+  const pendingTasks = cleaningTasks.filter(task => task.status === 'pending');
+  const inProgressTasks = cleaningTasks.filter(task => task.status === 'in_progress');
+  const highPriorityTasks = cleaningTasks.filter(task => ['high', 'critical'].includes(task.priority) && task.status !== 'completed');
 
   const getStatusColor = (status: string, type: 'maintenance' | 'inventory' | 'room') => {
     if (type === 'maintenance') {
@@ -420,7 +440,7 @@ export default function OperationsDashboard() {
   );
 
   // Show loading state
-  if (inventoryLoading || maintenanceLoading || roomsLoading) {
+  if (inventoryLoading || maintenanceLoading || roomsLoading || cleaningTasksLoading) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -442,7 +462,7 @@ export default function OperationsDashboard() {
   }
 
   // Show error state
-  const hasErrors = inventoryError || maintenanceError || roomsError;
+  const hasErrors = inventoryError || maintenanceError || roomsError || cleaningTasksError;
   if (hasErrors) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -457,6 +477,7 @@ export default function OperationsDashboard() {
                   {inventoryError && <p>Inventory: {inventoryError.message}</p>}
                   {maintenanceError && <p>Maintenance: {maintenanceError.message}</p>}
                   {roomsError && <p>Rooms: {roomsError.message}</p>}
+                  {cleaningTasksError && <p>Cleaning Tasks: {cleaningTasksError.message}</p>}
                 </div>
               </div>
             </div>
@@ -503,11 +524,11 @@ export default function OperationsDashboard() {
           action={() => setActiveTab('rooms')}
         />
         <QuickActionCard
-          title="Out of Order"
-          count={outOfOrderRooms.length}
-          icon={Wrench}
-          color="text-red-600"
-          action={() => setActiveTab('maintenance')}
+          title="Pending Tasks"
+          count={pendingTasks.length}
+          icon={ClipboardList}
+          color="text-blue-600"
+          action={() => setActiveTab('cleaning')}
         />
         <QuickActionCard
           title="Low Stock"
@@ -524,16 +545,16 @@ export default function OperationsDashboard() {
           action={() => setActiveTab('maintenance')}
         />
         <QuickActionCard
-          title="Reorder Needed"
-          count={outOfStockItems.length}
-          icon={ShoppingCart}
+          title="High Priority"
+          count={highPriorityTasks.length}
+          icon={Zap}
           color="text-red-600"
-          action={() => setActiveTab('inventory')}
+          action={() => setActiveTab('cleaning')}
         />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Home className="h-4 w-4" />
             Overview
@@ -541,6 +562,10 @@ export default function OperationsDashboard() {
           <TabsTrigger value="rooms" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             Rooms
+          </TabsTrigger>
+          <TabsTrigger value="cleaning" className="flex items-center gap-2">
+            <Fan className="h-4 w-4" />
+            Cleaning
           </TabsTrigger>
           <TabsTrigger value="inventory" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
@@ -623,9 +648,90 @@ export default function OperationsDashboard() {
                   <span className="font-medium">Open Maintenance</span>
                   <Badge className="bg-purple-100 text-purple-800">{maintenance.filter(m => m.status !== 'completed').length} items</Badge>
                 </div>
+                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
+                  <span className="font-medium">Pending Cleaning Tasks</span>
+                  <Badge className="bg-indigo-100 text-indigo-800">{pendingTasks.length} tasks</Badge>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-pink-50 rounded-lg">
+                  <span className="font-medium">High Priority Tasks</span>
+                  <Badge className="bg-pink-100 text-pink-800">{highPriorityTasks.length} tasks</Badge>
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Cleaning Tasks Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Fan className="h-5 w-5 mr-2 text-blue-600" />
+                Active Cleaning Tasks
+              </CardTitle>
+              <CardDescription>
+                Current tasks requiring attention
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {cleaningTasksLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              ) : [...pendingTasks, ...inProgressTasks].length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {[...pendingTasks, ...inProgressTasks].slice(0, 5).map((task) => (
+                    <div key={task.id} className={`border rounded-lg p-3 ${
+                      task.priority === 'critical' ? 'border-red-200 bg-red-50' :
+                      task.priority === 'high' ? 'border-orange-200 bg-orange-50' :
+                      'border-gray-200'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{task.title}</h4>
+                          <div className="text-xs text-gray-600 mt-1">
+                            <span className="font-medium">{task.type.replace('_', ' ')}</span>
+                            {task.roomId && <span> • Room {task.roomId}</span>}
+                          </div>
+                          {task.dueDate && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Due: {new Date(task.dueDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge className={
+                            task.priority === 'critical' ? 'bg-red-100 text-red-800' :
+                            task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }>
+                            {task.priority}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {task.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {[...pendingTasks, ...inProgressTasks].length > 5 && (
+                    <div className="text-center text-sm text-gray-500 pt-2 border-t">
+                      {[...pendingTasks, ...inProgressTasks].length - 5} more tasks - 
+                      <Button variant="link" className="p-0 h-auto ml-1" onClick={() => setActiveTab('cleaning')}>
+                        View all
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                  <p>No active cleaning tasks</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="rooms" className="space-y-6">
@@ -1142,6 +1248,135 @@ export default function OperationsDashboard() {
                   No inventory items found. Add your first item to get started.
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cleaning" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Fan className="h-5 w-5 mr-2" />
+                    Cleaning Task Management
+                  </CardTitle>
+                  <CardDescription>Manage cleaning tasks and schedules for all properties</CardDescription>
+                </div>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Task Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-yellow-700 font-medium">Pending Tasks</p>
+                      <p className="text-2xl font-bold text-yellow-800">{pendingTasks.length}</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-700 font-medium">In Progress</p>
+                      <p className="text-2xl font-bold text-blue-800">{inProgressTasks.length}</p>
+                    </div>
+                    <Fan className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-red-700 font-medium">High Priority</p>
+                      <p className="text-2xl font-bold text-red-800">{highPriorityTasks.length}</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Tasks */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Active Tasks</h3>
+                {cleaningTasksLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : [...pendingTasks, ...inProgressTasks].length > 0 ? (
+                  <div className="space-y-4">
+                    {[...pendingTasks, ...inProgressTasks].map((task) => (
+                      <div key={task.id} className={`border rounded-lg p-4 ${
+                        task.priority === 'critical' ? 'border-red-200 bg-red-50' :
+                        task.priority === 'high' ? 'border-orange-200 bg-orange-50' :
+                        'border-gray-200'
+                      }`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold">{task.title}</h4>
+                              <Badge className={
+                                task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
+                              }>
+                                {task.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              <span className="font-medium">{task.type.replace('_', ' ')}</span>
+                              {task.roomId && <span> • Room {task.roomId}</span>}
+                              {task.propertyId && properties.find(p => p.id === task.propertyId) && (
+                                <span> • {properties.find(p => p.id === task.propertyId)?.name}</span>
+                              )}
+                            </div>
+                            {task.description && (
+                              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              {task.dueDate && (
+                                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                              )}
+                              {task.assignedTo && <span>Assigned</span>}
+                              <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Badge className={
+                              task.priority === 'critical' ? 'bg-red-100 text-red-800' :
+                              task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }>
+                              {task.priority}
+                            </Badge>
+                            {task.status === 'pending' && (
+                              <Button size="sm" variant="outline">
+                                Start
+                              </Button>
+                            )}
+                            <Button size="sm" variant="ghost" className="text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Fan className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No active cleaning tasks</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
