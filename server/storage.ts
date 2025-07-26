@@ -626,6 +626,10 @@ export class MemStorage implements IStorage {
     return this.inventory.delete(id);
   }
 
+  async deleteInventoryItem(id: string): Promise<boolean> {
+    return this.inventory.delete(id);
+  }
+
   // Maintenance methods
   async getMaintenance(): Promise<Maintenance[]> {
     return Array.from(this.maintenance.values());

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Package, 
   AlertTriangle, 
@@ -19,28 +23,50 @@ import {
   TrendingDown,
   ShoppingCart,
   ClipboardList,
-  Zap
+  Zap,
+  Plus,
+  Edit,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
-import type { InventoryItem, MaintenanceItem, Room } from '@/lib/types';
+import type { InventoryItem, MaintenanceItem, Room, Property } from '@/lib/types';
 
 export default function OperationsDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedProperty, setSelectedProperty] = useState('all');
   
-  // Inventory management state
-  const [inventoryProperty, setInventoryProperty] = useState('all');
-  const [showAddInventory, setShowAddInventory] = useState(false);
-  const [showEditInventory, setShowEditInventory] = useState(false);
-  const [editingInventory, setEditingInventory] = useState<InventoryItem | null>(null);
-  const [newInventoryItem, setNewInventoryItem] = useState({
-    propertyId: '',
+  // Dialog states
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isRestockDialogOpen, setIsRestockDialogOpen] = useState(false);
+  const [currentItem, setCurrentItem] = useState<InventoryItem | null>(null);
+  
+  // Form states
+  const [newItem, setNewItem] = useState({
+    propertyId: user?.property || 'P1',
     item: '',
     quantity: 0,
     threshold: 5,
     unit: 'pieces',
     notes: ''
+  });
+  const [restockAmount, setRestockAmount] = useState(0);
+
+  // Fetch properties
+  const { data: properties = [] } = useQuery<Property[]>({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    },
   });
 
   // Fetch data based on user role with comprehensive error handling
@@ -150,6 +176,80 @@ export default function OperationsDashboard() {
     staleTime: 2 * 60 * 1000, // 2 minutes for rooms (more dynamic)
   });
 
+  // Inventory mutations
+  const addItemMutation = useMutation({
+    mutationFn: async (itemData: typeof newItem) => {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(itemData)
+      });
+      if (!response.ok) throw new Error('Failed to add item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      setIsAddDialogOpen(false);
+      setNewItem({
+        propertyId: user?.property || 'P1',
+        item: '',
+        quantity: 0,
+        threshold: 5,
+        unit: 'pieces',
+        notes: ''
+      });
+      toast({ title: "Success", description: "Inventory item added successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<InventoryItem> }) => {
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      setIsEditDialogOpen(false);
+      setIsRestockDialogOpen(false);
+      setCurrentItem(null);
+      toast({ title: "Success", description: "Inventory item updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete item');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      toast({ title: "Success", description: "Inventory item deleted successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
   // Calculate key metrics
   const lowStockItems = inventory.filter(item => item.quantity <= item.threshold);
   const outOfStockItems = inventory.filter(item => item.quantity === 0);
@@ -157,103 +257,6 @@ export default function OperationsDashboard() {
   const roomsNeedingCleaning = rooms.filter(room => room.cleaningStatus === 'dirty');
   const availableRooms = rooms.filter(room => room.status === 'available' && room.cleaningStatus === 'clean');
   const outOfOrderRooms = rooms.filter(room => room.status === 'maintenance');
-
-  // Inventory management handlers
-  const handleAddInventory = async () => {
-    if (!newInventoryItem.propertyId || !newInventoryItem.item) {
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/inventory', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(newInventoryItem)
-      });
-
-      if (response.ok) {
-        setShowAddInventory(false);
-        setNewInventoryItem({
-          propertyId: '',
-          item: '',
-          quantity: 0,
-          threshold: 5,
-          unit: 'pieces',
-          notes: ''
-        });
-        // Refresh inventory data
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Failed to add inventory item:', error);
-    }
-  };
-
-  const handleUpdateInventory = async () => {
-    if (!editingInventory) return;
-
-    try {
-      const response = await fetch(`/api/inventory/${editingInventory.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          item: editingInventory.item,
-          quantity: editingInventory.quantity,
-          threshold: editingInventory.threshold,
-          unit: editingInventory.unit,
-          notes: editingInventory.notes
-        })
-      });
-
-      if (response.ok) {
-        setShowEditInventory(false);
-        setEditingInventory(null);
-        // Refresh inventory data
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Failed to update inventory item:', error);
-    }
-  };
-
-  const handleDeleteInventory = async () => {
-    if (!editingInventory) return;
-
-    if (confirm(`Are you sure you want to delete "${editingInventory.item}"?`)) {
-      try {
-        const response = await fetch(`/api/inventory/${editingInventory.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (response.ok) {
-          setShowEditInventory(false);
-          setEditingInventory(null);
-          // Refresh inventory data
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error('Failed to delete inventory item:', error);
-      }
-    }
-  };
-
-  const handleReorderItem = (item: InventoryItem) => {
-    // Open edit modal with increased quantity
-    setEditingInventory({
-      ...item,
-      quantity: item.threshold * 3 // Suggest reordering 3x the threshold
-    });
-    setShowEditInventory(true);
-  };
 
   const getStatusColor = (status: string, type: 'maintenance' | 'inventory' | 'room') => {
     if (type === 'maintenance') {
@@ -646,76 +649,132 @@ export default function OperationsDashboard() {
                   <CardDescription>Track stock levels and get reorder alerts</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Select value={inventoryProperty} onValueChange={setInventoryProperty}>
+                  <Select value={selectedProperty} onValueChange={setSelectedProperty}>
                     <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select property" />
+                      <SelectValue placeholder="Filter by property" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Properties</SelectItem>
-                      {rooms.reduce((acc, room) => {
-                        const property = room.propertyId;
-                        if (!acc.includes(property)) {
-                          acc.push(property);
-                        }
-                        return acc;
-                      }, [] as string[]).map(propertyId => (
-                        <SelectItem key={propertyId} value={propertyId}>
-                          Property {propertyId}
+                      {properties.map(property => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={() => setShowAddInventory(true)}>
-                    <Package className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Item
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Inventory Item</DialogTitle>
+                        <DialogDescription>
+                          Add a new item to track in inventory
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="property">Property</Label>
+                          <Select value={newItem.propertyId} onValueChange={(value) => setNewItem({...newItem, propertyId: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select property" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {properties.map(property => (
+                                <SelectItem key={property.id} value={property.id}>
+                                  {property.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="item">Item Name</Label>
+                          <Input
+                            id="item"
+                            value={newItem.item}
+                            onChange={(e) => setNewItem({...newItem, item: e.target.value})}
+                            placeholder="e.g., Towels, Sheet Sets"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="quantity">Initial Quantity</Label>
+                            <Input
+                              id="quantity"
+                              type="number"
+                              value={newItem.quantity}
+                              onChange={(e) => setNewItem({...newItem, quantity: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="threshold">Low Stock Threshold</Label>
+                            <Input
+                              id="threshold"
+                              type="number"
+                              value={newItem.threshold}
+                              onChange={(e) => setNewItem({...newItem, threshold: parseInt(e.target.value) || 5})}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="unit">Unit</Label>
+                          <Select value={newItem.unit} onValueChange={(value) => setNewItem({...newItem, unit: value})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pieces">Pieces</SelectItem>
+                              <SelectItem value="sets">Sets</SelectItem>
+                              <SelectItem value="boxes">Boxes</SelectItem>
+                              <SelectItem value="bottles">Bottles</SelectItem>
+                              <SelectItem value="rolls">Rolls</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="notes">Notes (Optional)</Label>
+                          <Textarea
+                            id="notes"
+                            value={newItem.notes}
+                            onChange={(e) => setNewItem({...newItem, notes: e.target.value})}
+                            placeholder="Additional notes about this item"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => addItemMutation.mutate(newItem)} disabled={!newItem.item || addItemMutation.isPending}>
+                          {addItemMutation.isPending ? 'Adding...' : 'Add Item'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              {/* Low Stock Alert Section */}
-              {lowStockItems.length > 0 && (
-                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
-                    <h3 className="font-semibold text-yellow-800">Low Stock Alert</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {lowStockItems.map(item => (
-                      <div key={item.id} className="text-sm text-yellow-700">
-                        <span className="font-medium">{item.item}</span> - 
-                        <span className={item.quantity === 0 ? 'text-red-600 font-bold' : ''}>
-                          {item.quantity === 0 ? ' OUT OF STOCK' : ` ${item.quantity} ${item.unit} remaining`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Inventory Lists by Property */}
-              <div className="space-y-6">
-                {rooms.reduce((acc, room) => {
-                  const property = room.propertyId;
-                  if (!acc.includes(property)) {
-                    acc.push(property);
-                  }
-                  return acc;
-                }, [] as string[])
-                .filter(propertyId => inventoryProperty === 'all' || inventoryProperty === propertyId)
-                .map(propertyId => {
-                  const propertyInventory = inventory.filter(item => item.propertyId === propertyId);
+              {/* Group inventory by property */}
+              {properties
+                .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
+                .map(property => {
+                  const propertyInventory = inventory.filter(item => item.propertyId === property.id);
                   
                   if (propertyInventory.length === 0) return null;
-
+                  
                   return (
-                    <div key={propertyId} className="border rounded-lg p-4">
-                      <h3 className="font-semibold text-lg mb-4 flex items-center">
+                    <div key={property.id} className="mb-8">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
                         <Home className="h-5 w-5 mr-2" />
-                        Property {propertyId} Inventory ({propertyInventory.length} items)
+                        {property.name}
                       </h3>
-                      
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {propertyInventory.map(item => {
                           const isOutOfStock = item.quantity === 0;
                           const isLowStock = item.quantity <= item.threshold && item.quantity > 0;
@@ -741,10 +800,13 @@ export default function OperationsDashboard() {
                                       Threshold: {item.threshold} {item.unit}
                                     </span>
                                     {item.notes && (
-                                      <span className="text-sm text-gray-400 italic">
-                                        {item.notes}
+                                      <span className="text-sm text-gray-400">
+                                        • {item.notes}
                                       </span>
                                     )}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Last updated: {new Date(item.lastUpdated).toLocaleDateString()}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -755,27 +817,169 @@ export default function OperationsDashboard() {
                                   }>
                                     {isOutOfStock ? 'OUT' : isLowStock ? 'LOW' : 'OK'}
                                   </Badge>
+                                  
+                                  {/* Restock Button */}
+                                  <Dialog open={isRestockDialogOpen && currentItem?.id === item.id} onOpenChange={(open) => {
+                                    setIsRestockDialogOpen(open);
+                                    if (!open) setCurrentItem(null);
+                                  }}>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => {
+                                          setCurrentItem(item);
+                                          setRestockAmount(0);
+                                        }}
+                                      >
+                                        <RefreshCw className="h-3 w-3 mr-1" />
+                                        Restock
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Restock {item.item}</DialogTitle>
+                                        <DialogDescription>
+                                          Add new stock to update inventory levels
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="grid gap-4">
+                                        <div className="grid gap-2">
+                                          <Label>Current Stock: {item.quantity} {item.unit}</Label>
+                                        </div>
+                                        <div className="grid gap-2">
+                                          <Label htmlFor="restock-amount">Add Quantity</Label>
+                                          <Input
+                                            id="restock-amount"
+                                            type="number"
+                                            value={restockAmount}
+                                            onChange={(e) => setRestockAmount(parseInt(e.target.value) || 0)}
+                                            placeholder="Amount to add"
+                                          />
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          New total: {item.quantity + restockAmount} {item.unit}
+                                        </div>
+                                      </div>
+                                      <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsRestockDialogOpen(false)}>
+                                          Cancel
+                                        </Button>
+                                        <Button 
+                                          onClick={() => {
+                                            updateItemMutation.mutate({
+                                              id: item.id,
+                                              updates: { quantity: item.quantity + restockAmount }
+                                            });
+                                          }}
+                                          disabled={restockAmount <= 0 || updateItemMutation.isPending}
+                                        >
+                                          {updateItemMutation.isPending ? 'Updating...' : 'Update Stock'}
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+
+                                  {/* Edit Button */}
+                                  <Dialog open={isEditDialogOpen && currentItem?.id === item.id} onOpenChange={(open) => {
+                                    setIsEditDialogOpen(open);
+                                    if (!open) setCurrentItem(null);
+                                  }}>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => setCurrentItem(item)}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Edit {item.item}</DialogTitle>
+                                        <DialogDescription>
+                                          Update item details and thresholds
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      {currentItem && (
+                                        <div className="grid gap-4">
+                                          <div className="grid gap-2">
+                                            <Label htmlFor="edit-item">Item Name</Label>
+                                            <Input
+                                              id="edit-item"
+                                              value={currentItem.item}
+                                              onChange={(e) => setCurrentItem({...currentItem, item: e.target.value})}
+                                            />
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid gap-2">
+                                              <Label htmlFor="edit-quantity">Quantity</Label>
+                                              <Input
+                                                id="edit-quantity"
+                                                type="number"
+                                                value={currentItem.quantity}
+                                                onChange={(e) => setCurrentItem({...currentItem, quantity: parseInt(e.target.value) || 0})}
+                                              />
+                                            </div>
+                                            <div className="grid gap-2">
+                                              <Label htmlFor="edit-threshold">Threshold</Label>
+                                              <Input
+                                                id="edit-threshold"
+                                                type="number"
+                                                value={currentItem.threshold}
+                                                onChange={(e) => setCurrentItem({...currentItem, threshold: parseInt(e.target.value) || 5})}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="grid gap-2">
+                                            <Label htmlFor="edit-notes">Notes</Label>
+                                            <Textarea
+                                              id="edit-notes"
+                                              value={currentItem.notes || ''}
+                                              onChange={(e) => setCurrentItem({...currentItem, notes: e.target.value})}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                      <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                          Cancel
+                                        </Button>
+                                        <Button 
+                                          onClick={() => {
+                                            if (currentItem) {
+                                              updateItemMutation.mutate({
+                                                id: currentItem.id,
+                                                updates: {
+                                                  item: currentItem.item,
+                                                  quantity: currentItem.quantity,
+                                                  threshold: currentItem.threshold,
+                                                  notes: currentItem.notes
+                                                }
+                                              });
+                                            }
+                                          }}
+                                          disabled={updateItemMutation.isPending}
+                                        >
+                                          {updateItemMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+
+                                  {/* Delete Button */}
                                   <Button 
                                     size="sm" 
                                     variant="outline"
                                     onClick={() => {
-                                      setEditingInventory(item);
-                                      setShowEditInventory(true);
+                                      if (confirm('Are you sure you want to delete this item?')) {
+                                        deleteItemMutation.mutate(item.id);
+                                      }
                                     }}
+                                    disabled={deleteItemMutation.isPending}
                                   >
-                                    Edit
+                                    <Trash2 className="h-3 w-3 text-red-600" />
                                   </Button>
-                                  {(isOutOfStock || isLowStock) && (
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      className="bg-blue-50 hover:bg-blue-100 text-blue-700"
-                                      onClick={() => handleReorderItem(item)}
-                                    >
-                                      <ShoppingCart className="h-4 w-4 mr-1" />
-                                      Reorder
-                                    </Button>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -785,223 +989,15 @@ export default function OperationsDashboard() {
                     </div>
                   );
                 })}
-              </div>
-
-              {inventory.filter(item => 
-                inventoryProperty === 'all' || item.propertyId === inventoryProperty
-              ).length === 0 && (
+              
+              {inventory.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <Package className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                  <p>No inventory items found for the selected property</p>
-                  <Button 
-                    className="mt-2" 
-                    variant="outline"
-                    onClick={() => setShowAddInventory(true)}
-                  >
-                    Add First Item
-                  </Button>
+                  <Package className="h-12 w-12 mx-auto mb-2" />
+                  No inventory items found. Add your first item to get started.
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* Add Inventory Modal */}
-          {showAddInventory && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Add Inventory Item</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Property
-                    </label>
-                    <Select value={newInventoryItem.propertyId} onValueChange={(value) => 
-                      setNewInventoryItem(prev => ({ ...prev, propertyId: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select property" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {rooms.reduce((acc, room) => {
-                          const property = room.propertyId;
-                          if (!acc.includes(property)) {
-                            acc.push(property);
-                          }
-                          return acc;
-                        }, [] as string[]).map(propertyId => (
-                          <SelectItem key={propertyId} value={propertyId}>
-                            Property {propertyId}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Item Name
-                    </label>
-                    <Input
-                      value={newInventoryItem.item}
-                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, item: e.target.value }))}
-                      placeholder="e.g., Toilet Paper, Towels"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quantity
-                      </label>
-                      <Input
-                        type="number"
-                        value={newInventoryItem.quantity}
-                        onChange={(e) => setNewInventoryItem(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Unit
-                      </label>
-                      <Input
-                        value={newInventoryItem.unit}
-                        onChange={(e) => setNewInventoryItem(prev => ({ ...prev, unit: e.target.value }))}
-                        placeholder="pieces, rolls, etc."
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Low Stock Threshold
-                    </label>
-                    <Input
-                      type="number"
-                      value={newInventoryItem.threshold}
-                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, threshold: parseInt(e.target.value) || 5 }))}
-                      placeholder="5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notes (Optional)
-                    </label>
-                    <Input
-                      value={newInventoryItem.notes}
-                      onChange={(e) => setNewInventoryItem(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Additional notes"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-6">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowAddInventory(false);
-                      setNewInventoryItem({
-                        propertyId: '',
-                        item: '',
-                        quantity: 0,
-                        threshold: 5,
-                        unit: 'pieces',
-                        notes: ''
-                      });
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddInventory}>
-                    Add Item
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Inventory Modal */}
-          {showEditInventory && editingInventory && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Edit Inventory Item</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Item Name
-                    </label>
-                    <Input
-                      value={editingInventory.item}
-                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, item: e.target.value }) : null)}
-                      placeholder="e.g., Toilet Paper, Towels"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quantity
-                      </label>
-                      <Input
-                        type="number"
-                        value={editingInventory.quantity}
-                        onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, quantity: parseInt(e.target.value) || 0 }) : null)}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Unit
-                      </label>
-                      <Input
-                        value={editingInventory.unit}
-                        onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, unit: e.target.value }) : null)}
-                        placeholder="pieces, rolls, etc."
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Low Stock Threshold
-                    </label>
-                    <Input
-                      type="number"
-                      value={editingInventory.threshold}
-                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, threshold: parseInt(e.target.value) || 5 }) : null)}
-                      placeholder="5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notes (Optional)
-                    </label>
-                    <Input
-                      value={editingInventory.notes || ''}
-                      onChange={(e) => setEditingInventory(prev => prev ? ({ ...prev, notes: e.target.value }) : null)}
-                      placeholder="Additional notes"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between mt-6">
-                  <Button 
-                    variant="destructive"
-                    onClick={handleDeleteInventory}
-                  >
-                    Delete Item
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setShowEditInventory(false);
-                        setEditingInventory(null);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleUpdateInventory}>
-                      Update Item
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">

@@ -186,6 +186,17 @@ export interface InventoryItem {
   lastUpdated: Date;
 }
 
+export interface Property {
+  id: string;
+  name: string;
+  description: string;
+  frontDoorCode: string;
+  codeExpiry: string | null;
+  rateDaily: string;
+  rateWeekly: string;
+  rateMonthly: string;
+}
+
 export interface MaintenanceItem {
   id: string;
   propertyId: string;
