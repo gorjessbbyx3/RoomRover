@@ -14,6 +14,7 @@ import Payments from "@/pages/payments";
 import BannedUsersManagement from "@/pages/banned-users-management";
 import MasterCodesManagement from "@/pages/master-codes-management";
 import UserManagement from "@/pages/user-management";
+import FinancialManagement from '@/pages/financial-management';
 import Reports from "@/pages/reports";
 import Analytics from "@/pages/analytics";
 import Inquiries from "@/pages/inquiries";
@@ -133,6 +134,12 @@ function AppRouter() {
           <Route path="/reports">
             <ProtectedRoute allowedRoles={['admin']}>
               <Reports />
+            </ProtectedRoute>
+          </Route>
+          
+	 <Route path="/financial-management">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <FinancialManagement />
             </ProtectedRoute>
           </Route>
 
