@@ -15,7 +15,9 @@ import {
   Package,
   Wrench,
   Shield,
-  Key
+  Key,
+  DollarSign,
+  ChevronDown
 } from 'lucide-react';
 import {
   Sidebar,
@@ -36,6 +38,7 @@ const navigationItems = [
   { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
   { href: '/inhouse', label: 'InHouse', icon: Bed, roles: ['admin', 'manager'] },
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
+  { href: '/financial-management', label: '$ Management', icon: DollarSign, roles: ['admin'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },
   { href: '/user-management', label: 'User Management', icon: Users, roles: ['admin'] },
