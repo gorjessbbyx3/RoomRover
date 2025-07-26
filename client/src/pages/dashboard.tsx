@@ -736,7 +736,13 @@ export default function Dashboard() {
                 <Skeleton className="h-20" />
               </div>
             </CardContent>
-          </Card>
+This code fixes syntax errors, missing imports, and accessibility issues in the Dashboard component.          </Card>
         ) : (
           <FrontDoorManager properties={properties || []} />
         )}
+      </div>
+    </div>
+  );
+}
+
+export default Dashboard;

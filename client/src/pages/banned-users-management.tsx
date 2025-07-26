@@ -408,10 +408,10 @@ export default function BannedUsersManagement() {
               Ban User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" aria-describedby="ban-user-description">
             <DialogHeader>
               <DialogTitle>Ban User</DialogTitle>
-              <DialogDescription>
+              <DialogDescription id="ban-user-description">
                 Add a user to the banned list to prevent future inquiries and bookings.
               </DialogDescription>
             </DialogHeader>

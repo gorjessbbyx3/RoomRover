@@ -497,10 +497,10 @@ export default function UserManagement() {
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" aria-describedby="create-user-description">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
+              <DialogDescription id="create-user-description">
                 Add a new user to the system with appropriate permissions.
               </DialogDescription>
             </DialogHeader>
@@ -706,10 +706,10 @@ export default function UserManagement() {
 
       {/* Password Change Dialog */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="password-change-description">
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="password-change-description">
               Update the password for {selectedUser?.name} ({selectedUser?.username})
             </DialogDescription>
           </DialogHeader>
@@ -750,10 +750,10 @@ export default function UserManagement() {
 
       {/* Privilege Update Dialog */}
       <Dialog open={isPrivilegeDialogOpen} onOpenChange={setIsPrivilegeDialogOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="privilege-update-description">
           <DialogHeader>
             <DialogTitle>Update User Privileges</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="privilege-update-description">
               Modify role and permissions for {selectedUser?.name} ({selectedUser?.username})
             </DialogDescription>
           </DialogHeader>

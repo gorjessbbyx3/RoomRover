@@ -919,13 +919,13 @@ export default function OperationsDashboard() {
                         Add Item
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Inventory Item</DialogTitle>
-                        <DialogDescription>
-                          Add a new item to track in inventory
-                        </DialogDescription>
-                      </DialogHeader>
+                    <DialogContent className="max-w-md" aria-describedby="inventory-dialog-description">
+            <DialogHeader>
+              <DialogTitle>Add Inventory Item</DialogTitle>
+              <DialogDescription id="inventory-dialog-description">
+                Add a new item to the inventory system
+              </DialogDescription>
+            </DialogHeader>
                       <div className="grid gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="property">Property</Label>
@@ -1086,13 +1086,13 @@ export default function OperationsDashboard() {
                                         Restock
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Restock {item.item}</DialogTitle>
-                                        <DialogDescription>
-                                          Add new stock to update inventory levels
-                                        </DialogDescription>
-                                      </DialogHeader>
+                                     <DialogContent className="max-w-md" aria-describedby="restock-dialog-description">
+            <DialogHeader>
+              <DialogTitle>Restock {item.item}</DialogTitle>
+              <DialogDescription id="restock-dialog-description">
+                Update inventory quantity for selected item
+              </DialogDescription>
+            </DialogHeader>
                                       <div className="grid gap-4">
                                         <div className="grid gap-2">
                                           <Label>Current Stock: {item.quantity} {item.unit}</Label>
@@ -1516,7 +1516,7 @@ export default function OperationsDashboard() {
                         Report Issue
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
+                     <DialogContent className="max-w-3xl">
                       <DialogHeader>
                         <DialogTitle>Report Maintenance Issue</DialogTitle>
                         <DialogDescription>
@@ -1577,8 +1577,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="low">Low</SelectItem                                <SelectItem value="medium">Medium</SelectItem>
                                 <SelectItem value="high">High</SelectItem>
                                                                <SelectItem value="critical">Critical</SelectItem>
                               </SelectContent>
@@ -1908,16 +1907,13 @@ export default function OperationsDashboard() {
 
       {/* Maintenance Request Dialog */}
       <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Report Maintenance Issue
-            </DialogTitle>
-            <DialogDescription>
-              Create a maintenance request for {selectedRoom?.id}
-            </DialogDescription>
-          </DialogHeader>
+       <DialogContent className="max-w-md" aria-describedby="maintenance-dialog-description">
+              <DialogHeader>
+                <DialogTitle>Record Maintenance Issue</DialogTitle>
+                <DialogDescription id="maintenance-dialog-description">
+                  Report a new maintenance issue that needs attention
+                </DialogDescription>
+              </DialogHeader>
 
           <div className="grid gap-4">
             <div className="grid gap-2">
