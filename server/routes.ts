@@ -1684,8 +1684,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
           break;
       }
 
-      const updatedProperty = await storage.updatePropertyFrontDoorCode(req.params.id, frontDoor<replit_final_file>
-Code, expiry);
+      const updatedProperty = await storage.updatePropertyFrontDoorCode(req.params.id, frontDoorCode, expiry);
 
       res.json({ 
         property: updatedProperty,
