@@ -730,7 +730,7 @@ export default function OperationsDashboard() {
               )}
             </CardContent>
           </Card>
-                </TabsContent```text
+        </Tabs```text
 
         <TabsContent value="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
@@ -934,7 +934,7 @@ export default function OperationsDashboard() {
                               <SelectValue placeholder="Select property" />
                             </SelectTrigger>
                              <SelectContent>
-                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                <SelectItem value="all">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1323,7 +1323,7 @@ export default function OperationsDashboard() {
                               <SelectValue placeholder="Select property" />
                             </SelectTrigger>
                              <SelectContent>
-                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                <SelectItem value="all">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1503,7 +1503,7 @@ export default function OperationsDashboard() {
                       <SelectValue placeholder="Filter by property" />
                     </SelectTrigger>
                      <SelectContent>
-                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                <SelectItem value="all">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1537,7 +1537,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select property" />
                               </SelectTrigger>
                                <SelectContent>
-                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                <SelectItem value="all">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1575,8 +1575,7 @@ export default function OperationsDashboard() {
                           <div className="grid gap-2">
                             <Label htmlFor="maintenance-priority">Priority</Label>
                             <Select>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
+                              <SelectTrigger>                                <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
                                <SelectItem value="low">Low</SelectItem>
