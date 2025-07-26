@@ -61,7 +61,7 @@ function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="bg-primary-500 text-white p-4">
         <h1 className="text-lg font-medium" data-testid="nav-title">
-          Honolulu Private Residency Club
+          Honolulu Members-Only ClubHouse
         </h1>
         <div className="mt-2 space-y-1">
           <div className="text-sm" data-testid="user-name">{user.name}</div>
