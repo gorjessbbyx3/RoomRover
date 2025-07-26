@@ -693,8 +693,8 @@ class OperationsDashboardWorkflowTester {
 
 // Export for both Node.js and browser environments
 if (isNode) {
-  // Node.js export
-  export { OperationsDashboardWorkflowTester };
+  // Node.js export using CommonJS
+  module.exports = { OperationsDashboardWorkflowTester };
   
   // Auto-run in Node.js
   const tester = new OperationsDashboardWorkflowTester();
