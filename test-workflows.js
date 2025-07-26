@@ -217,11 +217,11 @@ async function runAllTests() {
 }
 
 // Auto-run when executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runAllTests();
 }
 
-module.exports = {
+export {
   runAllTests,
   testMembershipInquiry,
   testTrackerFlow,
