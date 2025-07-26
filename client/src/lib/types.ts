@@ -173,6 +173,12 @@ export interface User {
   property?: string;
   name: string;
   createdAt: Date;
+  membership?: {
+    tier: 'free' | 'pro' | 'premium';
+    status: 'active' | 'expired' | 'canceled';
+    started_at: string;
+    expires_at?: string;
+  };
 }
 
 export interface InventoryItem {

@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Camera } from 'lucide-react';
+import { User, Camera, Crown } from 'lucide-react';
 import ImageUploader from '@/components/image-uploader';
+import MembershipBadge from '@/components/membership-badge';
+import UpgradeModal from '@/components/upgrade-modal';
+import CountdownTimer from '@/components/countdown-timer';
 
 interface ProfileForm {
   name: string;
@@ -242,6 +245,58 @@ export default function Profile() {
               )}
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Membership Information */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Crown className="h-5 w-5" />
+            Membership Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MembershipBadge tier={user.membership?.tier || 'free'} />
+                <div>
+                  <p className="font-medium">
+                    {user.membership?.tier === 'premium' ? 'Premium Member' :
+                     user.membership?.tier === 'pro' ? 'Pro Member' : 'Free Member'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Status: {user.membership?.status || 'active'}
+                  </p>
+                </div>
+              </div>
+              
+              {user.membership?.tier !== 'premium' && (
+                <UpgradeModal 
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+
+            {user.membership?.expires_at && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm text-gray-600">Membership expires:</span>
+                <CountdownTimer expiresAt={user.membership.expires_at} />
+              </div>
+            )}
+
+            {user.membership?.started_at && (
+              <div className="text-sm text-gray-500">
+                Member since: {new Date(user.membership.started_at).toLocaleDateString()}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
