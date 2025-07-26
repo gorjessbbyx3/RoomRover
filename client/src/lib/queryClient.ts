@@ -1,4 +1,5 @@
 
+
 import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
@@ -35,5 +36,5 @@ export async function apiRequest(method: string, endpoint: string, data?: any) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  return response;
 }
