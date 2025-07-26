@@ -19,7 +19,6 @@ interface DeleteConfirmationDialogProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
-  isDeleting?: boolean;
 }
 
 export function DeleteConfirmationDialog({
@@ -27,8 +26,7 @@ export function DeleteConfirmationDialog({
   onOpenChange,
   onConfirm,
   title = "Are you sure?",
-  description = "This action cannot be undone. This will permanently delete the item.",
-  isDeleting = false
+  description = "This action cannot be undone. This will permanently delete the item."
 }: DeleteConfirmationDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
