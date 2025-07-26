@@ -31,6 +31,11 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
+// Verify we're not using localhost
+if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
+  throw new Error("DATABASE_URL is pointing to localhost. Please use the external database URL from Render.");
+}
+
 console.log('Storage connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
 
 const sql = neon(databaseUrl);
