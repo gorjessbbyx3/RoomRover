@@ -32,14 +32,14 @@ import {
 
 const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'manager', 'helper'] },
+  { href: '/operations', label: 'Operations', icon: Package, roles: ['admin', 'manager', 'helper'] },
+  { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
   { href: '/inhouse', label: 'InHouse', icon: Bed, roles: ['admin', 'manager'] },
   { href: '/payments', label: 'Payments', icon: CreditCard, roles: ['admin', 'manager'] },
   { href: '/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },
-  { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
   { href: '/user-management', label: 'User Management', icon: Users, roles: ['admin'] },
   { href: '/banned-users-management', label: 'Banned Members', icon: Shield, roles: ['admin'] },
-  { href: '/operations', label: 'Operations', icon: Package, roles: ['admin', 'manager', 'helper'] },
 ];
 
 function AppSidebar() {
