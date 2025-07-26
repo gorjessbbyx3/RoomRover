@@ -97,27 +97,27 @@ export default function ImageUploader({
     reader.readAsDataURL(file);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-      setUploadProgress(0);
-      setUploadError(null);
+    setUploadProgress(0);
+    setUploadError(null);
 
-      try {
-        // Simulate upload progress
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 90) {
-              clearInterval(progressInterval);
-              return 90;
-            }
-            return prev + 10;
-          });
-        }, 200);
+    try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
 
-        // Simulate upload for now - replace with actual upload logic
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate upload for now - replace with actual upload logic
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
         setUploadProgress(100);
 
@@ -130,7 +130,7 @@ export default function ImageUploader({
           title: "Success",
           description: "Image uploaded successfully",
         });
-      } catch (error) {
+      } catch (error: any) {
         setUploadError(error.message || 'Upload failed');
         toast({
           variant: "destructive",
