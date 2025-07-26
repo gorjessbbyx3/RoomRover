@@ -21,6 +21,7 @@ import {
   Users
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
+import AddTaskDialog from '@/components/add-task-dialog';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -524,30 +525,57 @@ export default function Dashboard() {
               </p>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  className="bg-success-500 hover:bg-success-600 text-white h-12"
-                  onClick={() => window.location.href = '/payments'}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Record Payment
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-warning-300 text-warning-700 hover:bg-warning-50 h-12"
-                  onClick={() => window.location.href = '/payments#pending'}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  View Pending ({stats?.pendingPaymentsCount || 0})
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-primary-300 text-primary-700 hover:bg-primary-50 h-12"
-                  onClick={() => window.location.href = '/analytics'}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Payment Analytics
-                </Button>
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/bookings'}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">New Booking</p>
+                        <p className="text-lg font-semibold text-blue-600">Create</p>
+                      </div>
+                      <Calendar className="h-8 w-8 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/payments'}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Record Payment</p>
+                        <p className="text-lg font-semibold text-green-600">Payment</p>
+                      </div>
+                      <DollarSign className="h-8 w-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/cleaning'}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">View Tasks</p>
+                        <p className="text-lg font-semibold text-purple-600">Cleaning</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-purple-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="p-6">
+                  <AddTaskDialog 
+                    trigger={
+                      <div className="flex items-center justify-between cursor-pointer w-full">
+                        <div>
+                          <p className="text-sm text-gray-600">Quick Task</p>
+                          <p className="text-lg font-semibold text-orange-600">Create</p>
+                        </div>
+                        <Package className="h-8 w-8 text-orange-600" />
+                      </div>
+                    }
+                  />
+                </Card>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-600 flex items-center justify-center">
@@ -635,7 +663,7 @@ export default function Dashboard() {
                             {drawerStat.currentCashHolding > 200 ? 'High' : 'Normal'}
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Current Holding:</span>
@@ -645,14 +673,14 @@ export default function Dashboard() {
                               {formatCurrency(drawerStat.currentCashHolding)}
                             </span>
                           </div>
-                          
+
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Today's Collection:</span>
                             <span className="font-medium text-gray-900">
                               {formatCurrency(drawerStat.totalCashCollectedToday)}
                             </span>
                           </div>
-                          
+
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Last Turn-in:</span>
                             <span className="text-sm text-gray-900">
@@ -663,7 +691,7 @@ export default function Dashboard() {
                             </span>
                           </div>
                         </div>
-                        
+
                         {drawerStat.currentCashHolding > 200 && (
                           <div className="mt-3 p-2 bg-warning-50 border border-warning-200 rounded">
                             <div className="flex items-center">
@@ -689,7 +717,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      
+
 
       {/* Front Door Code Management - Visible to all users */}
       <div className="mt-8">
@@ -709,8 +737,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : (
-          <FrontDoorManager properties={properties || []} />
-        )}
+          <FrontDoorManager properties={properties || []} />        )}
       </div>
     </div>
   );

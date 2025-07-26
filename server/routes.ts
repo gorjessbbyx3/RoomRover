@@ -740,8 +740,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cleaning-tasks", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
     try {
-      const taskData = insertCleaningTaskSchema.parse(req.body);
-      const task = await storage.createCleaningTask(taskData);
+      const taskData = {
+        ...req.body,
+        createdAt: new Date(),
+        status: req.body.status || 'pending'
+      };
+      
+      // Remove fields that aren't in the schema
+      const { isRecurring, recurringType, linkedInventoryItems, ...cleanTaskData } = taskData;
+      
+      const task = await storage.createCleaningTask(cleanTaskData);
+      
+      // Log task creation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'task_created',
+        details: `Created ${task.type} task: ${task.title}${task.roomId ? ` for room ${task.roomId}` : ''}`
+      });
+
       res.status(201).json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
