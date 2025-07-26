@@ -5,8 +5,9 @@ import { Toaster } from '@/components/ui/toaster';
 import ErrorBoundary from '@/components/error-boundary';
 
 // Import pages
-import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
+import Login from '@/pages/login';
+import UserManagement from '@/pages/user-management';
 import Rooms from '@/pages/rooms';
 import Bookings from '@/pages/bookings';
 import Payments from '@/pages/payments';
