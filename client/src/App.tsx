@@ -77,6 +77,24 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
+          <Route path="/profile">
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/manager-dashboard">
+            <ProtectedRoute allowedRoles={['manager']}>
+              <ManagerDashboard />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/helper-dashboard">
+            <ProtectedRoute allowedRoles={['helper']}>
+              <HelperDashboard />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/maintenance">
             <ProtectedRoute allowedRoles={['admin', 'manager']}>
               <OperationsDashboard />
