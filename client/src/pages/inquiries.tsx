@@ -36,8 +36,10 @@ interface Inquiry {
 
 export default function Inquiries() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: inquiries, isLoading } = useQuery<Inquiry[]>({
     queryKey: ['/api/inquiries'],

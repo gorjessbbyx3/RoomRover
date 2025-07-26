@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,8 @@ import {
 
 export default function Rooms() {
   const { user } = useAuth();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<RoomWithDetails | null>(null);
@@ -81,7 +83,7 @@ export default function Rooms() {
 
   const handleGenerateCode = () => {
     if (!selectedRoom) return;
-    
+
     generateCodeMutation.mutate({
       roomId: selectedRoom.id,
       duration: codeDuration
@@ -223,7 +225,7 @@ export default function Rooms() {
                           >
                             <Key className="h-4 w-4" />
                           </Button>
-                          
+
                           <Select
                             value={room.status}
                             onValueChange={(value) => handleStatusChange(room.id, value)}
@@ -274,7 +276,7 @@ export default function Rooms() {
                 className="bg-gray-50"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="duration">Code Duration</Label>
               <Select value={codeDuration} onValueChange={setCodeDuration}>

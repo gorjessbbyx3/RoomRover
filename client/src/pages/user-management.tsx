@@ -1,6 +1,5 @@
-
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Shield, UserCheck, UserX, Search, Filter, MoreHorizontal, Eye, EyeOff, Key, Settings, Activity, Lock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 
 const availablePages = [
   { path: '/dashboard', label: 'Dashboard', description: 'Main dashboard with overview stats' },
@@ -71,6 +71,8 @@ export default function UserManagement() {
     role: 'helper' as 'admin' | 'manager' | 'helper',
     property: ''
   });
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -246,14 +248,14 @@ export default function UserManagement() {
                            user.username.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
       const matchesProperty = propertyFilter === 'all' || user.property === propertyFilter;
-      
+
       return matchesSearch && matchesRole && matchesProperty;
     });
   }, [users, searchTerm, roleFilter, propertyFilter]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.username || !formData.name || !formData.password) {
       toast({
@@ -318,7 +320,7 @@ export default function UserManagement() {
       userId: selectedUser.id, 
       newPassword 
     });
-    
+
     setIsPasswordDialogOpen(false);
     setSelectedUser(null);
     setNewPassword('');
@@ -340,11 +342,11 @@ export default function UserManagement() {
 
   const openPermissionsDialog = async (user: User) => {
     setSelectedUser(user);
-    
+
     // Load current permissions or set defaults based on role
     try {
       let currentPermissions: string[] = [];
-      
+
       if (user.allowedPages) {
         currentPermissions = JSON.parse(user.allowedPages);
       } else {
@@ -361,13 +363,13 @@ export default function UserManagement() {
             break;
         }
       }
-      
+
       setUserPermissions(currentPermissions);
     } catch (error) {
       // If parsing fails, set defaults
       setUserPermissions(['/dashboard']);
     }
-    
+
     setIsPermissionsDialogOpen(true);
   };
 
@@ -389,7 +391,7 @@ export default function UserManagement() {
       role: privilegeForm.role,
       property: privilegeForm.property || null
     });
-    
+
     setIsPrivilegeDialogOpen(false);
     setSelectedUser(null);
   };
@@ -447,6 +449,40 @@ export default function UserManagement() {
     manager: users.filter((u: User) => u.role === 'manager').length,
     helper: users.filter((u: User) => u.role === 'helper').length,
     total: users.length
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setIsDeleting(true);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        toast({
+          title: "Success",
+          description: "User deleted successfully",
+        });
+      } else {
+        throw new Error('Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteUserId(null);
+    }
   };
 
   if (!currentUser || currentUser.role !== 'admin') {
@@ -986,6 +1022,16 @@ export default function UserManagement() {
           </form>
         </DialogContent>
       </Dialog>
+       <DeleteConfirmationDialog
+        isOpen={deleteUserId !== null}
+        onClose={() => setDeleteUserId(null)}
+        onConfirm={() => {
+          if (deleteUserId) {
+            handleDeleteUser(deleteUserId);
+          }
+        }}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
