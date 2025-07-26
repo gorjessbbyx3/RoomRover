@@ -155,3 +155,166 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
     </Dialog>
   );
 }
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Crown, Star, Users, Check, Zap, Shield, Headphones } from "lucide-react";
+
+interface UpgradeModalProps {
+  children: React.ReactNode;
+  currentTier?: 'free' | 'pro' | 'premium';
+}
+
+export function UpgradeModal({ children, currentTier = 'free' }: UpgradeModalProps) {
+  const [open, setOpen] = useState(false);
+
+  const plans = [
+    {
+      tier: 'free',
+      name: 'Free',
+      price: '$0',
+      period: 'forever',
+      icon: Users,
+      description: 'Perfect for getting started',
+      features: [
+        'Basic room management',
+        'Standard booking system',
+        'Email support',
+        'Basic reports'
+      ],
+      buttonText: 'Current Plan',
+      disabled: currentTier === 'free'
+    },
+    {
+      tier: 'pro',
+      name: 'Pro',
+      price: '$29',
+      period: 'per month',
+      icon: Star,
+      description: 'Great for growing businesses',
+      features: [
+        'Everything in Free',
+        'Advanced analytics',
+        'Priority support',
+        'Custom integrations',
+        'Automated workflows',
+        'Advanced reporting'
+      ],
+      buttonText: currentTier === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
+      disabled: currentTier === 'pro',
+      popular: true
+    },
+    {
+      tier: 'premium',
+      name: 'Premium',
+      price: '$79',
+      period: 'per month',
+      icon: Crown,
+      description: 'For enterprise-level operations',
+      features: [
+        'Everything in Pro',
+        'AI-powered insights',
+        'White-label solution',
+        '24/7 phone support',
+        'Custom development',
+        'Dedicated account manager'
+      ],
+      buttonText: currentTier === 'premium' ? 'Current Plan' : 'Upgrade to Premium',
+      disabled: currentTier === 'premium'
+    }
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-center">
+            Choose Your Plan
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid md:grid-cols-3 gap-6 mt-6">
+          {plans.map((plan) => {
+            const Icon = plan.icon;
+            
+            return (
+              <Card 
+                key={plan.tier} 
+                className={`relative ${plan.popular ? 'border-blue-500 shadow-lg' : ''}`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-blue-500 text-white">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+                
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className={`p-3 rounded-full ${
+                      plan.tier === 'premium' ? 'bg-purple-100 text-purple-600' :
+                      plan.tier === 'pro' ? 'bg-blue-100 text-blue-600' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      <Icon className="h-8 w-8" />
+                    </div>
+                  </div>
+                  
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                  
+                  <div className="mt-4">
+                    <span className="text-3xl font-bold">{plan.price}</span>
+                    <span className="text-gray-500 ml-2">{plan.period}</span>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Button 
+                    className="w-full" 
+                    disabled={plan.disabled}
+                    variant={plan.popular ? 'default' : 'outline'}
+                  >
+                    {plan.buttonText}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <div className="grid md:grid-cols-3 gap-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Zap className="h-5 w-5 text-blue-500" />
+              <span className="text-sm">Instant activation</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Shield className="h-5 w-5 text-green-500" />
+              <span className="text-sm">30-day money back</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Headphones className="h-5 w-5 text-purple-500" />
+              <span className="text-sm">Expert support</span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -263,3 +263,328 @@ export default function ManagerListingsTable() {
     </Card>
   );
 }
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Eye, Edit, DoorOpen, Users, Calendar, DollarSign } from "lucide-react";
+import { useAuth } from '@/lib/auth';
+import { toast } from '@/hooks/use-toast';
+
+interface Room {
+  id: string;
+  number: string;
+  type: string;
+  status: 'available' | 'occupied' | 'maintenance' | 'cleaning';
+  cleaningStatus: string;
+  doorCode?: string;
+  codeExpiry?: string;
+  lastCleaned?: string;
+}
+
+interface Booking {
+  id: string;
+  roomId: string;
+  guestName: string;
+  startDate: string;
+  endDate?: string;
+  plan: string;
+  totalAmount: string;
+  paymentStatus: string;
+  status: string;
+}
+
+export function ManagerListingsTable() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+  // Fetch rooms for manager's property
+  const { data: rooms = [], isLoading: roomsLoading } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: async () => {
+      const response = await fetch('/api/rooms', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch rooms');
+      return response.json();
+    }
+  });
+
+  // Fetch bookings
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery({
+    queryKey: ['bookings'],
+    queryFn: async () => {
+      const response = await fetch('/api/bookings', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      return response.json();
+    }
+  });
+
+  // Update room mutation
+  const updateRoomMutation = useMutation({
+    mutationFn: async (data: { roomId: string; updates: Partial<Room> }) => {
+      const response = await fetch(`/api/rooms/${data.roomId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(data.updates)
+      });
+      if (!response.ok) throw new Error('Failed to update room');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setUpdateDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Room updated successfully"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update room",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Generate door code mutation
+  const generateCodeMutation = useMutation({
+    mutationFn: async (data: { roomId: string; duration: string }) => {
+      const response = await fetch(`/api/rooms/${data.roomId}/generate-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ duration: data.duration })
+      });
+      if (!response.ok) throw new Error('Failed to generate code');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      toast({
+        title: "Success",
+        description: "Door code generated successfully"
+      });
+    }
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available': return 'bg-green-100 text-green-800';
+      case 'occupied': return 'bg-blue-100 text-blue-800';
+      case 'maintenance': return 'bg-red-100 text-red-800';
+      case 'cleaning': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getCurrentBooking = (roomId: string) => {
+    return bookings.find((booking: Booking) => 
+      booking.roomId === roomId && booking.status === 'active'
+    );
+  };
+
+  if (roomsLoading || bookingsLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DoorOpen className="h-5 w-5" />
+            My Property Listings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Room</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Current Guest</TableHead>
+                <TableHead>Check-out</TableHead>
+                <TableHead>Revenue</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rooms.map((room: Room) => {
+                const currentBooking = getCurrentBooking(room.id);
+                
+                return (
+                  <TableRow key={room.id}>
+                    <TableCell className="font-medium">
+                      Room {room.number}
+                    </TableCell>
+                    <TableCell className="capitalize">
+                      {room.type}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(room.status)}>
+                        {room.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {currentBooking ? (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{currentBooking.guestName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">No guest</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {currentBooking?.endDate ? (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>{new Date(currentBooking.endDate).toLocaleDateString()}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {currentBooking ? (
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          <span>${currentBooking.totalAmount}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">$0</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRoom(room);
+                            setUpdateDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => generateCodeMutation.mutate({
+                            roomId: room.id,
+                            duration: 'monthly'
+                          })}
+                          disabled={generateCodeMutation.isPending}
+                        >
+                          <DoorOpen className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Update Room Dialog */}
+      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Room {selectedRoom?.number}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedRoom && (
+            <div className="space-y-4">
+              <div>
+                <Label>Status</Label>
+                <Select 
+                  defaultValue={selectedRoom.status}
+                  onValueChange={(value) => {
+                    setSelectedRoom({ ...selectedRoom, status: value as any });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="occupied">Occupied</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="cleaning">Cleaning</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Cleaning Status</Label>
+                <Select 
+                  defaultValue={selectedRoom.cleaningStatus}
+                  onValueChange={(value) => {
+                    setSelectedRoom({ ...selectedRoom, cleaningStatus: value });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clean">Clean</SelectItem>
+                    <SelectItem value="dirty">Dirty</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setUpdateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    updateRoomMutation.mutate({
+                      roomId: selectedRoom.id,
+                      updates: {
+                        status: selectedRoom.status,
+                        cleaningStatus: selectedRoom.cleaningStatus
+                      }
+                    });
+                  }}
+                  disabled={updateRoomMutation.isPending}
+                >
+                  {updateRoomMutation.isPending ? 'Updating...' : 'Update Room'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

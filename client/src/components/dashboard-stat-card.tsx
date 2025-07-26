@@ -80,3 +80,68 @@ export default function DashboardStatCard({
     </Card>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { LucideIcon } from "lucide-react";
+
+interface DashboardStatCardProps {
+  title: string;
+  value: string | number;
+  icon: LucideIcon;
+  description?: string;
+  trend?: {
+    value: number;
+    label: string;
+    isPositive?: boolean;
+  };
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export function DashboardStatCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  description, 
+  trend, 
+  className,
+  children 
+}: DashboardStatCardProps) {
+  return (
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {description}
+          </p>
+        )}
+        
+        {trend && (
+          <div className="flex items-center mt-2">
+            <Badge 
+              variant={trend.isPositive !== false ? "default" : "destructive"}
+              className="text-xs"
+            >
+              {trend.isPositive !== false ? '+' : ''}{trend.value}%
+            </Badge>
+            <span className="text-xs text-muted-foreground ml-2">
+              {trend.label}
+            </span>
+          </div>
+        )}
+        
+        {children && (
+          <div className="mt-4">
+            {children}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
