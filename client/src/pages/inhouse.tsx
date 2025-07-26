@@ -63,8 +63,29 @@ export default function InHouse() {
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  const [newMemberDialogOpen, setNewMemberDialogOpen] = useState(false);
   const [codeDuration, setCodeDuration] = useState('monthly');
   const [roomNotes, setRoomNotes] = useState('');
+  
+  // New Member Form State
+  const [newMember, setNewMember] = useState({
+    name: '',
+    contact: '',
+    contactType: 'phone',
+    referralSource: '',
+    cashAppTag: ''
+  });
+  
+  // New Booking Form State
+  const [newBooking, setNewBooking] = useState({
+    guestId: '',
+    roomId: '',
+    plan: 'daily',
+    startDate: '',
+    endDate: '',
+    totalAmount: ''
+  });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
     queryKey: ['/api/rooms'],
@@ -121,6 +142,66 @@ export default function InHouse() {
     },
   });
 
+  const createMemberMutation = useMutation({
+    mutationFn: async (memberData: typeof newMember) => {
+      const response = await apiRequest('POST', '/api/guests', memberData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Member Created',
+        description: 'New member created successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/guests'] });
+      setNewMemberDialogOpen(false);
+      setNewMember({
+        name: '',
+        contact: '',
+        contactType: 'phone',
+        referralSource: '',
+        cashAppTag: ''
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to create member',
+      });
+    },
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (bookingData: typeof newBooking) => {
+      const response = await apiRequest('POST', '/api/bookings', bookingData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Booking Created',
+        description: 'New booking created successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+      setNewBookingDialogOpen(false);
+      setNewBooking({
+        guestId: '',
+        roomId: '',
+        plan: 'daily',
+        startDate: '',
+        endDate: '',
+        totalAmount: ''
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to create booking',
+      });
+    },
+  });
+
   const handleGenerateCode = () => {
     if (!selectedRoom) return;
     
@@ -145,6 +226,32 @@ export default function InHouse() {
       updates: { notes: roomNotes }
     });
     setNotesDialogOpen(false);
+  };
+
+  const handleCreateMember = () => {
+    if (!newMember.name || !newMember.contact) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Name and contact are required.',
+      });
+      return;
+    }
+    
+    createMemberMutation.mutate(newMember);
+  };
+
+  const handleCreateBooking = () => {
+    if (!newBooking.guestId || !newBooking.roomId || !newBooking.startDate || !newBooking.totalAmount) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'All fields are required.',
+      });
+      return;
+    }
+    
+    createBookingMutation.mutate(newBooking);
   };
 
   const isCodeExpired = (expiryDate: string | null) => {
@@ -196,7 +303,23 @@ export default function InHouse() {
           </div>
           <div className="flex space-x-2">
             <Button 
+              onClick={() => setNewBookingDialogOpen(true)}
+              className="bg-success-500 hover:bg-success-600"
+              data-testid="button-new-booking"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Booking
+            </Button>
+            <Button 
+              onClick={() => setNewMemberDialogOpen(true)}
               className="bg-primary-500 hover:bg-primary-600"
+              data-testid="button-new-member"
+            >
+              <User className="h-4 w-4 mr-2" />
+              New Member
+            </Button>
+            <Button 
+              className="bg-warning-500 hover:bg-warning-600"
               data-testid="button-bulk-generate-codes"
             >
               <Key className="h-4 w-4 mr-2" />
@@ -223,7 +346,6 @@ export default function InHouse() {
                     <TableHead>Member</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Door Code</TableHead>
-                    <TableHead>Code Expiry</TableHead>
                     <TableHead>Last Cleaned</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -269,25 +391,15 @@ export default function InHouse() {
                         </TableCell>
                         <TableCell>
                           {room.doorCode ? (
-                            <div className="flex items-center space-x-2">
-                              <Badge 
-                                variant={isCodeExpired(room.codeExpiry) ? "destructive" : "default"}
-                                className="font-mono"
-                              >
-                                {room.doorCode}
-                              </Badge>
-                              {isCodeExpired(room.codeExpiry) && (
-                                <AlertCircle className="h-4 w-4 text-error-500" />
-                              )}
-                            </div>
+                            <Badge 
+                              variant="default"
+                              className="font-mono"
+                            >
+                              {room.doorCode}
+                            </Badge>
                           ) : (
                             <span className="text-gray-400">No code</span>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <span className={isCodeExpired(room.codeExpiry) ? 'text-error-600' : 'text-gray-600'}>
-                            {formatDate(room.codeExpiry)}
-                          </span>
                         </TableCell>
                         <TableCell>
                           <div>
@@ -491,6 +603,194 @@ export default function InHouse() {
               className="bg-primary-500 hover:bg-primary-600"
             >
               {updateRoomMutation.isPending ? 'Saving...' : 'Save Notes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Member Dialog */}
+      <Dialog open={newMemberDialogOpen} onOpenChange={setNewMemberDialogOpen}>
+        <DialogContent data-testid="dialog-new-member">
+          <DialogHeader>
+            <DialogTitle>Add New Member</DialogTitle>
+            <p className="text-sm text-gray-500">Create a new member profile.</p>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="member-name">Full Name *</Label>
+                <Input
+                  id="member-name"
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({...newMember, name: e.target.value})}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="member-contact">Contact *</Label>
+                <Input
+                  id="member-contact"
+                  value={newMember.contact}
+                  onChange={(e) => setNewMember({...newMember, contact: e.target.value})}
+                  placeholder="Phone or email"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contact-type">Contact Type</Label>
+                <Select value={newMember.contactType} onValueChange={(value) => setNewMember({...newMember, contactType: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phone">Phone</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="cash-app-tag">Cash App Tag</Label>
+                <Input
+                  id="cash-app-tag"
+                  value={newMember.cashAppTag}
+                  onChange={(e) => setNewMember({...newMember, cashAppTag: e.target.value})}
+                  placeholder="$username"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="referral-source">Referral Source</Label>
+              <Input
+                id="referral-source"
+                value={newMember.referralSource}
+                onChange={(e) => setNewMember({...newMember, referralSource: e.target.value})}
+                placeholder="How did they hear about us?"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setNewMemberDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateMember}
+              disabled={createMemberMutation.isPending}
+              className="bg-primary-500 hover:bg-primary-600"
+            >
+              {createMemberMutation.isPending ? 'Creating...' : 'Create Member'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Booking Dialog */}
+      <Dialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen}>
+        <DialogContent data-testid="dialog-new-booking">
+          <DialogHeader>
+            <DialogTitle>New Booking</DialogTitle>
+            <p className="text-sm text-gray-500">Create a new booking for a member.</p>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="booking-guest">Member *</Label>
+                <Select value={newBooking.guestId} onValueChange={(value) => setNewBooking({...newBooking, guestId: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {guests?.map((guest) => (
+                      <SelectItem key={guest.id} value={guest.id}>
+                        {guest.name} - {guest.contact}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="booking-room">Room *</Label>
+                <Select value={newBooking.roomId} onValueChange={(value) => setNewBooking({...newBooking, roomId: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rooms?.filter(room => room.status === 'available').map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        Room {room.roomNumber} ({room.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="booking-plan">Plan *</Label>
+                <Select value={newBooking.plan} onValueChange={(value) => setNewBooking({...newBooking, plan: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="tenant">Tenant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="booking-amount">Total Amount *</Label>
+                <Input
+                  id="booking-amount"
+                  type="number"
+                  value={newBooking.totalAmount}
+                  onChange={(e) => setNewBooking({...newBooking, totalAmount: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="booking-start">Start Date *</Label>
+                <Input
+                  id="booking-start"
+                  type="date"
+                  value={newBooking.startDate}
+                  onChange={(e) => setNewBooking({...newBooking, startDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="booking-end">End Date</Label>
+                <Input
+                  id="booking-end"
+                  type="date"
+                  value={newBooking.endDate}
+                  onChange={(e) => setNewBooking({...newBooking, endDate: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setNewBookingDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateBooking}
+              disabled={createBookingMutation.isPending}
+              className="bg-success-500 hover:bg-success-600"
+            >
+              {createBookingMutation.isPending ? 'Creating...' : 'Create Booking'}
             </Button>
           </DialogFooter>
         </DialogContent>
