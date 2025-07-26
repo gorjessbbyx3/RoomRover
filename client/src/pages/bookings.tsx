@@ -208,7 +208,7 @@ export default function Bookings() {
   const calculateAmount = (plan: string, roomId: string) => {
     const room = rooms?.find(r => r.id === roomId);
     const property = properties?.find(p => p.id === room?.propertyId);
-    
+
     if (!property) return '';
 
     switch (plan) {
@@ -226,7 +226,7 @@ export default function Bookings() {
   const handlePlanOrRoomChange = () => {
     const roomId = bookingForm.getValues('roomId');
     const plan = bookingForm.getValues('plan');
-    
+
     if (roomId && plan) {
       const amount = calculateAmount(plan, roomId);
       bookingForm.setValue('totalAmount', amount);
@@ -296,7 +296,7 @@ export default function Bookings() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={guestForm.control}
@@ -311,7 +311,7 @@ export default function Bookings() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={guestForm.control}
                         name="contactType"
@@ -349,7 +349,7 @@ export default function Bookings() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={guestForm.control}
                         name="cashAppTag"
@@ -444,7 +444,7 @@ export default function Bookings() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={bookingForm.control}
                         name="guestId"
@@ -458,7 +458,7 @@ export default function Bookings() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {guests?.map((guest) => (
+                                {guests?.filter(guest => guest.id && guest.id.trim() !== '').map((guest) => (
                                   <SelectItem key={guest.id} value={guest.id}>
                                     {guest.name} ({guest.contact})
                                   </SelectItem>
@@ -514,7 +514,7 @@ export default function Bookings() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={bookingForm.control}
                         name="endDate"
@@ -648,7 +648,7 @@ export default function Bookings() {
                 <TableBody>
                   {bookings.map((booking) => {
                     const guest = guests?.find(g => g.id === booking.guestId);
-                    
+
                     return (
                       <TableRow key={booking.id} className="hover:bg-gray-50" data-testid={`booking-row-${booking.id}`}>
                         <TableCell>

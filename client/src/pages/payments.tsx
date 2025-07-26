@@ -436,7 +436,7 @@ export default function Payments() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {bookings?.filter(b => b.paymentStatus === 'pending').map((booking) => {
+                              {bookings?.filter(b => b.paymentStatus === 'pending' && b.id && b.id.trim() !== '').map((booking) => {
                                 const guest = guests?.find(g => g.id === booking.guestId);
                                 return (
                                   <SelectItem key={booking.id} value={booking.id}>

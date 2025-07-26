@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,7 +66,7 @@ export default function InHouse() {
   const [newMemberDialogOpen, setNewMemberDialogOpen] = useState(false);
   const [codeDuration, setCodeDuration] = useState('monthly');
   const [roomNotes, setRoomNotes] = useState('');
-  
+
   // New Member Form State
   const [newMember, setNewMember] = useState({
     name: '',
@@ -76,7 +75,7 @@ export default function InHouse() {
     referralSource: '',
     cashAppTag: ''
   });
-  
+
   // New Booking Form State
   const [newBooking, setNewBooking] = useState({
     guestId: '',
@@ -204,7 +203,7 @@ export default function InHouse() {
 
   const handleGenerateCode = () => {
     if (!selectedRoom) return;
-    
+
     generateCodeMutation.mutate({
       roomId: selectedRoom.id,
       duration: codeDuration
@@ -220,7 +219,7 @@ export default function InHouse() {
 
   const handleSaveNotes = () => {
     if (!selectedRoom) return;
-    
+
     updateRoomMutation.mutate({
       roomId: selectedRoom.id,
       updates: { notes: roomNotes }
@@ -237,7 +236,7 @@ export default function InHouse() {
       });
       return;
     }
-    
+
     createMemberMutation.mutate(newMember);
   };
 
@@ -250,7 +249,7 @@ export default function InHouse() {
       });
       return;
     }
-    
+
     createBookingMutation.mutate(newBooking);
   };
 
@@ -355,7 +354,7 @@ export default function InHouse() {
                   {rooms?.map((room) => {
                     const guest = getGuestForRoom(room.id);
                     const booking = getBookingForRoom(room.id);
-                    
+
                     return (
                       <TableRow key={room.id} className="hover:bg-gray-50" data-testid={`room-row-${room.id}`}>
                         <TableCell>
@@ -422,7 +421,7 @@ export default function InHouse() {
                             >
                               <Key className="h-4 w-4" />
                             </Button>
-                            
+
                             <Select
                               value={room.status}
                               onValueChange={(value) => handleStatusChange(room.id, value)}
@@ -479,7 +478,7 @@ export default function InHouse() {
                 className="bg-gray-50"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="duration">Code Duration</Label>
               <Select value={codeDuration} onValueChange={setCodeDuration}>
@@ -534,7 +533,7 @@ export default function InHouse() {
                   <p className="text-sm text-gray-900">{selectedGuest.contact}</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Contact Type</Label>
@@ -545,7 +544,7 @@ export default function InHouse() {
                   <p className="text-sm text-gray-900">{selectedGuest.cashAppTag || 'Not provided'}</p>
                 </div>
               </div>
-              
+
               <div>
                 <Label className="text-sm font-medium text-gray-700">Referral Source</Label>
                 <p className="text-sm text-gray-900">{selectedGuest.referralSource || 'Not provided'}</p>
@@ -579,7 +578,7 @@ export default function InHouse() {
                 className="bg-gray-50"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="room-notes">Internal Notes (Staff Only)</Label>
               <Textarea
@@ -637,7 +636,7 @@ export default function InHouse() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="contact-type">Contact Type</Label>
@@ -661,7 +660,7 @@ export default function InHouse() {
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="referral-source">Referral Source</Label>
               <Input
@@ -706,7 +705,7 @@ export default function InHouse() {
                     <SelectValue placeholder="Select member" />
                   </SelectTrigger>
                   <SelectContent>
-                    {guests?.map((guest) => (
+                    {guests?.filter(guest => guest.id && guest.id.trim() !== '').map((guest) => (
                       <SelectItem key={guest.id} value={guest.id}>
                         {guest.name} - {guest.contact}
                       </SelectItem>
@@ -721,7 +720,7 @@ export default function InHouse() {
                     <SelectValue placeholder="Select room" />
                   </SelectTrigger>
                   <SelectContent>
-                    {rooms?.filter(room => room.status === 'available').map((room) => (
+                    {rooms?.filter(room => room.status === 'available' && room.id && room.id.trim() !== '').map((room) => (
                       <SelectItem key={room.id} value={room.id}>
                         Room {room.roomNumber} ({room.id})
                       </SelectItem>
@@ -730,7 +729,7 @@ export default function InHouse() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="booking-plan">Plan *</Label>
@@ -757,7 +756,7 @@ export default function InHouse() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="booking-start">Start Date *</Label>
