@@ -1,0 +1,113 @@
+🟠 Minor Issues / Incomplete Areas
+1. No Role-Based Auth Guard
+Issue: There’s no clear middleware or frontend logic that:
+
+Redirects unauthorized users (e.g., guest trying to access /dashboard/manager)
+
+Prevents API access based on role
+
+🔧 Fix Suggestion:
+Create a withRoleGuard HOC or use middleware like:
+
+ts
+Copy
+Edit
+if (user?.role !== 'manager') {
+  return redirect('/unauthorized')
+}
+2. Dashboard Pages Are Mostly Static
+Issue: Your manager/helper dashboards don’t show dynamic data yet.
+
+No Supabase queries to fetch listings, tasks, helpers, or reports
+
+Buttons or stats shown don’t reflect real-time activity
+
+🔧 Fix Suggestion:
+Add this to your dashboard page:
+
+ts
+Copy
+Edit
+const { data, error } = await supabase
+  .from('listings')
+  .select('*')
+  .eq('manager_id', user.id)
+Then render assigned properties, bookings, or task queues.
+
+3. No Navigation UI Between Dashboards
+Issue: Managers and Helpers can't easily navigate between views or switch context (e.g., Manager wants to impersonate a helper).
+
+🔧 Fix Suggestion:
+Add a role-aware sidebar/nav:
+
+ts
+Copy
+Edit
+if (role === 'manager') {
+  show links for: ['My Listings', 'Assign Helper', 'Reports']
+} else if (role === 'helper') {
+  show links for: ['Assigned Tasks', 'Time Tracker']
+}
+4. No Task Management or Booking Workflow
+Issue: For Helpers:
+
+No task list UI (e.g., cleanings, repairs)
+
+No logic to mark tasks complete or accept assignments
+
+For Managers:
+
+No control panel to assign helpers to listings
+
+No visibility into current helper workload
+
+🔧 Fix Suggestion:
+Create tasks table:
+
+ts
+Copy
+Edit
+id | listing_id | helper_id | description | due_date | status
+Then:
+
+Managers create/assign tasks
+
+Helpers view/mark complete
+
+5. No Metrics or Analytics Yet
+Dashboards are usually about quick insight — but there’s no current:
+
+Booking stats
+
+Active rooms
+
+Helper performance
+
+Revenue overview (if planned)
+
+🔧 You could add:
+
+ts
+Copy
+Edit
+const totalBookings = await supabase
+  .from('bookings')
+  .select('id', { count: 'exact' })
+  .eq('manager_id', user.id)
+🔴 Missing or Needed Components
+Feature	Status	Suggested Component
+Manager Dashboard Table	❌ Missing	<ManagerListingsTable />
+Helper Task View	❌ Missing	<TaskList /> or <TaskCard />
+Role Switcher / Impersonation	❌ Missing	<RoleSwitcher />
+Time Tracker	❌ Missing	<ClockInOutButton />
+Role-Based Middleware	❌ Missing	middleware.ts or withRoleGuard HOC
+Analytics Widgets	❌ Missing	<DashboardStatCard />
+
+✅ Summary
+Area	Status
+Role-based routing	✅ Basic structure present
+Page stubs for dashboards	✅ Exist but need content
+Dynamic Supabase queries	🚧 Missing on most pages
+UI widgets/cards/stats	❌ Not implemented yet
+Task/Assignment features	❌ Not present
+Access control	❌ No middleware or guards
