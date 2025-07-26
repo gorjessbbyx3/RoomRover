@@ -1,4 +1,3 @@
-
 import { db } from './db';
 import { users, properties, rooms, inventory } from '../shared/schema';
 import * as bcrypt from 'bcrypt';
@@ -76,6 +75,7 @@ export async function seedDatabase() {
     status: "available",
     doorCode: null,
     codeExpiry: null,
+    masterCode: '1234',
     cleaningStatus: "clean",
     linenStatus: "fresh",
     lastCleaned: new Date(),
@@ -91,6 +91,7 @@ export async function seedDatabase() {
     status: "available",
     doorCode: null,
     codeExpiry: null,
+    masterCode: '1234',
     cleaningStatus: "clean",
     linenStatus: "fresh",
     lastCleaned: new Date(),

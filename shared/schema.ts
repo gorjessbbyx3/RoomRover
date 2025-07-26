@@ -29,8 +29,9 @@ export const rooms = pgTable("rooms", {
   propertyId: text("property_id").notNull().references(() => properties.id),
   roomNumber: integer("room_number").notNull(),
   status: text("status").notNull().default("available"), // available, occupied, cleaning, maintenance
-  doorCode: text("door_code"),
+  doorCode: text("door_code"), // Guest assigned door code
   codeExpiry: timestamp("code_expiry"),
+  masterCode: text("master_code").default("1234"), // Master code for room access
   cleaningStatus: text("cleaning_status").notNull().default("clean"), // clean, dirty, in_progress
   linenStatus: text("linen_status").notNull().default("fresh"), // fresh, used, needs_replacement
   lastCleaned: timestamp("last_cleaned"),

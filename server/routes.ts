@@ -1424,6 +1424,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update room master code
+  app.put("/api/rooms/:id/master-code", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const room = await storage.getRoom(req.params.id);
+      if (!room) {
+        return res.status(404).json({ error: 'Room not found' });
+      }
+
+      const { masterCode } = req.body;
+
+      if (!masterCode || masterCode.length !== 4) {
+        return res.status(400).json({ error: 'Master code must be exactly 4 digits' });
+      }
+
+      const updatedRoom = await storage.updateRoomMasterCode(req.params.id, masterCode);
+
+      res.json({ 
+        room: updatedRoom,
+        masterCode
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update master code' });
+    }
+  });
+
   // Update front door code
   app.put("/api/properties/:id/front-door-code", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {

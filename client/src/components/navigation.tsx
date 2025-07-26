@@ -40,7 +40,6 @@ const navigationItems = [
   { href: '/user-management', label: 'User Management', icon: Users, roles: ['admin'] },
 
   { href: '/banned-users-management', label: 'Banned Users', icon: Shield, roles: ['admin'] },
-  { href: '/master-codes-management', label: 'Master Codes', icon: Key, roles: ['admin'] },
   { href: '/operations', label: 'Operations', icon: Package, roles: ['admin', 'manager', 'helper'] },
 ];
 

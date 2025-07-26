@@ -6,19 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Key, Plus, Shield, Eye, EyeOff } from 'lucide-react';
+import { Key, Edit, Shield } from 'lucide-react';
 
-interface MasterCode {
+interface Room {
   id: string;
-  property: string;
-  masterCode: string;
-  notes?: string;
-  lastUpdated: string;
+  propertyId: string;
+  roomNumber: number;
+  status: string;
+  doorCode: string | null;
+  masterCode?: string;
 }
 
 interface Property {
@@ -30,24 +29,26 @@ export default function MasterCodesManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
-  const [formData, setFormData] = useState({
-    property: '',
-    masterCode: '',
-    notes: ''
-  });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [editCode, setEditCode] = useState('');
 
-  const { data: masterCodes = [], isLoading } = useQuery({
-    queryKey: ['master-codes'],
+  const { data: rooms = [], isLoading: roomsLoading } = useQuery({
+    queryKey: ['rooms'],
     queryFn: async () => {
-      const response = await fetch('/api/master-codes', {
+      const response = await fetch('/api/rooms', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      if (!response.ok) throw new Error('Failed to fetch master codes');
-      return response.json();
+      if (!response.ok) throw new Error('Failed to fetch rooms');
+      const roomsData = await response.json();
+      
+      // Set default master code to 1234 if not set
+      return roomsData.map((room: Room) => ({
+        ...room,
+        masterCode: room.masterCode || '1234'
+      }));
     }
   });
 
@@ -64,62 +65,63 @@ export default function MasterCodesManagement() {
     }
   });
 
-  const addMasterCodeMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await fetch('/api/master-codes', {
-        method: 'POST',
+  const updateMasterCodeMutation = useMutation({
+    mutationFn: async ({ roomId, masterCode }: { roomId: string; masterCode: string }) => {
+      const response = await fetch(`/api/rooms/${roomId}/master-code`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ masterCode })
       });
-      if (!response.ok) throw new Error('Failed to add master code');
+      if (!response.ok) throw new Error('Failed to update master code');
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['master-codes'] });
-      setIsAddDialogOpen(false);
-      setFormData({ property: '', masterCode: '', notes: '' });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setIsEditDialogOpen(false);
+      setSelectedRoom(null);
+      setEditCode('');
       toast({
-        title: 'Master Code Added',
-        description: 'Master code has been successfully added.',
+        title: 'Master Code Updated',
+        description: 'Room master code has been successfully updated.',
       });
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to add master code. Please try again.',
+        description: 'Failed to update master code. Please try again.',
         variant: 'destructive',
       });
     }
   });
 
-  const generateCode = () => {
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    setFormData(prev => ({ ...prev, masterCode: code }));
+  const getPropertyName = (propertyId: string) => {
+    const property = properties.find((p: Property) => p.id === propertyId);
+    return property ? property.name : propertyId;
   };
 
-  const toggleCodeVisibility = (id: string) => {
-    setShowCodes(prev => ({ ...prev, [id]: !prev[id] }));
+  const handleEditClick = (room: Room) => {
+    setSelectedRoom(room);
+    setEditCode(room.masterCode || '1234');
+    setIsEditDialogOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.property || !formData.masterCode) {
+    if (!selectedRoom || !editCode || editCode.length !== 4) {
       toast({
         title: 'Error',
-        description: 'Property and master code are required.',
+        description: 'Master code must be exactly 4 digits.',
         variant: 'destructive',
       });
       return;
     }
-    addMasterCodeMutation.mutate(formData);
-  };
-
-  const getPropertyName = (propertyId: string) => {
-    const property = properties.find((p: Property) => p.id === propertyId);
-    return property ? property.name : propertyId;
+    updateMasterCodeMutation.mutate({
+      roomId: selectedRoom.id,
+      masterCode: editCode
+    });
   };
 
   if (!user || user.role !== 'admin') {
@@ -133,158 +135,153 @@ export default function MasterCodesManagement() {
     );
   }
 
+  // Group rooms by property
+  const roomsByProperty = rooms.reduce((acc: Record<string, Room[]>, room) => {
+    if (!acc[room.propertyId]) {
+      acc[room.propertyId] = [];
+    }
+    acc[room.propertyId].push(room);
+    return acc;
+  }, {});
+
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
           <Key className="h-8 w-8" />
-          Master Codes Management
+          Room Master Codes Management
         </h1>
         <p className="text-gray-600 mt-2">
-          Manage master door codes for property access and maintenance.
+          Manage master door codes for each room. These codes are separate from assigned guest door codes.
         </p>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-sm text-gray-500">
-          {masterCodes.length} master code{masterCodes.length !== 1 ? 's' : ''}
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Master Code
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Master Code</DialogTitle>
-              <DialogDescription>
-                Add a new master code for property access.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="property">Property *</Label>
-                <Select value={formData.property} onValueChange={(value) => setFormData(prev => ({ ...prev, property: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((property: Property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+      {Object.entries(roomsByProperty).map(([propertyId, propertyRooms]) => (
+        <Card key={propertyId} className="mb-6">
+          <CardHeader>
+            <CardTitle>{getPropertyName(propertyId)}</CardTitle>
+            <CardDescription>
+              Master codes for all rooms in {getPropertyName(propertyId)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {roomsLoading ? (
+              <div className="text-center py-8">Loading rooms...</div>
+            ) : propertyRooms.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No rooms found for this property.
               </div>
-              <div>
-                <Label htmlFor="masterCode">Master Code *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="masterCode"
-                    value={formData.masterCode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, masterCode: e.target.value }))}
-                    placeholder="Enter 4-digit code"
-                    maxLength={4}
-                    pattern="\d{4}"
-                    required
-                  />
-                  <Button type="button" variant="outline" onClick={generateCode}>
-                    Generate
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Additional notes about this master code"
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={addMasterCodeMutation.isPending}>
-                  {addMasterCodeMutation.isPending ? 'Adding...' : 'Add Master Code'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Master Codes</CardTitle>
-          <CardDescription>
-            Master codes provide access to properties for maintenance and management.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading master codes...</div>
-          ) : masterCodes.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No master codes found.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Master Code</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {masterCodes.map((masterCode: MasterCode) => (
-                  <TableRow key={masterCode.id}>
-                    <TableCell className="font-medium">
-                      {getPropertyName(masterCode.property)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono">
-                          {showCodes[masterCode.id] ? masterCode.masterCode : '••••'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleCodeVisibility(masterCode.id)}
-                        >
-                          {showCodes[masterCode.id] ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      {masterCode.notes ? (
-                        <div className="truncate" title={masterCode.notes}>
-                          {masterCode.notes}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">No notes</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(masterCode.lastUpdated).toLocaleDateString()}
-                    </TableCell>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Room Number</TableHead>
+                    <TableHead>Room ID</TableHead>
+                    <TableHead>Master Code</TableHead>
+                    <TableHead>Current Status</TableHead>
+                    <TableHead>Assigned Door Code</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {propertyRooms
+                    .sort((a, b) => a.roomNumber - b.roomNumber)
+                    .map((room) => (
+                      <TableRow key={room.id}>
+                        <TableCell className="font-medium">
+                          Room {room.roomNumber}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {room.id}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                            {room.masterCode || '1234'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            room.status === 'available' ? 'bg-green-100 text-green-800' :
+                            room.status === 'occupied' ? 'bg-blue-100 text-blue-800' :
+                            room.status === 'cleaning' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {room.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {room.doorCode ? (
+                            <span className="font-mono bg-blue-100 px-2 py-1 rounded text-blue-800">
+                              {room.doorCode}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">No guest code</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(room)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+
+      {/* Edit Master Code Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Master Code</DialogTitle>
+            <DialogDescription>
+              Update the master code for {selectedRoom?.id} (Room {selectedRoom?.roomNumber})
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="masterCode">Master Code *</Label>
+              <Input
+                id="masterCode"
+                value={editCode}
+                onChange={(e) => setEditCode(e.target.value)}
+                placeholder="Enter 4-digit code"
+                maxLength={4}
+                pattern="\d{4}"
+                className="font-mono"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This code is separate from guest door codes
+              </p>
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateMasterCodeMutation.isPending}
+              >
+                {updateMasterCodeMutation.isPending ? 'Updating...' : 'Update Master Code'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { eq, desc, and, lte, gte } from 'drizzle-orm';
 import { db } from './db';
 import { 
@@ -39,7 +38,7 @@ export class PostgresStorage implements IStorage {
     if (updates.password) {
       updateData.password = await bcrypt.hash(updates.password, 10);
     }
-    
+
     const result = await db.update(users)
       .set(updateData)
       .where(eq(users.id, id))
@@ -95,6 +94,21 @@ export class PostgresStorage implements IStorage {
       .where(eq(rooms.id, id))
       .returning();
     return result[0];
+  }
+
+  async updateRoomMasterCode(roomId: string, masterCode: string): Promise<Room | null> {
+    try {
+      const [updatedRoom] = await this.db
+        .update(rooms)
+        .set({ masterCode })
+        .where(eq(rooms.id, roomId))
+        .returning();
+
+      return updatedRoom || null;
+    } catch (error) {
+      console.error('Error updating room master code:', error);
+      return null;
+    }
   }
 
   // Guest methods
@@ -294,7 +308,7 @@ export class PostgresStorage implements IStorage {
   async createInquiry(insertInquiry: InsertInquiry): Promise<Inquiry> {
     const trackerToken = crypto.randomUUID();
     const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
+
     const result = await db.insert(inquiries).values({
       ...insertInquiry,
       trackerToken,
