@@ -9,9 +9,6 @@ export default defineConfig({
   schema: "./shared/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
+    url: process.env.DATABASE_URL + "?sslmode=require",
   },
 });
