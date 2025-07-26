@@ -10,6 +10,15 @@ export const users = pgTable("users", {
   role: text("role").notNull(), // admin, manager, helper
   property: text("property"), // P1, P2, or null for admin/helper
   name: text("name").notNull(),
+  allowedPages: text("allowed_pages"), // JSON array of page paths
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userPermissions = pgTable("user_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  pagePath: text("page_path").notNull(), // e.g., '/dashboard', '/payments'
+  hasAccess: boolean("has_access").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -233,9 +242,17 @@ export const insertBannedUserSchema = createInsertSchema(bannedUsers).omit({
   bannedDate: true,
 });
 
+export const insertUserPermissionSchema = createInsertSchema(userPermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
 
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;

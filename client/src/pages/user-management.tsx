@@ -12,8 +12,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Plus, Shield, UserCheck, UserX, Search, Filter, MoreHorizontal, Eye, EyeOff, Key, Settings, Activity } from 'lucide-react';
+import { Users, Plus, Shield, UserCheck, UserX, Search, Filter, MoreHorizontal, Eye, EyeOff, Key, Settings, Activity, Lock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const availablePages = [
+  { path: '/dashboard', label: 'Dashboard', description: 'Main dashboard with overview stats' },
+  { path: '/inhouse', label: 'InHouse', description: 'Manage bookings and room assignments' },
+  { path: '/payments', label: 'Payments', description: 'Handle payments and financial tracking' },
+  { path: '/reports', label: 'Reports', description: 'Generate comprehensive reports' },
+  { path: '/analytics', label: 'Analytics', description: 'Advanced analytics and insights' },
+  { path: '/inquiries', label: 'Inquiries', description: 'Manage customer inquiries' },
+  { path: '/user-management', label: 'User Management', description: 'Manage system users and permissions' },
+  { path: '/banned-users-management', label: 'Banned Members', description: 'Manage banned members list' },
+  { path: '/operations', label: 'Operations', description: 'Operational tasks and management' },
+];
 
 interface User {
   id: string;
@@ -38,6 +51,7 @@ export default function UserManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isPrivilegeDialogOpen, setIsPrivilegeDialogOpen] = useState(false);
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,6 +61,7 @@ export default function UserManagement() {
     role: 'helper' as 'admin' | 'manager' | 'helper',
     property: ''
   });
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -189,6 +204,40 @@ export default function UserManagement() {
     }
   });
 
+  const updateUserPermissionsMutation = useMutation({
+    mutationFn: async ({ userId, permissions }: { userId: string; permissions: string[] }) => {
+      const response = await fetch(`/api/users/${userId}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ permissions })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update user permissions');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setIsPermissionsDialogOpen(false);
+      setSelectedUser(null);
+      toast({
+        title: 'Permissions Updated',
+        description: 'User page permissions have been successfully updated.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update permissions. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  });
+
   // Filter and search users
   const filteredUsers = useMemo(() => {
     return users.filter((user: User) => {
@@ -288,6 +337,39 @@ export default function UserManagement() {
     setIsPrivilegeDialogOpen(true);
   };
 
+  const openPermissionsDialog = async (user: User) => {
+    setSelectedUser(user);
+    
+    // Load current permissions or set defaults based on role
+    try {
+      let currentPermissions: string[] = [];
+      
+      if (user.allowedPages) {
+        currentPermissions = JSON.parse(user.allowedPages);
+      } else {
+        // Set default permissions based on role
+        switch (user.role) {
+          case 'admin':
+            currentPermissions = availablePages.map(p => p.path);
+            break;
+          case 'manager':
+            currentPermissions = ['/dashboard', '/inhouse', '/payments', '/inquiries', '/operations'];
+            break;
+          case 'helper':
+            currentPermissions = ['/dashboard', '/operations'];
+            break;
+        }
+      }
+      
+      setUserPermissions(currentPermissions);
+    } catch (error) {
+      // If parsing fails, set defaults
+      setUserPermissions(['/dashboard']);
+    }
+    
+    setIsPermissionsDialogOpen(true);
+  };
+
   const handlePrivilegeUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
@@ -309,6 +391,26 @@ export default function UserManagement() {
     
     setIsPrivilegeDialogOpen(false);
     setSelectedUser(null);
+  };
+
+  const handlePermissionToggle = (pagePath: string, isChecked: boolean) => {
+    setUserPermissions(prev => {
+      if (isChecked) {
+        return [...prev, pagePath];
+      } else {
+        return prev.filter(path => path !== pagePath);
+      }
+    });
+  };
+
+  const handlePermissionsUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    updateUserPermissionsMutation.mutate({
+      userId: selectedUser.id,
+      permissions: userPermissions
+    });
   };
 
   const getRoleBadge = (role: string) => {
@@ -687,6 +789,10 @@ export default function UserManagement() {
                               <Settings className="h-4 w-4 mr-2" />
                               Edit Privileges
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
+                              <Lock className="h-4 w-4 mr-2" />
+                              Manage Page Access
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600">
                               <UserX className="h-4 w-4 mr-2" />
@@ -810,6 +916,70 @@ export default function UserManagement() {
                 disabled={updateUserPrivilegesMutation.isPending}
               >
                 {updateUserPrivilegesMutation.isPending ? 'Updating...' : 'Update Privileges'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Page Permissions Dialog */}
+      <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
+        <DialogContent className="max-w-lg" aria-describedby="permissions-update-description">
+          <DialogHeader>
+            <DialogTitle>Manage Page Access</DialogTitle>
+            <DialogDescription id="permissions-update-description">
+              Control which pages {selectedUser?.name} can access in the navigation menu.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePermissionsUpdate} className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="text-sm text-gray-600 mb-4">
+                Select the pages this user should have access to:
+              </div>
+              {availablePages.map((page) => (
+                <div key={page.path} className="flex items-start space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id={`page-${page.path}`}
+                    checked={userPermissions.includes(page.path)}
+                    onCheckedChange={(checked) => handlePermissionToggle(page.path, checked as boolean)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label 
+                      htmlFor={`page-${page.path}`} 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      {page.label}
+                    </Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {page.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm">
+              <Shield className="h-4 w-4 text-blue-600" />
+              <span className="text-blue-800">
+                Role-based restrictions still apply. Users can only access pages their role permits.
+              </span>
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsPermissionsDialogOpen(false);
+                  setSelectedUser(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateUserPermissionsMutation.isPending}
+              >
+                {updateUserPermissionsMutation.isPending ? 'Updating...' : 'Update Permissions'}
               </Button>
             </DialogFooter>
           </form>

@@ -38,8 +38,7 @@ const navigationItems = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['admin'] },
   { href: '/inquiries', label: 'Inquiries', icon: MessageSquare, roles: ['admin', 'manager'] },
   { href: '/user-management', label: 'User Management', icon: Users, roles: ['admin'] },
-
-  { href: '/banned-users-management', label: 'Banned Users', icon: Shield, roles: ['admin'] },
+  { href: '/banned-users-management', label: 'Banned Members', icon: Shield, roles: ['admin'] },
   { href: '/operations', label: 'Operations', icon: Package, roles: ['admin', 'manager', 'helper'] },
 ];
 
@@ -49,9 +48,26 @@ function AppSidebar() {
 
   if (!user) return null;
 
-  const filteredItems = navigationItems.filter(item => 
-    item.roles.includes(user.role)
-  );
+  const filteredItems = navigationItems.filter(item => {
+    // First check role-based access
+    if (!item.roles.includes(user.role)) {
+      return false;
+    }
+
+    // If user has specific page permissions, check those
+    if (user.allowedPages) {
+      try {
+        const allowedPages = JSON.parse(user.allowedPages);
+        return allowedPages.includes(item.href);
+      } catch (error) {
+        // If parsing fails, fall back to role-based access
+        return true;
+      }
+    }
+
+    // Default to role-based access if no specific permissions
+    return true;
+  });
 
   return (
     <Sidebar>

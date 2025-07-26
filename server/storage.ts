@@ -123,9 +123,19 @@ export interface IStorage {
   createInquiry(inquiry: InsertInquiry): Promise<Inquiry>;
   updateInquiry(id: string, updates: Partial<InsertInquiry>): Promise<Inquiry | undefined>;
 
-    // Banned Users
+    // Banned users
+  getBannedUsers(): Promise<any[]>;
+  createBannedUser(data: any): Promise<any>;
+  deleteBannedUser(id: string): Promise<boolean>;
   checkBannedUser(email: string): Promise<any>;
-  addToBannedList(data: {name: string; phone?: string; email?: string; reason: string;}): Promise<any>;
+
+  // User permissions
+  getUserPermissions(userId: string): Promise<any[]>;
+  updateUserPermissions(userId: string, permissions: any[]): Promise<boolean>;
+  getUserWithPermissions(userId: string): Promise<any>;
+
+  // Admin cash drawer and house bank
+  getAdminDrawerTransactions(): Promise<any[]>;
 
   // Master Codes
   getMasterCodes(): Promise<any[]>;
@@ -148,6 +158,7 @@ export class MemStorage implements IStorage {
   private inquiries: Map<string, Inquiry> = new Map();
   private bannedList: Map<string, any> = new Map();
   private masterCodes: Map<string, any> = new Map();
+  private userPermissions: Map<string, any[]> = new Map();
 
   constructor() {
     this.initializeData();
@@ -1047,6 +1058,23 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+
+  async getUserPermissions(userId: string): Promise<any[]> {
+    return this.userPermissions.get(userId) || [];
+  }
+
+  async updateUserPermissions(userId: string, permissions: any[]): Promise<boolean> {
+    this.userPermissions.set(userId, permissions);
+    return true;
+  }
+
+  async getUserWithPermissions(userId: string): Promise<any> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+
+    const permissions = this.userPermissions.get(userId) || [];
+    return { ...user, permissions };
   }
 }
 

@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id/privileges", authenticateUser, requireRole(['admin']), async (req, res) => {
+  app.put("/api/users/:id/privileges", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
     try {
       const { role, property } = req.body;
 
@@ -192,6 +192,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, user: updated });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update user privileges' });
+    }
+  });
+
+  // User permissions routes
+  app.get("/api/users/:id/permissions", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const permissions = await storage.getUserPermissions(req.params.id);
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user permissions' });
+    }
+  });
+
+  app.put("/api/users/:id/permissions", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { permissions } = req.body;
+
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({ error: 'Permissions must be an array' });
+      }
+
+      const updated = await storage.updateUserPermissions(req.params.id, permissions);
+
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'permissions_updated',
+        details: `Admin ${req.user.name} updated page permissions for user ${req.params.id}`
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update user permissions' });
+    }
+  });
+
+  app.get("/api/users/:id/with-permissions", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userWithPermissions = await storage.getUserWithPermissions(req.params.id);
+      if (!userWithPermissions) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.json(userWithPermissions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user with permissions' });
     }
   });
 
@@ -332,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cashAppTag: req.body.cashAppTag?.toString() || null,
         notes: req.body.notes?.toString() || null
       };
-      
+
       const validatedData = insertGuestSchema.parse(guestData);
       const guest = await storage.createGuest(validatedData);
       res.status(201).json(guest);
@@ -775,12 +824,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priority: req.body.priority?.toString() || 'normal',
         notes: req.body.notes?.toString() || null
       };
-      
+
       // Remove fields that aren't in the schema
       const { isRecurring, recurringType, linkedInventoryItems, ...cleanTaskData } = taskData;
-      
+
+```text
+
       const task = await storage.createCleaningTask(cleanTaskData);
-      
+
       // Log task creation
       await storage.createAuditLog({
         userId: req.user.id,
@@ -1410,7 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         while (currentDate <= endDate && instances.length < 50) { // Limit to 50 instances
           const nextDate = new Date(currentDate);
-          
+
           switch (repeatFrequency) {
             case 'daily':
               nextDate.setDate(nextDate.getDate() + repeatInterval);
@@ -1431,7 +1482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isRecurring: false // Child instances are not recurring themselves
             };
             delete instanceData.id; // Remove ID so new one is generated
-            
+
             instances.push(instanceData);
           }
 
@@ -1647,12 +1698,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const day = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
         const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
         const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-        
+
         const dayPayments = payments.filter(p => {
           const paymentDate = new Date(p.dateReceived);
           return paymentDate >= dayStart && paymentDate < dayEnd;
         });
-        
+
         dailyRevenue.push(dayPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0));
       }
 
@@ -1677,7 +1728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Customer insights
       const recentBookingsData = bookings.filter(b => new Date(b.startDate) >= startDate);
-      
+
       // Calculate average stay length
       const stayLengths = recentBookingsData
         .filter(b => b.endDate)
@@ -1733,7 +1784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate operational alerts
       const alerts = [];
-      
+
       if (cleaningTasks.filter(task => task.status === 'pending').length > totalRooms * 0.3) {
         alerts.push({
           type: "cleaning",
