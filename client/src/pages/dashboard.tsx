@@ -18,7 +18,8 @@ import {
   Key,
   TrendingUp,
   HandCoins,
-  Users
+  Users,
+  Package
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AddTaskDialog from '@/components/add-task-dialog';
