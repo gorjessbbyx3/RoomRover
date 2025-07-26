@@ -1337,7 +1337,7 @@ export default function OperationsDashboard() {
                               <SelectValue placeholder="Select room" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="no-room">No specific room</SelectItem>
+                              <SelectItem value="none">No specific room</SelectItem>
                               {rooms.map(room => (
                                 <SelectItem key={room.id} value={room.id}>
                                   {room.id}
@@ -1551,7 +1551,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select room" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="no-room">No specific room</SelectItem>
+                                <SelectItem value="none">No specific room</SelectItem>
                                 {rooms.map(room => (
                                   <SelectItem key={room.id} value={room.id}>
                                     {room.id}

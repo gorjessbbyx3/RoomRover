@@ -159,13 +159,13 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="add-task-dialog-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Create New Cleaning Task
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="add-task-dialog-description">
             Create a new task for rooms or common areas with optional scheduling and inventory links
           </DialogDescription>
         </DialogHeader>
@@ -249,7 +249,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
                   <SelectValue placeholder="Select room" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific room</SelectItem>
+                  <SelectItem value="none">No specific room</SelectItem>
                   {rooms.map(room => (
                     <SelectItem key={room.id} value={room.id}>
                       {room.id}

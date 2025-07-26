@@ -1,0 +1,50 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (1) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Environment DATABASE_URL: postgresql://roomrover_postgres_user:***@dpg-d21k88je5dus738qnk4g-a.oregon-postgres.render.com/roomrover_postgres
+Connecting to database: postgresql://roomrover_postgres_user:***@dpg-d21k88je5dus738qnk4g-a.oregon-postgres.render.com/roomrover_postgres
+🌱 Seeding database...
+Failed to seed database: NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async seedDatabase (/home/runner/workspace/server/seed.ts:10:3)
+    at async <anonymous> (/home/runner/workspace/server/index.ts:70:7) {
+  severity: undefined,
+  code: undefined,
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  sourceError: TypeError: fetch failed
+      at node:internal/deps/undici/undici:13510:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1548:15)
+      at async seedDatabase (/home/runner/workspace/server/seed.ts:10:3)
+      at async <anonymous> (/home/runner/workspace/server/index.ts:70:7) {
+    [cause]: ConnectTimeoutError: Connect Timeout Error (attempted address: api.oregon-postgres.render.com:443, timeout: 10000ms)
+        at onConnectTimeout (node:internal/deps/undici/undici:2602:28)
+        at Immediate._onImmediate (node:internal/deps/undici/undici:2583:11)
+        at process.processImmediate (node:internal/timers:483:21) {
+      code: 'UND_ERR_CONNECT_TIMEOUT'
+    }
+  }
+}
+Continuing with in-memory storage...
+7:25:29 AM [express] serving on port 5000
+7:25:33 AM [vite] Pre-transform error: /home/runner/workspace/client/src/pages/dashboard.tsx: Unexpected token (742:10)
+
+  740 |         ) : (
+  741 |           <FrontDoorManager properties={properties || []} />
+> 742 |         )}

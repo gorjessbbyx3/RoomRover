@@ -25,18 +25,25 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
     }
 
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     // In a real app, verify JWT token
     // For now, just use the token as user ID
-    const user = await storage.getUser(token);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
+    try {
+      const user = await storage.getUser(token);
+      if (!user) {
+        console.log('User not found for token:', token);
+        return res.status(401).json({ error: 'Invalid token' });
+      }
 
-    req.user = user;
-    next();
+      req.user = user;
+      next();
+    } catch (storageError) {
+      console.error('Storage error:', storageError);
+      return res.status(401).json({ error: 'Authentication failed' });
+    }
   } catch (error) {
     console.error('Authentication error:', error);
     res.status(401).json({ error: 'Invalid token' });
