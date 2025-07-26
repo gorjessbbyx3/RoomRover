@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
 
+// Ensure environment variables are loaded
+console.log('Environment DATABASE_URL:', process.env.DATABASE_URL?.replace(/:([^:@]{1,}@)/, ':***@'));
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
