@@ -109,7 +109,7 @@ export default function OperationsDashboard() {
         throw new Error('Invalid maintenance data format - expected array');
       }
 
-      const validPriorities = ['low', 'medium', 'high', 'critical'];
+      const validPriorities = ['critical', 'high', 'medium', 'low'];
       const validStatuses = ['open', 'in_progress', 'completed'];
 
       return data.map((item, index) => {
@@ -617,7 +617,9 @@ export default function OperationsDashboard() {
                     const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
                   })
-                  .map(item => (
+                  .map(item => {
+                    const validPriorities = ['critical', 'high', 'medium', 'low'];
+                    return (
                     <div key={item.id} className={`border rounded-lg p-4 ${
                       item.priority === 'critical' ? 'border-red-200 bg-red-50' :
                       item.priority === 'high' ? 'border-orange-200 bg-orange-50' :
@@ -627,8 +629,13 @@ export default function OperationsDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-semibold">{item.issue}</h3>
-                            <Badge className={getStatusColor(item.priority, 'maintenance')}>
-                              {item.priority}
+                            <Badge className={
+                              item.priority === 'critical' ? 'bg-red-100 text-red-800' :
+                              item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                              item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }>
+                              {validPriorities.includes(item.priority) ? item.priority.toUpperCase() : 'UNKNOWN'}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600">
@@ -646,7 +653,8 @@ export default function OperationsDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
