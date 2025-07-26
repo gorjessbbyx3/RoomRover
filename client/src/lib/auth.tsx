@@ -50,8 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+        } else {
+          console.warn('No user data in response');
+          localStorage.removeItem('token');
+        }
       } else {
+        console.warn('Token verification failed with status:', response.status);
         localStorage.removeItem('token');
       }
     } catch (error) {

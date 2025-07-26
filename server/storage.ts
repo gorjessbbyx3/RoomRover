@@ -52,7 +52,7 @@ export interface IStorage {
 
   // Bookings
   getBookings(): Promise<Booking[]>;
-  getBookingsByRoom(roomId: string): Promise<Booking[]>;
+  getBookingsByRoom(roomId: string): Promise<Room[]>;
   getBookingsByGuest(guestId: string): Promise<Booking[]>;
   getActiveBookings(): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
@@ -668,6 +668,16 @@ export class MemStorage implements IStorage {
     const item = this.maintenance.get(id);
     if (!item) return undefined;
 
+    // Validate priority if being updated
+    if (updates.priority && !['low', 'medium', 'high', 'critical'].includes(updates.priority)) {
+      throw new Error('Invalid priority value');
+    }
+
+    // Validate status if being updated
+    if (updates.status && !['open', 'in_progress', 'completed'].includes(updates.status)) {
+      throw new Error('Invalid status value');
+    }
+
     const updatedItem = { ...item, ...updates };
     this.maintenance.set(id, updatedItem);
     return updatedItem;
@@ -840,7 +850,7 @@ export class MemStorage implements IStorage {
   }
 
   async createHouseBankTransaction(data: {
-    type: 'transfer_in' | 'expense_supplies' | 'expense_contractor' | 'expense_maintenance' | 'expense_other';
+    type: 'transfer_in' | 'expense_supplies' | 'expense_contractor' | 'expense_maintenance' | 'expense_utilities' | 'expense_other';
     amount: number;
     category: 'supplies' | 'contractors' | 'maintenance' | 'utilities' | 'other';
     vendor?: string;
@@ -875,6 +885,9 @@ export class MemStorage implements IStorage {
         .filter(t => t.category === 'supplies')
         .reduce((sum, t) => sum + t.amount, 0),
       contractors: transactions
+        .filter(t => t.category === 'contractors')
+        .reduce((sum, t) => sum + t.amount, 0),
+      maintenance: transactions
         .filter(t => t.category === 'contractors')
         .reduce((sum, t) => sum + t.amount, 0),
       maintenance: transactions

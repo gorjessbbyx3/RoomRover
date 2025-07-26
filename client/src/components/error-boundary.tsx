@@ -11,7 +11,6 @@ interface ErrorBoundaryState {
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
-  fallback?: React.ComponentType<{ error?: Error; retry: () => void }>;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -25,22 +24,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error('Error boundary caught error:', error, errorInfo);
   }
 
-  retry = () => {
+  handleRetry = () => {
     this.setState({ hasError: false, error: undefined });
   };
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
-        return <FallbackComponent error={this.state.error} retry={this.retry} />;
-      }
-
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -50,26 +44,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 Something went wrong
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                We encountered an unexpected error. Please try refreshing the page.
+            <CardContent className="text-center space-y-4">
+              <p className="text-gray-600">
+                An unexpected error occurred. Please try refreshing the page.
               </p>
-              {this.state.error && (
-                <details className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                  <summary>Error details</summary>
-                  <pre className="mt-2 whitespace-pre-wrap">{this.state.error.message}</pre>
-                </details>
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <div className="text-left p-3 bg-gray-100 rounded-md text-sm text-gray-700 font-mono">
+                  {this.state.error.message}
+                </div>
               )}
-              <div className="flex gap-2">
-                <Button onClick={this.retry} className="flex-1">
+              <div className="flex gap-2 justify-center">
+                <Button onClick={this.handleRetry} variant="outline">
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                  Retry
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.reload()}
-                  className="flex-1"
-                >
+                <Button onClick={() => window.location.reload()}>
                   Refresh Page
                 </Button>
               </div>

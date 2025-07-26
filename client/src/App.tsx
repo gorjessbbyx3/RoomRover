@@ -3,6 +3,7 @@ import { AuthProvider } from '@/lib/auth';
 import { Toaster } from '@/components/ui/toaster';
 import Navigation from '@/components/navigation';
 import ProtectedRoute from '@/components/protected-route';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Route, Switch } from 'wouter';
 
 // Import all pages
@@ -24,7 +25,6 @@ import Membership from '@/pages/membership';
 import Tracker from '@/pages/tracker';
 import NotFound from '@/pages/not-found';
 import Login from '@/pages/login';
-import { ErrorBoundary } from '@/components/error-boundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,34 +113,6 @@ function AppRouter() {
             </ProtectedRoute>
           </Navigation>
         </Route>
-        <Route path="/maintenance-management">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <MaintenanceManagement />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/inventory-management">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <InventoryManagement />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/banned-users">
-          <Navigation>
-            <ProtectedRoute roles={['admin']}>
-              <BannedUsersManagement />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/master-codes">
-          <Navigation>
-            <ProtectedRoute roles={['admin']}>
-              <MasterCodesManagement />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
         <Route component={NotFound} />
       </Switch>
     </div>
@@ -149,13 +121,13 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ErrorBoundary>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
           <AppRouter />
           <Toaster />
-        </ErrorBoundary>
-      </AuthProvider>
-    </QueryClientProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

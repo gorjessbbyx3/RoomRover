@@ -109,7 +109,7 @@ export default function OperationsDashboard() {
         throw new Error('Invalid maintenance data format - expected array');
       }
 
-      const validPriorities = ['critical', 'high', 'medium', 'low'];
+      const validPriorities = ['low', 'medium', 'high', 'critical'];
       const validStatuses = ['open', 'in_progress', 'completed'];
 
       return data.map((item, index) => {
@@ -173,17 +173,40 @@ export default function OperationsDashboard() {
   const availableRooms = rooms.filter(room => room.status === 'available' && room.cleaningStatus === 'clean');
   const outOfOrderRooms = rooms.filter(room => room.status === 'maintenance');
 
-  const getStatusColor = (status: string, type: 'inventory' | 'maintenance' | 'room') => {
-    if (type === 'inventory') {
-      if (status === 'out') return 'bg-red-100 text-red-800';
-      if (status === 'low') return 'bg-yellow-100 text-yellow-800';
-      return 'bg-green-100 text-green-800';
-    }
+  const getStatusColor = (status: string, type: 'maintenance' | 'inventory' | 'room') => {
     if (type === 'maintenance') {
-      if (status === 'critical') return 'bg-red-100 text-red-800';
-      if (status === 'high') return 'bg-orange-100 text-orange-800';
-      if (status === 'medium') return 'bg-yellow-100 text-yellow-800';
-      return 'bg-blue-100 text-blue-800';
+      // For maintenance items, status can be priority levels
+      const validPriorities = ['low', 'medium', 'high', 'critical'];
+      const validStatuses = ['open', 'in_progress', 'completed'];
+
+      if (validPriorities.includes(status)) {
+        switch (status) {
+          case 'critical': return 'bg-red-100 text-red-800';
+          case 'high': return 'bg-orange-100 text-orange-800';
+          case 'medium': return 'bg-yellow-100 text-yellow-800';
+          case 'low': return 'bg-green-100 text-green-800';
+          default: return 'bg-gray-100 text-gray-800';
+        }
+      } else if (validStatuses.includes(status)) {
+        switch (status) {
+          case 'open': return 'bg-red-100 text-red-800';
+          case 'in_progress': return 'bg-yellow-100 text-yellow-800';
+          case 'completed': return 'bg-green-100 text-green-800';
+          default: return 'bg-gray-100 text-gray-800';
+        }
+      }
+      return 'bg-gray-100 text-gray-800';
+    } else {
+      // For inventory items
+      const validStatuses = ['low_stock', 'out_of_stock', 'in_stock'];
+      if (!validStatuses.includes(status)) return 'bg-gray-100 text-gray-800';
+
+      switch (status) {
+        case 'out_of_stock': return 'bg-red-100 text-red-800';
+        case 'low_stock': return 'bg-yellow-100 text-yellow-800';
+        case 'in_stock': return 'bg-green-100 text-green-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
     }
     if (type === 'room') {
       if (status === 'available') return 'bg-green-100 text-green-800';
@@ -617,9 +640,7 @@ export default function OperationsDashboard() {
                     const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
                   })
-                  .map(item => {
-                    const validPriorities = ['critical', 'high', 'medium', 'low'];
-                    return (
+                  .map(item => (
                     <div key={item.id} className={`border rounded-lg p-4 ${
                       item.priority === 'critical' ? 'border-red-200 bg-red-50' :
                       item.priority === 'high' ? 'border-orange-200 bg-orange-50' :
@@ -629,13 +650,8 @@ export default function OperationsDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-semibold">{item.issue}</h3>
-                            <Badge className={
-                              item.priority === 'critical' ? 'bg-red-100 text-red-800' :
-                              item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                              item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }>
-                              {validPriorities.includes(item.priority) ? item.priority.toUpperCase() : 'UNKNOWN'}
+                            <Badge className={getStatusColor(item.priority, 'maintenance')}>
+                              {item.priority}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600">
@@ -653,8 +669,7 @@ export default function OperationsDashboard() {
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  ))}
               </div>
             </CardContent>
           </Card>
