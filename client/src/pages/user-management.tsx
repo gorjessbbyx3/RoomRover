@@ -20,6 +20,7 @@ const availablePages = [
   { path: '/dashboard', label: 'Dashboard', description: 'Main dashboard with overview stats' },
   { path: '/inhouse', label: 'InHouse', description: 'Manage bookings and room assignments' },
   { path: '/payments', label: 'Payments', description: 'Handle payments and financial tracking' },
+  { path: '/financial-management', label: '$ Management', description: 'Financial management and cash tracking' },
   { path: '/reports', label: 'Reports', description: 'Generate comprehensive reports' },
   { path: '/analytics', label: 'Analytics', description: 'Advanced analytics and insights' },
   { path: '/inquiries', label: 'Inquiries', description: 'Manage customer inquiries' },
