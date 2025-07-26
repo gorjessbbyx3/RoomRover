@@ -27,7 +27,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Settings
 } from 'lucide-react';
 import type { InventoryItem, MaintenanceItem, Room, Property } from '@/lib/types';
 
@@ -45,6 +46,9 @@ export default function OperationsDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRestockDialogOpen, setIsRestockDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<InventoryItem | null>(null);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   
   // Form states
   const [newItem, setNewItem] = useState({
@@ -56,6 +60,11 @@ export default function OperationsDashboard() {
     notes: ''
   });
   const [restockAmount, setRestockAmount] = useState(0);
+  const [maintenanceRequest, setMaintenanceRequest] = useState({
+    issue: '',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
+    notes: ''
+  });
 
   // Fetch properties
   const { data: properties = [] } = useQuery<Property[]>({
@@ -244,6 +253,61 @@ export default function OperationsDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast({ title: "Success", description: "Inventory item deleted successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Room mutations
+  const updateRoomMutation = useMutation({
+    mutationFn: async ({ roomId, updates }: { roomId: string; updates: Partial<Room> }) => {
+      const response = await fetch(`/api/rooms/${roomId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update room');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      toast({ title: "Success", description: "Room status updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const addMaintenanceRequestMutation = useMutation({
+    mutationFn: async (requestData: typeof maintenanceRequest & { roomId: string; propertyId: string }) => {
+      const response = await fetch('/api/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...requestData,
+          dateReported: new Date().toISOString(),
+          status: 'open'
+        })
+      });
+      if (!response.ok) throw new Error('Failed to create maintenance request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      setIsMaintenanceDialogOpen(false);
+      setMaintenanceRequest({
+        issue: '',
+        priority: 'medium',
+        notes: ''
+      });
+      toast({ title: "Success", description: "Maintenance request created successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -668,7 +732,10 @@ export default function OperationsDashboard() {
                           <Card 
                             key={room.id}
                             className={`border rounded-lg cursor-pointer transition-all hover:shadow-md p-4 ${getStatusColor()}`}
-                            onClick={() => console.log('Room clicked:', room.id)}
+                            onClick={() => {
+                              setSelectedRoom(room);
+                              setIsRoomDialogOpen(true);
+                            }}
                             data-testid={`room-card-${room.id}`}
                           >
                             <div className="text-center">
@@ -1136,6 +1203,192 @@ export default function OperationsDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Room Status Dialog */}
+      <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5" />
+              {selectedRoom?.id} - Room Management
+            </DialogTitle>
+            <DialogDescription>
+              Update room status and request maintenance
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRoom && (
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label>Current Status</Label>
+                <div className="flex items-center gap-2">
+                  <Badge className={getStatusColor(selectedRoom.status, 'room')}>
+                    {selectedRoom.status}
+                  </Badge>
+                  <span className="text-sm text-gray-600">
+                    Cleaning: {selectedRoom.cleaningStatus}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="room-status">Update Status</Label>
+                <Select 
+                  value={selectedRoom.status} 
+                  onValueChange={(value) => {
+                    updateRoomMutation.mutate({
+                      roomId: selectedRoom.id,
+                      updates: { status: value as Room['status'] }
+                    });
+                    setSelectedRoom({...selectedRoom, status: value as Room['status']});
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="occupied">Occupied</SelectItem>
+                    <SelectItem value="cleaning">Cleaning</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="cleaning-status">Cleaning Status</Label>
+                <Select 
+                  value={selectedRoom.cleaningStatus} 
+                  onValueChange={(value) => {
+                    updateRoomMutation.mutate({
+                      roomId: selectedRoom.id,
+                      updates: { cleaningStatus: value as Room['cleaningStatus'] }
+                    });
+                    setSelectedRoom({...selectedRoom, cleaningStatus: value as Room['cleaningStatus']});
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clean">Clean</SelectItem>
+                    <SelectItem value="dirty">Dirty</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedRoom.lastCleaned && (
+                <div className="text-sm text-gray-600">
+                  Last cleaned: {new Date(selectedRoom.lastCleaned).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRoomDialogOpen(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                setIsMaintenanceDialogOpen(true);
+                setIsRoomDialogOpen(false);
+              }}
+              className="flex items-center gap-2"
+            >
+              <Wrench className="h-4 w-4" />
+              Report Issue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Maintenance Request Dialog */}
+      <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Report Maintenance Issue
+            </DialogTitle>
+            <DialogDescription>
+              Create a maintenance request for {selectedRoom?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="issue">Issue Title</Label>
+              <Input
+                id="issue"
+                value={maintenanceRequest.issue}
+                onChange={(e) => setMaintenanceRequest({...maintenanceRequest, issue: e.target.value})}
+                placeholder="Brief description of the issue"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Priority Level</Label>
+              <Select 
+                value={maintenanceRequest.priority} 
+                onValueChange={(value) => setMaintenanceRequest({...maintenanceRequest, priority: value as any})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes & Details</Label>
+              <Textarea
+                id="notes"
+                value={maintenanceRequest.notes}
+                onChange={(e) => setMaintenanceRequest({...maintenanceRequest, notes: e.target.value})}
+                placeholder="Detailed description of the issue, including any specific problems or requirements..."
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsMaintenanceDialogOpen(false);
+                setMaintenanceRequest({
+                  issue: '',
+                  priority: 'medium',
+                  notes: ''
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedRoom && maintenanceRequest.issue.trim()) {
+                  addMaintenanceRequestMutation.mutate({
+                    ...maintenanceRequest,
+                    roomId: selectedRoom.id,
+                    propertyId: selectedRoom.propertyId
+                  });
+                }
+              }}
+              disabled={!maintenanceRequest.issue.trim() || addMaintenanceRequestMutation.isPending}
+            >
+              {addMaintenanceRequestMutation.isPending ? 'Creating...' : 'Create Request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
