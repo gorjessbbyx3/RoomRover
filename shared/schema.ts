@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, decimal, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -247,7 +247,113 @@ export const insertUserPermissionSchema = createInsertSchema(userPermissions).om
   createdAt: true,
 });
 
-// Types
+// Audit log for tracking admin actions
+export const auditLogs = pgTable("audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  details: text("details"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Helpers table for assigning staff to properties/rooms
+export const helpers = pgTable("helpers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  assignedBy: varchar("assigned_by").references(() => users.id),
+  propertyId: text("property_id").references(() => properties.id),
+  roomId: text("room_id").references(() => rooms.id),
+  role: text("role").notNull().default("cleaning"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Tasks for helpers (extends existing cleaning tasks)
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  propertyId: text("property_id").references(() => properties.id),
+  roomId: text("room_id").references(() => rooms.id),
+  helperId: varchar("helper_id").references(() => helpers.id),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("general"),
+  priority: text("priority").notNull().default("normal"),
+  status: text("status").notNull().default("pending"),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  completedBy: varchar("completed_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Messages between users (managers, helpers, guests)
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  receiverId: varchar("receiver_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  propertyId: text("property_id").references(() => properties.id),
+  roomId: text("room_id").references(() => rooms.id),
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  messageType: text("message_type").notNull().default("general"),
+  isRead: boolean("is_read").notNull().default(false),
+  sentAt: timestamp("sent_at").defaultNow(),
+});
+
+// Reviews for properties, rooms, and service
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reviewerId: varchar("reviewer_id").notNull().references(() => users.id),
+  targetId: varchar("target_id").references(() => users.id), // reviewed user (helper, manager)
+  propertyId: text("property_id").references(() => properties.id),
+  roomId: text("room_id").references(() => rooms.id),
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  reviewType: text("review_type").notNull().default("property"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Property and room photos
+export const propertyPhotos = pgTable("property_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  propertyId: text("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  roomId: text("room_id").references(() => rooms.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  caption: text("caption"),
+  isMain: boolean("is_main").notNull().default(false),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+// Favorites for guests to save preferred rooms/properties
+export const favorites = pgTable("favorites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  propertyId: text("property_id").references(() => properties.id),
+  roomId: text("room_id").references(() => rooms.id),
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => ({
+  uniqueUserProperty: unique().on(table.userId, table.propertyId),
+  uniqueUserRoom: unique().on(table.userId, table.roomId)
+}));
+
+// Notification system
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("info"),
+  isRead: boolean("is_read").notNull().default(false),
+  actionUrl: text("action_url"),
+  priority: text("priority").notNull().default("normal"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
@@ -286,3 +392,56 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type BannedUser = typeof bannedUsers.$inferSelect;
 export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
+
+export type AuditLogs = typeof auditLogs.$inferSelect;
+export type InsertAuditLogs = z.infer<typeof insertAuditLogs>;
+
+export type Helper = typeof helpers.$inferSelect;
+export type InsertHelper = z.infer<typeof insertHelperSchema>;
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type PropertyPhoto = typeof propertyPhotos.$inferSelect;
+export type InsertPropertyPhoto = z.infer<typeof insertPropertyPhotoSchema>;
+
+export type Favorite = typeof favorites.$inferSelect;
+export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export const insertHelperSchema = createInsertSchema(helpers).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  sentAt: true,
+});
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertPropertyPhotoSchema = createInsertSchema(propertyPhotos).omit({
+  id: true,
+  uploadedAt: true,
+});
+export const insertFavoriteSchema = createInsertSchema(favorites).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});

@@ -1607,6 +1607,181 @@ const task = await storage.createCleaningTask(cleanTaskData);
     }
   });
 
+  // Helper management routes
+  app.get("/api/helpers", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      let helpers;
+      if (req.user.role === 'admin') {
+        helpers = await storage.getHelpers();
+      } else {
+        helpers = await storage.getHelpersByProperty(req.user.property);
+      }
+      res.json(helpers);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch helpers' });
+    }
+  });
+
+  app.post("/api/helpers", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const helperData = {
+        ...req.body,
+        assignedBy: req.user.id
+      };
+      const helper = await storage.createHelper(helperData);
+      res.status(201).json(helper);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create helper assignment' });
+    }
+  });
+
+  // Enhanced task routes (building on existing cleaning tasks)
+  app.get("/api/tasks", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      let tasks;
+      if (req.user.role === 'admin') {
+        tasks = await storage.getTasks();
+      } else if (req.user.role === 'manager') {
+        tasks = await storage.getTasksByProperty(req.user.property);
+      } else {
+        tasks = await storage.getTasksByHelper(req.user.id);
+      }
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+  });
+
+  app.post("/api/tasks", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const task = await storage.createTask(req.body);
+      res.status(201).json(task);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create task' });
+    }
+  });
+
+  // Messages routes
+  app.get("/api/messages", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const messages = await storage.getMessages(req.user.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
+
+  app.post("/api/messages", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const messageData = {
+        ...req.body,
+        senderId: req.user.id
+      };
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to send message' });
+    }
+  });
+
+  app.get("/api/messages/conversation/:userId", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const conversation = await storage.getConversation(req.user.id, req.params.userId);
+      res.json(conversation);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch conversation' });
+    }
+  });
+
+  // Reviews routes
+  app.get("/api/reviews", authenticateUser, async (req, res) => {
+    try {
+      const reviews = await storage.getReviews();
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+  });
+
+  app.post("/api/reviews", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reviewData = {
+        ...req.body,
+        reviewerId: req.user.id
+      };
+      const review = await storage.createReview(reviewData);
+      res.status(201).json(review);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create review' });
+    }
+  });
+
+  // Property photos routes
+  app.get("/api/properties/:id/photos", authenticateUser, async (req, res) => {
+    try {
+      const photos = await storage.getPropertyPhotos(req.params.id);
+      res.json(photos);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch property photos' });
+    }
+  });
+
+  app.post("/api/properties/:id/photos", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const photoData = {
+        ...req.body,
+        propertyId: req.params.id,
+        uploadedBy: req.user.id
+      };
+      const photo = await storage.createPropertyPhoto(photoData);
+      res.status(201).json(photo);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to upload photo' });
+    }
+  });
+
+  // Favorites routes
+  app.get("/api/favorites", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const favorites = await storage.getFavorites(req.user.id);
+      res.json(favorites);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch favorites' });
+    }
+  });
+
+  app.post("/api/favorites", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const favoriteData = {
+        ...req.body,
+        userId: req.user.id
+      };
+      const favorite = await storage.createFavorite(favoriteData);
+      res.status(201).json(favorite);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to add favorite' });
+    }
+  });
+
+  // Notifications routes
+  app.get("/api/notifications", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const notifications = await storage.getNotifications(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.put("/api/notifications/:id/read", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const notification = await storage.markNotificationAsRead(req.params.id);
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
   app.post("/api/master-codes", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
     try {
       const masterCodeData = req.body;
