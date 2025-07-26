@@ -8,6 +8,7 @@ import { Route, Switch } from 'wouter';
 
 // Import all pages
 import Dashboard from '@/pages/dashboard';
+import Login from '@/pages/login';
 import UserManagement from '@/pages/user-management';
 import Cleaning from '@/pages/cleaning';
 import OperationsDashboard from '@/pages/operations-dashboard';
@@ -24,7 +25,6 @@ import MasterCodesManagement from '@/pages/master-codes-management';
 import Membership from '@/pages/membership';
 import Tracker from '@/pages/tracker';
 import NotFound from '@/pages/not-found';
-import Login from '@/pages/login';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,85 +37,87 @@ const queryClient = new QueryClient({
 
 function AppRouter() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Switch>
-        <Route path="/" component={Login} />
-        <Route path="/login" component={Login} />
-        <Route path="/membership" component={Membership} />
-        <Route path="/tracker/:token" component={Tracker} />
-        <Route path="/dashboard">
-          <Navigation>
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Switch>
+          <Route path="/" component={Login} />
+          <Route path="/login" component={Login} />
+          <Route path="/membership" component={Membership} />
+          <Route path="/tracker/:token" component={Tracker} />
+          <Route path="/dashboard">
+            <Navigation>
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
         <Route path="/operations">
-          <Navigation>
-            <ProtectedRoute>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/rooms">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <Rooms />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/bookings">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <Bookings />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/cleaning">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager', 'helper']}>
-              <Cleaning />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/payments">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <Payments />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/reports">
-          <Navigation>
-            <ProtectedRoute roles={['admin']}>
-              <Reports />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/analytics">
-          <Navigation>
-            <ProtectedRoute roles={['admin']}>
-              <Analytics />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/inquiries">
-          <Navigation>
-            <ProtectedRoute roles={['admin', 'manager']}>
-              <Inquiries />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
-        <Route path="/users">
-          <Navigation>
-            <ProtectedRoute roles={['admin']}>
-              <UserManagement />
-            </ProtectedRoute>
-          </Navigation>
-        </Route>
+            <Navigation>
+              <ProtectedRoute>
+                <OperationsDashboard />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/rooms">
+            <Navigation>
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Rooms />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/bookings">
+            <Navigation>
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Bookings />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/cleaning">
+            <Navigation>
+              <ProtectedRoute roles={['admin', 'manager', 'helper']}>
+                <Cleaning />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/payments">
+            <Navigation>
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Payments />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/reports">
+            <Navigation>
+              <ProtectedRoute roles={['admin']}>
+                <Reports />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/analytics">
+            <Navigation>
+              <ProtectedRoute roles={['admin']}>
+                <Analytics />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/inquiries">
+            <Navigation>
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <Inquiries />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
+          <Route path="/users">
+            <Navigation>
+              <ProtectedRoute roles={['admin']}>
+                <UserManagement />
+              </ProtectedRoute>
+            </Navigation>
+          </Route>
         <Route component={NotFound} />
-      </Switch>
-    </div>
+        </Switch>
+      </div>
+    </AuthProvider>
   );
 }
 
@@ -123,10 +125,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppRouter />
-          <Toaster />
-        </AuthProvider>
+        <AppRouter />
+        <Toaster />
       </QueryClientProvider>
     </ErrorBoundary>
   );
