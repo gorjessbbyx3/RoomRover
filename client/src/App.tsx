@@ -23,6 +23,7 @@ import MasterCodesManagement from '@/pages/master-codes-management';
 import Membership from '@/pages/membership';
 import Tracker from '@/pages/tracker';
 import NotFound from '@/pages/not-found';
+import Login from '@/pages/login';
 
 const queryClient = new QueryClient({
   defaultOptions: {
