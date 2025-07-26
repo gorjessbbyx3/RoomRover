@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { queryClient } from './queryClient';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface User {
   id: string;
@@ -86,9 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       localStorage.setItem('token', data.token);
       setUser(data.user);
-
-      // Ensure queryClient is aware of the new auth state
-      queryClient.invalidateQueries();
     } catch (error) {
       console.error('Login error:', error);
       throw error;

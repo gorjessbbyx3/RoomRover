@@ -535,15 +535,6 @@ export class MemStorage implements IStorage {
     return this.cleaningTasks.get(id);
   }
 
-  async updateCleaningTask(id: string, updates: Partial<CleaningTask>): Promise<CleaningTask | undefined> {
-    const task = this.cleaningTasks.get(id);
-    if (!task) return undefined;
-
-    const updatedTask = { ...task, ...updates };
-    this.cleaningTasks.set(id, updatedTask);
-    return updatedTask;
-  }
-
   async createCleaningTask(insertTask: InsertCleaningTask): Promise<CleaningTask> {
     const id = randomUUID();
     const task: CleaningTask = {
@@ -569,35 +560,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
-  async deleteBannedUser(id: string): Promise<boolean> {
-    return this.bannedList.delete(id);
-  }
-
-  async getMasterCodes(): Promise<any[]> {
-    return Array.from(this.masterCodes.values());
-  }
-
-  async addMasterCode(data: { property: string; masterCode: string; notes?: string }): Promise<any> {
-    const id = randomUUID();
-    const masterCode = {
-      id,
-      ...data,
-      createdAt: new Date(),
-    };
-    this.masterCodes.set(id, masterCode);
-    return masterCode;
-  }
-
-  async createAuditLog(data: { userId: string; action: string; details: string }): Promise<any> {
-    const id = randomUUID();
-    const auditLog = {
-      id,
-      ...data,
-      timestamp: new Date(),
-    };
-    // In production this would go to database
-    return auditLog;
-  }
+  
 
   // Inventory methods
   async getInventory(): Promise<Inventory[]> {
@@ -741,24 +704,7 @@ export class MemStorage implements IStorage {
     return bannedUser;
   }
 
-  async getMasterCodes() {
-    return Array.from(this.masterCodes.values());
-  }
-
-  async addMasterCode(data: {
-    property: string;
-    masterCode: string;
-    notes?: string;
-  }) {
-    const id = randomUUID();
-    const masterCode = {
-      id,
-      ...data,
-      lastUpdated: new Date(),
-    };
-    this.masterCodes.set(id, masterCode);
-    return masterCode;
-  }
+  
 
   async updatePropertyFrontDoorCode(propertyId: string, code: string, expiry?: Date): Promise<Property | undefined> {
     const property = this.properties.get(propertyId);
