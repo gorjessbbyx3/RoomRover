@@ -1497,51 +1497,112 @@ export default function OperationsDashboard() {
                   <CardTitle>Maintenance Requests</CardTitle>
                   <CardDescription>Track and manage property maintenance issues</CardDescription>
                 </div>
-                <Button>
-                  <Wrench className="h-4 w-4 mr-2" />
-                  Report Issue
-                </Button>
+                <div className="flex gap-2">
+                  <Select value={selectedProperty} onValueChange={setSelectedProperty}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by property" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Properties</SelectItem>
+                      {properties.map(property => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button>
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Report Issue
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {maintenance
-                  .filter(item => item.status !== 'completed')
-                  .sort((a, b) => {
-                    const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-                    return priorityOrder[b.priority] - priorityOrder[a.priority];
-                  })
-                  .map(item => (
-                    <div key={item.id} className={`border rounded-lg p-4 ${
-                      item.priority === 'critical' ? 'border-red-200 bg-red-50' :
-                      item.priority === 'high' ? 'border-orange-200 bg-orange-50' :
-                      'border-gray-200'
-                    }`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{item.issue}</h3>
-                            <Badge className={getStatusColor(item.priority, 'maintenance')}>
-                              {item.priority}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {item.roomId && <span>Room {item.roomId} • </span>}
-                            Reported {new Date(item.dateReported).toLocaleDateString()}
-                          </div>
-                        </div>
+              {/* Group maintenance by property */}
+              {properties
+                .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
+                .map(property => {
+                  const propertyMaintenance = maintenance
+                    .filter(item => item.propertyId === property.id)
+                    .filter(item => item.status !== 'completed')
+                    .sort((a, b) => {
+                      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                      return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    });
+                  
+                  if (propertyMaintenance.length === 0) return null;
+                  
+                  return (
+                    <div key={property.id} className="mb-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold flex items-center">
+                          <Home className="h-5 w-5 mr-2" />
+                          {property.name}
+                        </h3>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {item.status.replace('_', ' ')}
+                          <Badge variant="outline" className="text-xs">
+                            {propertyMaintenance.length} open items
                           </Badge>
-                          <Button size="sm" variant="outline">
-                            Update
-                          </Button>
+                          {propertyMaintenance.filter(item => item.priority === 'critical').length > 0 && (
+                            <Badge className="bg-red-100 text-red-800 text-xs">
+                              {propertyMaintenance.filter(item => item.priority === 'critical').length} critical
+                            </Badge>
+                          )}
                         </div>
                       </div>
+                      <div className="space-y-4">
+                        {propertyMaintenance.map(item => (
+                          <div key={item.id} className={`border rounded-lg p-4 ${
+                            item.priority === 'critical' ? 'border-red-200 bg-red-50' :
+                            item.priority === 'high' ? 'border-orange-200 bg-orange-50' :
+                            'border-gray-200'
+                          }`}>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-semibold">{item.issue}</h4>
+                                  <Badge className={getStatusColor(item.priority, 'maintenance')}>
+                                    {item.priority}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-gray-600 mb-2">
+                                  {item.roomId && <span>Room {item.roomId} • </span>}
+                                  Reported {new Date(item.dateReported).toLocaleDateString()}
+                                  {item.description && (
+                                    <div className="mt-1 text-gray-500">
+                                      {item.description}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  Days open: {Math.floor((new Date().getTime() - new Date(item.dateReported).getTime()) / (1000 * 60 * 60 * 24))}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                <Badge variant="outline" className="text-xs">
+                                  {item.status.replace('_', ' ')}
+                                </Badge>
+                                <Button size="sm" variant="outline">
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Update
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-              </div>
+                  );
+                })}
+              
+              {maintenance.filter(item => item.status !== 'completed').length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Wrench className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No open maintenance requests</p>
+                  <p className="text-sm">All properties are in good condition</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
