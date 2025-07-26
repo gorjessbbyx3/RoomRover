@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -238,7 +237,7 @@ export default function Inquiries() {
                               onAssigned={() => queryClient.invalidateQueries({ queryKey: ['/api/inquiries'] })}
                             />
                           )}
-                          
+
                           <Button
                             size="sm"
                             variant="ghost"

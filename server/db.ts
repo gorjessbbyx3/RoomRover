@@ -9,13 +9,18 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
+// Validate database URL format
+if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+  throw new Error("DATABASE_URL must be a valid PostgreSQL connection string");
+}
+
 console.log('Connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
 
 const sql = postgres(databaseUrl, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
-  ssl: { rejectUnauthorized: false },
+  ssl: 'require',
 });
 
 export const db = drizzle(sql, { schema });
