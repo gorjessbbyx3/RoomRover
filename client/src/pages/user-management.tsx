@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Plus, Shield, UserCheck, UserX } from 'lucide-react';
+import { Users, Plus, Shield, UserCheck, UserX, Search, Filter, MoreHorizontal, Eye, EyeOff, Key, Settings, Activity } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 interface User {
   id: string;
@@ -19,6 +22,8 @@ interface User {
   role: 'admin' | 'manager' | 'helper';
   property: string | null;
   createdAt: string;
+  lastActive?: string;
+  isActive?: boolean;
 }
 
 interface Property {
@@ -35,6 +40,9 @@ export default function UserManagement() {
   const [isPrivilegeDialogOpen, setIsPrivilegeDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [privilegeForm, setPrivilegeForm] = useState({
     role: 'helper' as 'admin' | 'manager' | 'helper',
     property: ''
@@ -43,6 +51,7 @@ export default function UserManagement() {
     username: '',
     name: '',
     password: '',
+    confirmPassword: '',
     role: 'helper' as 'admin' | 'manager' | 'helper',
     property: ''
   });
@@ -99,6 +108,7 @@ export default function UserManagement() {
         username: '',
         name: '',
         password: '',
+        confirmPassword: '',
         role: 'helper',
         property: ''
       });
@@ -179,12 +189,44 @@ export default function UserManagement() {
     }
   });
 
+  // Filter and search users
+  const filteredUsers = useMemo(() => {
+    return users.filter((user: User) => {
+      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           user.username.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesProperty = propertyFilter === 'all' || user.property === propertyFilter;
+      
+      return matchesSearch && matchesRole && matchesProperty;
+    });
+  }, [users, searchTerm, roleFilter, propertyFilter]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
     if (!formData.username || !formData.name || !formData.password) {
       toast({
         title: 'Error',
         description: 'Username, name, and password are required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters long.',
         variant: 'destructive',
       });
       return;
@@ -208,6 +250,15 @@ export default function UserManagement() {
       toast({
         title: 'Error',
         description: 'New password is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters long.',
         variant: 'destructive',
       });
       return;
@@ -262,11 +313,11 @@ export default function UserManagement() {
 
   const getRoleBadge = (role: string) => {
     const colors = {
-      admin: 'bg-red-100 text-red-800',
-      manager: 'bg-blue-100 text-blue-800',
-      helper: 'bg-green-100 text-green-800'
+      admin: 'bg-red-100 text-red-800 border-red-200',
+      manager: 'bg-blue-100 text-blue-800 border-blue-200',
+      helper: 'bg-green-100 text-green-800 border-green-200'
     };
-    return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getPropertyName = (propertyId: string | null) => {
@@ -291,7 +342,8 @@ export default function UserManagement() {
   const userCounts = {
     admin: users.filter((u: User) => u.role === 'admin').length,
     manager: users.filter((u: User) => u.role === 'manager').length,
-    helper: users.filter((u: User) => u.role === 'helper').length
+    helper: users.filter((u: User) => u.role === 'helper').length,
+    total: users.length
   };
 
   if (!currentUser || currentUser.role !== 'admin') {
@@ -313,11 +365,12 @@ export default function UserManagement() {
           User Management
         </h1>
         <p className="text-gray-600 mt-2">
-          Manage system users and their permissions.
+          Manage system users, their permissions, and access levels.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -359,19 +412,83 @@ export default function UserManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4 text-orange-500" />
+              Active Users
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {users.filter((u: User) => u.isActive !== false).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {users.length}
+              {userCounts.total}
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search users by name or username..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-32">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="helper">Helper</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={propertyFilter} onValueChange={setPropertyFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Properties" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Properties</SelectItem>
+                  {properties.map((property: Property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      {property.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => {
+                setSearchTerm('');
+                setRoleFilter('all');
+                setPropertyFilter('all');
+              }} variant="outline">
+                Clear
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-gray-500">
-          {users.length} user{users.length !== 1 ? 's' : ''}
+          Showing {filteredUsers.length} of {users.length} user{users.length !== 1 ? 's' : ''}
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -380,7 +497,7 @@ export default function UserManagement() {
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>
@@ -388,36 +505,51 @@ export default function UserManagement() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username *</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  placeholder="Enter username"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="username">Username *</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    placeholder="Enter username"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter full name"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Enter password"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Min 6 characters"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm password"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="role">Role *</Label>
@@ -426,15 +558,15 @@ export default function UserManagement() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin - Full access</SelectItem>
+                    <SelectItem value="admin">Admin - Full system access</SelectItem>
                     <SelectItem value="manager">Manager - Property management</SelectItem>
-                    <SelectItem value="helper">Helper - Cleaning tasks</SelectItem>
+                    <SelectItem value="helper">Helper - Cleaning and maintenance tasks</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {formData.role === 'manager' && (
                 <div>
-                  <Label htmlFor="property">Property *</Label>
+                  <Label htmlFor="property">Assigned Property *</Label>
                   <Select value={formData.property} onValueChange={(value) => setFormData(prev => ({ ...prev, property: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property to manage" />
@@ -460,192 +592,229 @@ export default function UserManagement() {
             </form>
           </DialogContent>
         </Dialog>
-
-        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Change Password</DialogTitle>
-              <DialogDescription>
-                Change password for {selectedUser?.name} ({selectedUser?.username})
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <Label htmlFor="newPassword">New Password *</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsPasswordDialogOpen(false);
-                    setSelectedUser(null);
-                    setNewPassword('');
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={changePasswordMutation.isPending}
-                  className="bg-primary-500 hover:bg-primary-600"
-                >
-                  {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isPrivilegeDialogOpen} onOpenChange={setIsPrivilegeDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Update User Privileges</DialogTitle>
-              <DialogDescription>
-                Update role and permissions for {selectedUser?.name} ({selectedUser?.username})
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handlePrivilegeUpdate} className="space-y-4">
-              <div>
-                <Label htmlFor="role">Role *</Label>
-                <Select 
-                  value={privilegeForm.role} 
-                  onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, role: value as typeof privilegeForm.role }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin - Full access</SelectItem>
-                    <SelectItem value="manager">Manager - Property management</SelectItem>
-                    <SelectItem value="helper">Helper - Cleaning tasks</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {privilegeForm.role === 'manager' && (
-                <div>
-                  <Label htmlFor="property">Property *</Label>
-                  <Select 
-                    value={privilegeForm.property} 
-                    onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, property: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select property to manage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {properties.map((property: Property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsPrivilegeDialogOpen(false);
-                    setSelectedUser(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={updateUserPrivilegesMutation.isPending}
-                  className="bg-warning-500 hover:bg-warning-600"
-                >
-                  {updateUserPrivilegesMutation.isPending ? 'Updating...' : 'Update Privileges'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
+      {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle>System Users</CardTitle>
           <CardDescription>
-            Manage user accounts and their access permissions.
+            Manage user accounts, permissions, and access levels for your organization.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading users...</div>
-          ) : users.length === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No users found.
+              {searchTerm || roleFilter !== 'all' || propertyFilter !== 'all' 
+                ? 'No users match your search criteria.' 
+                : 'No users found.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Property Access</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user: User) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="font-mono">{user.username}</TableCell>
-                    <TableCell>
-                      <Badge className={`${getRoleBadge(user.role)} flex items-center gap-1 w-fit`}>
-                        {getRoleIcon(user.role)}
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getPropertyName(user.property)}</TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openPasswordDialog(user)}
-                          className="text-xs"
-                        >
-                          Change Password
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openPrivilegeDialog(user)}
-                          className="text-xs text-warning-600 hover:text-warning-800"
-                        >
-                          Edit Privileges
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role & Access</TableHead>
+                    <TableHead>Property</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user: User) => (
+                    <TableRow key={user.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm text-gray-500 font-mono">@{user.username}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`${getRoleBadge(user.role)} flex items-center gap-1 w-fit border`}
+                        >
+                          {getRoleIcon(user.role)}
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{getPropertyName(user.property)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge className={user.isActive !== false ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                            {user.isActive !== false ? (
+                              <>
+                                <Eye className="h-3 w-3 mr-1" />
+                                Active
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Inactive
+                              </>
+                            )}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </div>
+                        {user.lastActive && (
+                          <div className="text-xs text-gray-500">
+                            Last: {new Date(user.lastActive).toLocaleDateString()}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openPasswordDialog(user)}>
+                              <Key className="h-4 w-4 mr-2" />
+                              Change Password
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openPrivilegeDialog(user)}>
+                              <Settings className="h-4 w-4 mr-2" />
+                              Edit Privileges
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">
+                              <UserX className="h-4 w-4 mr-2" />
+                              Deactivate User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Update the password for {selectedUser?.name} ({selectedUser?.username})
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <Label htmlFor="newPassword">New Password *</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsPasswordDialogOpen(false);
+                  setSelectedUser(null);
+                  setNewPassword('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={changePasswordMutation.isPending}
+              >
+                {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Privilege Update Dialog */}
+      <Dialog open={isPrivilegeDialogOpen} onOpenChange={setIsPrivilegeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update User Privileges</DialogTitle>
+            <DialogDescription>
+              Modify role and permissions for {selectedUser?.name} ({selectedUser?.username})
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePrivilegeUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="role">Role *</Label>
+              <Select 
+                value={privilegeForm.role} 
+                onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, role: value as typeof privilegeForm.role }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin - Full system access</SelectItem>
+                  <SelectItem value="manager">Manager - Property management</SelectItem>
+                  <SelectItem value="helper">Helper - Cleaning and maintenance tasks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {privilegeForm.role === 'manager' && (
+              <div>
+                <Label htmlFor="property">Assigned Property *</Label>
+                <Select 
+                  value={privilegeForm.property} 
+                  onValueChange={(value) => setPrivilegeForm(prev => ({ ...prev, property: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select property to manage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((property: Property) => (
+                      <SelectItem key={property.id} value={property.id}>
+                        {property.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsPrivilegeDialogOpen(false);
+                  setSelectedUser(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateUserPrivilegesMutation.isPending}
+              >
+                {updateUserPrivilegesMutation.isPending ? 'Updating...' : 'Update Privileges'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
