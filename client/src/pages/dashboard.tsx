@@ -738,8 +738,5 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : (
-          <FrontDoorManager properties={properties || []} />        )}
-      </div>
-    </div>
-  );
-}
+          <FrontDoorManager properties={properties || []} />
+        )}

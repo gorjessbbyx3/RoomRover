@@ -316,8 +316,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/guests", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
     try {
-      const guestData = insertGuestSchema.parse(req.body);
-      const guest = await storage.createGuest(guestData);
+      const guestData = {
+        ...req.body,
+        name: req.body.name?.toString() || '',
+        contact: req.body.contact?.toString() || '',
+        contactType: req.body.contactType?.toString() || 'phone',
+        referralSource: req.body.referralSource?.toString() || null,
+        cashAppTag: req.body.cashAppTag?.toString() || null,
+        notes: req.body.notes?.toString() || null
+      };
+      
+      const validatedData = insertGuestSchema.parse(guestData);
+      const guest = await storage.createGuest(validatedData);
       res.status(201).json(guest);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -352,12 +362,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      // Parse dates from string format
+      // Parse dates from string format and ensure strings are properly handled
       const parsedData = {
         ...req.body,
         startDate: new Date(req.body.startDate),
         endDate: req.body.endDate ? new Date(req.body.endDate) : null,
-        isTenant: req.body.isTenant || false
+        isTenant: req.body.isTenant || false,
+        plan: req.body.plan?.toString() || 'daily',
+        totalAmount: req.body.totalAmount?.toString() || '0',
+        paymentStatus: req.body.paymentStatus?.toString() || 'pending',
+        status: req.body.status?.toString() || 'active',
+        doorCode: req.body.doorCode?.toString() || null,
+        frontDoorCode: req.body.frontDoorCode?.toString() || null,
+        notes: req.body.notes?.toString() || null
       };
 
       const bookingData = insertBookingSchema.parse(parsedData);
@@ -743,7 +760,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const taskData = {
         ...req.body,
         createdAt: new Date(),
-        status: req.body.status || 'pending'
+        status: req.body.status || 'pending',
+        // Ensure strings are properly handled
+        title: req.body.title?.toString() || '',
+        description: req.body.description?.toString() || null,
+        type: req.body.type?.toString() || 'general',
+        priority: req.body.priority?.toString() || 'normal',
+        notes: req.body.notes?.toString() || null
       };
       
       // Remove fields that aren't in the schema
@@ -1353,7 +1376,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const maintenanceData = {
         ...req.body,
-        reportedBy: req.user.id
+        reportedBy: req.user.id,
+        // Ensure strings are properly handled
+        issue: req.body.issue?.toString() || '',
+        description: req.body.description?.toString() || null,
+        priority: req.body.priority?.toString() || 'normal',
+        status: req.body.status?.toString() || 'open',
+        notes: req.body.notes?.toString() || null
       };
 
       // Handle inventory linking

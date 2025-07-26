@@ -1337,7 +1337,7 @@ export default function OperationsDashboard() {
                               <SelectValue placeholder="Select room" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">No specific room</SelectItem>
+                              <SelectItem value="no-room">No specific room</SelectItem>
                               {rooms.map(room => (
                                 <SelectItem key={room.id} value={room.id}>
                                   {room.id}
@@ -1523,6 +1523,9 @@ export default function OperationsDashboard() {
                           Create a new maintenance request with optional repeat schedule and inventory linking
                         </DialogDescription>
                       </DialogHeader>
+                      {/* Maintenance Form */}
+                      {/* Refactored to use react-hook-form */}
+                      {/* Property Selection */}
                       <div className="grid gap-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
@@ -1532,6 +1535,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select property" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="none" disabled>Select property</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1547,7 +1551,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select room" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">No specific room</SelectItem>
+                                <SelectItem value="no-room">No specific room</SelectItem>
                                 {rooms.map(room => (
                                   <SelectItem key={room.id} value={room.id}>
                                     {room.id}
@@ -1557,7 +1561,7 @@ export default function OperationsDashboard() {
                             </Select>
                           </div>
                         </div>
-
+                        {/* Issue and Priority */}
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor="maintenance-issue">Issue Title</Label>
@@ -1576,12 +1580,13 @@ export default function OperationsDashboard() {
                                 <SelectItem value="low">Low</SelectItem>
                                 <SelectItem value="medium">Medium</SelectItem>
                                 <SelectItem value="high">High</SelectItem>
-                                <SelectItem value="critical">Critical</SelectItem>
+                                                               <SelectItem value="critical">Critical</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
 
+                        {/* Description */}
                         <div className="grid gap-2">
                           <Label htmlFor="maintenance-description">Detailed Description</Label>
                           <Textarea
@@ -1591,6 +1596,7 @@ export default function OperationsDashboard() {
                           />
                         </div>
 
+                        {/* Due Date */}
                         <div className="grid gap-2">
                           <Label htmlFor="maintenance-due-date">Due Date (Optional)</Label>
                           <Input

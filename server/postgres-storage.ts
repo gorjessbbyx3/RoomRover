@@ -127,7 +127,17 @@ export class PostgresStorage implements IStorage {
   }
 
   async createGuest(insertGuest: InsertGuest): Promise<Guest> {
-    const result = await db.insert(guests).values(insertGuest).returning();
+    const sanitizedData = {
+      ...insertGuest,
+      name: insertGuest.name?.toString() || '',
+      contact: insertGuest.contact?.toString() || '',
+      contactType: insertGuest.contactType?.toString() || 'phone',
+      referralSource: insertGuest.referralSource?.toString() || null,
+      cashAppTag: insertGuest.cashAppTag?.toString() || null,
+      notes: insertGuest.notes?.toString() || null
+    };
+
+    const result = await db.insert(guests).values(sanitizedData).returning();
     return result[0];
   }
 
@@ -215,8 +225,17 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async createCleaningTask(insertTask: InsertCleaningTask): Promise<CleaningTask> {
-    const result = await db.insert(cleaningTasks).values(insertTask).returning();
+  async createCleaningTask(taskData: InsertCleaningTask): Promise<CleaningTask> {
+    const sanitizedData = {
+      ...taskData,
+      title: taskData.title?.toString() || '',
+      description: taskData.description?.toString() || null,
+      type: taskData.type?.toString() || 'general',
+      priority: taskData.priority?.toString() || 'normal',
+      notes: taskData.notes?.toString() || null
+    };
+
+    const result = await db.insert(cleaningTasks).values(sanitizedData).returning();
     return result[0];
   }
 
@@ -277,8 +296,18 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async createMaintenanceItem(insertItem: InsertMaintenance): Promise<Maintenance> {
-    const result = await db.insert(maintenance).values(insertItem).returning();
+  async createMaintenanceItem(maintenanceData: InsertMaintenance): Promise<Maintenance> {
+    const sanitizedData = {
+      ...maintenanceData,
+      issue: maintenanceData.issue?.toString() || '',
+      description: maintenanceData.description?.toString() || null,
+      priority: maintenanceData.priority?.toString() || 'normal',
+      status: maintenanceData.status?.toString() || 'open',
+      notes: maintenanceData.notes?.toString() || null,
+      linkedInventoryIds: maintenanceData.linkedInventoryIds?.toString() || null
+    };
+
+    const result = await db.insert(maintenance).values(sanitizedData).returning();
     return result[0];
   }
 
