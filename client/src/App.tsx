@@ -1,120 +1,138 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Route, Switch } from 'wouter';
 import { AuthProvider } from '@/lib/auth';
 import { Toaster } from '@/components/ui/toaster';
-import Navigation from '@/components/navigation';
-import ProtectedRoute from '@/components/protected-route';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { Route, Switch } from 'wouter';
+import ErrorBoundary from '@/components/error-boundary';
 
-// Import all pages
-import Dashboard from '@/pages/dashboard';
+// Import pages
 import Login from '@/pages/login';
-import UserManagement from '@/pages/user-management';
-import Cleaning from '@/pages/cleaning';
-import OperationsDashboard from '@/pages/operations-dashboard';
-import Inquiries from '@/pages/inquiries';
+import Dashboard from '@/pages/dashboard';
+import Rooms from '@/pages/rooms';
 import Bookings from '@/pages/bookings';
 import Payments from '@/pages/payments';
-import Rooms from '@/pages/rooms';
-import Reports from '@/pages/reports';
-import Analytics from '@/pages/analytics';
-import MaintenanceManagement from '@/pages/maintenance-management';
+import Cleaning from '@/pages/cleaning';
+import UserManagement from '@/pages/user-management';
 import InventoryManagement from '@/pages/inventory-management';
+import MaintenanceManagement from '@/pages/maintenance-management';
 import BannedUsersManagement from '@/pages/banned-users-management';
 import MasterCodesManagement from '@/pages/master-codes-management';
+import Reports from '@/pages/reports';
+import Inquiries from '@/pages/inquiries';
 import Membership from '@/pages/membership';
 import Tracker from '@/pages/tracker';
+import Analytics from '@/pages/analytics';
+import OperationsDashboard from '@/pages/operations-dashboard';
 import NotFound from '@/pages/not-found';
+import ProtectedRoute from '@/components/protected-route';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function AppRouter() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-gray-50">
         <Switch>
-          <Route path="/" component={Login} />
           <Route path="/login" component={Login} />
           <Route path="/membership" component={Membership} />
-          <Route path="/tracker/:token" component={Tracker} />
+          <Route path="/track/:token" component={Tracker} />
+
+          <Route path="/">
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/dashboard">
-            <Navigation>
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            </Navigation>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
           </Route>
-        <Route path="/operations">
-            <Navigation>
-              <ProtectedRoute>
-                <OperationsDashboard />
-              </ProtectedRoute>
-            </Navigation>
-          </Route>
+
           <Route path="/rooms">
-            <Navigation>
-              <ProtectedRoute roles={['admin', 'manager']}>
-                <Rooms />
-              </ProtectedRoute>
-            </Navigation>
+            <ProtectedRoute>
+              <Rooms />
+            </ProtectedRoute>
           </Route>
+
           <Route path="/bookings">
-            <Navigation>
-              <ProtectedRoute roles={['admin', 'manager']}>
-                <Bookings />
-              </ProtectedRoute>
-            </Navigation>
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <Bookings />
+            </ProtectedRoute>
           </Route>
-          <Route path="/cleaning">
-            <Navigation>
-              <ProtectedRoute roles={['admin', 'manager', 'helper']}>
-                <Cleaning />
-              </ProtectedRoute>
-            </Navigation>
-          </Route>
+
           <Route path="/payments">
-            <Navigation>
-              <ProtectedRoute roles={['admin', 'manager']}>
-                <Payments />
-              </ProtectedRoute>
-            </Navigation>
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <Payments />
+            </ProtectedRoute>
           </Route>
-          <Route path="/reports">
-            <Navigation>
-              <ProtectedRoute roles={['admin']}>
-                <Reports />
-              </ProtectedRoute>
-            </Navigation>
+
+          <Route path="/cleaning">
+            <ProtectedRoute>
+              <Cleaning />
+            </ProtectedRoute>
           </Route>
-          <Route path="/analytics">
-            <Navigation>
-              <ProtectedRoute roles={['admin']}>
-                <Analytics />
-              </ProtectedRoute>
-            </Navigation>
+
+          <Route path="/inventory">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <InventoryManagement />
+            </ProtectedRoute>
           </Route>
-          <Route path="/inquiries">
-            <Navigation>
-              <ProtectedRoute roles={['admin', 'manager']}>
-                <Inquiries />
-              </ProtectedRoute>
-            </Navigation>
+
+          <Route path="/inventory-management">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <InventoryManagement />
+            </ProtectedRoute>
           </Route>
+
+          <Route path="/maintenance">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <MaintenanceManagement />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/users">
-            <Navigation>
-              <ProtectedRoute roles={['admin']}>
-                <UserManagement />
-              </ProtectedRoute>
-            </Navigation>
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserManagement />
+            </ProtectedRoute>
           </Route>
-        <Route component={NotFound} />
+
+          <Route path="/banned-users">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <BannedUsersManagement />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/master-codes">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MasterCodesManagement />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/reports">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Reports />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/inquiries">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <Inquiries />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/analytics">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <Analytics />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/operations">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <OperationsDashboard />
+            </ProtectedRoute>
+          </Route>
+
+          <Route component={NotFound} />
         </Switch>
       </div>
     </AuthProvider>

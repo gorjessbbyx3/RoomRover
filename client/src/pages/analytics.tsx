@@ -47,20 +47,73 @@ export default function Analytics() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
 
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
-    queryKey: ['analytics', timeRange],
+  // Fetch real analytics data
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['analytics'],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics?range=${timeRange}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const response = await fetch('/api/analytics', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
+      if (!response.ok) throw new Error('Failed to fetch analytics');
       return response.json();
     }
   });
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-    </div>;
+  const data = analyticsData || {
+    revenue: {
+      total: 0,
+      daily: [],
+      projections: {
+        nextMonth: 0,
+        confidence: 0
+      }
+    },
+    occupancy: {
+      current: 0,
+      trend: 0,
+      peakTimes: [],
+      seasonalPatterns: []
+    },
+    customerInsights: {
+      averageStayLength: 0,
+      repeatCustomerRate: 0,
+      referralSources: [],
+      satisfaction: 0
+    },
+    operationalEfficiency: {
+      cleaningTime: 0,
+      maintenanceResponse: 0,
+      bookingToCheckin: 0,
+      alerts: []
+    },
+    marketIntelligence: {
+      competitorRates: [],
+      demandForecast: [],
+      priceOptimization: []
+    }
+  };
+
+  if (analyticsLoading) {
+    return (
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+          <p className="text-gray-600 mt-2">Loading analytics data...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -99,10 +152,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${analytics?.revenue.projections.nextMonth.toLocaleString()}
+                  ${data?.revenue.projections.nextMonth.toLocaleString()}
                 </div>
                 <p className="text-sm text-gray-500">
-                  {analytics?.revenue.projections.confidence}% confidence
+                  {data?.revenue.projections.confidence}% confidence
                 </p>
                 <Button 
                   variant="outline" 
@@ -144,15 +197,15 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">
-                  {analytics?.occupancy.current}%
+                  {data?.occupancy.current}%
                 </div>
                 <div className="flex items-center text-sm text-gray-500">
-                  {analytics?.occupancy.trend > 0 ? (
+                  {data?.occupancy.trend > 0 ? (
                     <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
                   ) : (
                     <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
                   )}
-                  {Math.abs(analytics?.occupancy.trend || 0)}% vs last period
+                  {Math.abs(data?.occupancy.trend || 0)}% vs last period
                 </div>
                  <Button 
                   variant="outline" 
@@ -185,7 +238,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-purple-600">
-                  {analytics?.customerInsights.repeatCustomerRate}%
+                  {data?.customerInsights.repeatCustomerRate}%
                 </div>
                 <Button 
                   variant="outline" 
@@ -215,7 +268,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-orange-600">
-                  {analytics?.operationalEfficiency.cleaningTime} min
+                  {data?.operationalEfficiency.cleaningTime} min
                 </div>
                  <Button 
                   variant="outline" 
@@ -245,7 +298,7 @@ export default function Analytics() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {analytics?.operationalEfficiency.alerts.map((alert, idx) => (
+              {data?.operationalEfficiency.alerts.map((alert, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 border rounded">
                   <span>{alert.message}</span>
                   <Badge variant={alert.severity === 'high' ? 'destructive' : 'default'}>
@@ -264,7 +317,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {analytics?.marketIntelligence.priceOptimization.map((rec, idx) => (
+                {data?.marketIntelligence.priceOptimization.map((rec, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 border rounded">
                     <div>
                       <span className="font-medium">{rec.period}</span>
