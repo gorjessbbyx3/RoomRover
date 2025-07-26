@@ -135,7 +135,7 @@ export default function Dashboard() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Active Bookings</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Active Memberships</dt>
                   <dd className="text-lg font-medium text-gray-900" data-testid="stat-active-bookings">
                     {statsLoading ? <Skeleton className="h-6 w-8" /> : stats?.activeBookings || 0}
                   </dd>
