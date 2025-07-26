@@ -302,3 +302,89 @@ export default function Profile() {
     </div>
   );
 }
+import { useAuth } from '@/lib/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
+export default function Profile() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+  });
+
+  const handleSave = () => {
+    // TODO: Implement profile update
+    toast({
+      title: 'Profile Updated',
+      description: 'Your profile has been updated successfully.',
+    });
+    setIsEditing(false);
+  };
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto py-6 px-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              disabled={!isEditing}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div>
+            <Label>Role</Label>
+            <Input value={user.role} disabled />
+          </div>
+
+          {user.property && (
+            <div>
+              <Label>Property</Label>
+              <Input value={user.property} disabled />
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button onClick={handleSave}>Save Changes</Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

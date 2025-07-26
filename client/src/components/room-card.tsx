@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
@@ -30,7 +30,7 @@ interface RoomCardProps {
 export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [isViewingRoom, setIsViewingRoom] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
       });
       queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      navigate('/inhouse');
+      setLocation('/inhouse');
     },
     onError: (error: any) => {
       toast({
@@ -96,7 +96,7 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
         title: 'Authentication Required',
         description: 'Please log in to book a room.',
       });
-      navigate('/login');
+      setLocation('/login');
       return;
     }
 
@@ -115,7 +115,7 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
   const handleViewDetails = () => {
     // Verify room ID exists before navigating
     if (room.id) {
-      navigate(`/room/${room.id}`);
+      setLocation(`/room/${room.id}`);
     } else {
       toast({
         variant: 'destructive',

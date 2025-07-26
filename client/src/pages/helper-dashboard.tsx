@@ -216,3 +216,62 @@ export default function HelperDashboard() {
     </div>
   );
 }
+import { useAuth } from '@/lib/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ClipboardList, Home, Wrench } from 'lucide-react';
+import { Link } from 'wouter';
+
+export default function HelperDashboard() {
+  const { user } = useAuth();
+
+  const helperActions = [
+    {
+      title: 'Operations',
+      description: 'View and complete assigned tasks',
+      icon: ClipboardList,
+      href: '/operations',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Room Status',
+      description: 'Check room availability and status',
+      icon: Home,
+      href: '/inhouse',
+      color: 'bg-green-500'
+    }
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Helper Dashboard</h1>
+        <p className="mt-2 text-gray-600">
+          Welcome back, {user?.name}. Here are your available tasks.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {helperActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Card key={action.title} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <div className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center mb-3`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-lg">{action.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">{action.description}</p>
+                <Link href={action.href}>
+                  <Button className="w-full">Access {action.title}</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

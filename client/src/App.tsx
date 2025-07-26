@@ -23,6 +23,9 @@ import Membership from "@/pages/membership";
 import Tracker from "@/pages/tracker";
 import NotFound from "@/pages/not-found";
 import Navigation from "@/components/navigation";
+import Profile from "@/pages/profile";
+import ManagerDashboard from "@/pages/manager-dashboard";
+import HelperDashboard from "@/pages/helper-dashboard";
 
 const queryClient = new QueryClient();
 
@@ -59,20 +62,8 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
-          <Route path="/cleaning">
+          <Route path="/operations">
             <ProtectedRoute allowedRoles={['admin', 'manager', 'helper']}>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/inventory">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/inventory-management">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
               <OperationsDashboard />
             </ProtectedRoute>
           </Route>
@@ -95,51 +86,15 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
-          <Route path="/maintenance">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/maintenance-management">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/operations">
-            <ProtectedRoute allowedRoles={['admin', 'manager', 'helper']}>
-              <OperationsDashboard />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/users">
-            <ProtectedRoute allowedRoles={['admin']}>
-              <UserManagement />
-            </ProtectedRoute>
-          </Route>
-
           <Route path="/user-management">
             <ProtectedRoute allowedRoles={['admin']}>
               <UserManagement />
             </ProtectedRoute>
           </Route>
 
-          <Route path="/banned-users">
-            <ProtectedRoute allowedRoles={['admin']}>
-              <BannedUsersManagement />
-            </ProtectedRoute>
-          </Route>
-
           <Route path="/banned-users-management">
             <ProtectedRoute allowedRoles={['admin']}>
               <BannedUsersManagement />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/master-codes">
-            <ProtectedRoute allowedRoles={['admin']}>
-              <MasterCodesManagement />
             </ProtectedRoute>
           </Route>
 
@@ -154,8 +109,8 @@ function AppRouter() {
               <Reports />
             </ProtectedRoute>
           </Route>
-          
-	 <Route path="/financial-management">
+
+          <Route path="/financial-management">
             <ProtectedRoute allowedRoles={['admin']}>
               <FinancialManagement />
             </ProtectedRoute>
@@ -168,14 +123,8 @@ function AppRouter() {
           </Route>
 
           <Route path="/analytics">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+            <ProtectedRoute allowedRoles={['admin']}>
               <Analytics />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/operations">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 
