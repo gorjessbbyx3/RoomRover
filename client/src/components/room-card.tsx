@@ -1,3 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
+import { apiRequest } from '@/lib/queryClient';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { RoomWithDetails } from '@/lib/types';
@@ -9,6 +14,71 @@ interface RoomCardProps {
 }
 
 export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const bookRoomMutation = useMutation({
+    mutationFn: async (roomId: string) => {
+      if (!user) {
+        throw new Error('You must be logged in to book a room');
+      }
+
+      const response = await apiRequest('POST', '/api/bookings', {
+        roomId,
+        userId: user.id,
+        checkIn: new Date().toISOString(),
+        plan: 'monthly',
+        totalAmount: room.price
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Booking Created',
+        description: `Room ${room.roomNumber} has been successfully booked.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      navigate('/inhouse');
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Booking Failed',
+        description: error.message || 'Failed to book room. Please try again.',
+      });
+    },
+  });
+
+  const handleBookRoom = () => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in to book a room.',
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (room.status !== 'available') {
+      toast({
+        variant: 'destructive',
+        title: 'Room Unavailable',
+        description: 'This room is not currently available for booking.',
+      });
+      return;
+    }
+
+    bookRoomMutation.mutate(room.id);
+  };
+
+  const handleViewDetails = () => {
+    navigate(`/room/${room.id}`);
+  };
+
   const getStatusColor = () => {
     switch (room.status) {
       case 'available':
