@@ -32,6 +32,7 @@ import {
   Fan
 } from 'lucide-react';
 import type { InventoryItem, MaintenanceItem, Room, Property } from '@/lib/types';
+import { useRealtimeUpdates } from '@/hooks/use-realtime-updates';
 
 export default function OperationsDashboard() {
   const { user } = useAuth();
@@ -41,7 +42,7 @@ export default function OperationsDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedProperty, setSelectedProperty] = useState('all');
-  
+
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -50,7 +51,7 @@ export default function OperationsDashboard() {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
-  
+
   // Form states
   const [newItem, setNewItem] = useState({
     propertyId: user?.property || 'P1',
@@ -336,7 +337,7 @@ export default function OperationsDashboard() {
   const roomsNeedingCleaning = rooms.filter(room => room.cleaningStatus === 'dirty');
   const availableRooms = rooms.filter(room => room.status === 'available' && room.cleaningStatus === 'clean');
   const outOfOrderRooms = rooms.filter(room => room.status === 'maintenance');
-  
+
   // Cleaning task metrics
   const pendingTasks = cleaningTasks.filter(task => task.status === 'pending');
   const inProgressTasks = cleaningTasks.filter(task => task.status === 'in_progress');
@@ -494,18 +495,28 @@ export default function OperationsDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Unified view of inventory, room status, and maintenance for {user?.property || 'all properties'}
-        </p>
-        {/* Data freshness indicator */}
-        <div className="mt-2 text-xs text-gray-500">
-          Last updated: {new Date().toLocaleTimeString()} | 
-          Role: {user?.role} | 
-          Property: {user?.property || 'All'}
+      <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
+            <p className="mt-2 text-gray-600">
+              Unified view of inventory, room status, and maintenance for {user?.property || 'all properties'}
+            </p>
+          </div>
+          <Button 
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['inventory'] });
+              queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+              queryClient.invalidateQueries({ queryKey: ['rooms'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/cleaning-tasks'] });
+            }} 
+            variant="outline" 
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
         </div>
-      </div>
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
@@ -717,7 +728,8 @@ export default function OperationsDashboard() {
                   ))}
                   {[...pendingTasks, ...inProgressTasks].length > 5 && (
                     <div className="text-center text-sm text-gray-500 pt-2 border-t">
-                      {[...pendingTasks, ...inProgressTasks].length - 5} more tasks - 
+                      {[...pendingTasks, ...inProgressTasks].length - 5} more tasks - ```text
+
                       <Button variant="link" className="p-0 h-auto ml-1" onClick={() => setActiveTab('cleaning')}>
                         View all
                       </Button>
@@ -743,11 +755,11 @@ export default function OperationsDashboard() {
                 .filter(room => room.propertyId === property.id)
                 .filter(room => filterStatus === 'all' || room.status === filterStatus)
                 .filter(room => room.id.toLowerCase().includes(searchTerm.toLowerCase()));
-              
+
               if (propertyRooms.length === 0) return null;
-              
+
               const gridCols = property.id === 'P1' ? 'grid-cols-4' : 'grid-cols-5';
-              
+
               return (
                 <Card key={property.id} className="shadow-material">
                   <CardHeader className="border-b border-gray-200">
@@ -852,7 +864,7 @@ export default function OperationsDashboard() {
                                 {statusLabel}
                               </div>
                               <div className={`rounded-full mx-auto mt-2 w-3 h-3 ${getStatusDotColor()}`}></div>
-                              
+
                               {/* Additional room info */}
                               <div className="mt-2 space-y-1">
                                 <div className={`text-xs ${getStatusTextColor()}`}>
@@ -864,7 +876,7 @@ export default function OperationsDashboard() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {room.cleaningStatus === 'dirty' && (
                                 <Button size="sm" className="w-full mt-2 text-xs" variant="outline">
                                   Clean
@@ -879,7 +891,7 @@ export default function OperationsDashboard() {
                 </Card>
               );
             })}
-          
+
           {rooms.length === 0 && (
             <Card>
               <CardContent className="p-8">
@@ -1017,9 +1029,9 @@ export default function OperationsDashboard() {
                 .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
                 .map(property => {
                   const propertyInventory = inventory.filter(item => item.propertyId === property.id);
-                  
+
                   if (propertyInventory.length === 0) return null;
-                  
+
                   return (
                     <div key={property.id} className="mb-8">
                       <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -1069,7 +1081,7 @@ export default function OperationsDashboard() {
                                   }>
                                     {isOutOfStock ? 'OUT' : isLowStock ? 'LOW' : 'OK'}
                                   </Badge>
-                                  
+
                                   {/* Restock Button */}
                                   <Dialog open={isRestockDialogOpen && currentItem?.id === item.id} onOpenChange={(open) => {
                                     setIsRestockDialogOpen(open);
@@ -1241,7 +1253,7 @@ export default function OperationsDashboard() {
                     </div>
                   );
                 })}
-              
+
               {inventory.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="h-12 w-12 mx-auto mb-2" />
@@ -1559,7 +1571,7 @@ export default function OperationsDashboard() {
                             </Select>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor="maintenance-issue">Issue Title</Label>
@@ -1607,7 +1619,7 @@ export default function OperationsDashboard() {
                             <input type="checkbox" id="enable-repeat" className="rounded" />
                             <Label htmlFor="enable-repeat" className="font-medium">Enable Repeat Schedule</Label>
                           </div>
-                          
+
                           <div className="grid grid-cols-3 gap-4">
                             <div className="grid gap-2">
                               <Label htmlFor="repeat-frequency">Frequency</Label>
@@ -1646,7 +1658,7 @@ export default function OperationsDashboard() {
                         <div className="border rounded-lg p-4 space-y-4">
                           <Label className="font-medium">Link Inventory Items (Optional)</Label>
                           <p className="text-sm text-gray-600">Select items that may be needed for this maintenance task</p>
-                          
+
                           <div className="grid gap-2 max-h-40 overflow-y-auto border rounded p-2">
                             {inventory.map(item => (
                               <div key={item.id} className="flex items-center space-x-2">
@@ -1664,7 +1676,7 @@ export default function OperationsDashboard() {
                               </div>
                             ))}
                           </div>
-                          
+
                           <div className="text-xs text-gray-500">
                             Selected items will be flagged when maintenance is scheduled and can help with inventory planning.
                           </div>
@@ -1695,12 +1707,12 @@ export default function OperationsDashboard() {
                     const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
                     return priorityOrder[b.priority] - priorityOrder[a.priority];
                   });
-                
+
                 // Skip if property is filtered out
                 if (selectedProperty !== 'all' && selectedProperty !== property.id) {
                   return null;
                 }
-                
+
                 return (
                   <div key={property.id} className="mb-8">
                     <div className="flex items-center justify-between mb-4">
@@ -1725,7 +1737,7 @@ export default function OperationsDashboard() {
                         )}
                       </div>
                     </div>
-                    
+
                     {propertyMaintenance.length > 0 ? (
                       <div className="space-y-4">
                         {propertyMaintenance.map(item => (
@@ -1789,7 +1801,7 @@ export default function OperationsDashboard() {
                   </div>
                 );
               })}
-              
+
               {/* Show message only when no properties match filter */}
               {selectedProperty !== 'all' && !properties.find(p => p.id === selectedProperty) && (
                 <div className="text-center py-8 text-gray-500">
@@ -1814,7 +1826,7 @@ export default function OperationsDashboard() {
               Update room status and request maintenance
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRoom && (
             <div className="space-y-4">
               <div className="grid gap-2">

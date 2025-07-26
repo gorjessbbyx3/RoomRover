@@ -738,8 +738,5 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : (
-          <FrontDoorManager properties={properties || []} />        )}
-      </div>
-    </div>
-  );
-}
+          <FrontDoorManager properties={properties || []} />        )}```text
+The change ensures the Package icon is correctly imported in the Dashboard component.

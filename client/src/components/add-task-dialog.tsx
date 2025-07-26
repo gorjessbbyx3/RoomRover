@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
@@ -22,7 +21,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const [taskData, setTaskData] = useState({
     type: '',
     title: '',
@@ -304,7 +303,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
                 Make this a recurring task
               </Label>
             </div>
-            
+
             {taskData.isRecurring && (
               <div className="ml-6 mt-2">
                 <Label htmlFor="recurring-type">Repeat Frequency</Label>
