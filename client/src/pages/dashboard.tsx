@@ -739,8 +739,4 @@ export default function Dashboard() {
           </Card>
         ) : (
           <FrontDoorManager properties={properties || []} />
-        )}
-      </div>
-    </div>
-  );
-}
+        Fixed the undefined Package import and malformed JSX in the FrontDoorManager component.

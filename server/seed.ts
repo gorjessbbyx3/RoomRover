@@ -5,6 +5,15 @@ import * as bcrypt from 'bcrypt';
 export async function seedDatabase() {
   console.log('🌱 Seeding database...');
 
+  // Test database connection first
+  try {
+    await db.select().from(users).limit(1);
+    console.log('✅ Database connection established');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error?.message);
+    throw new Error('Database connection failed');
+  }
+
   // Create default admin user
   const adminPassword = await bcrypt.hash("admin123", 10);
   await db.insert(users).values({

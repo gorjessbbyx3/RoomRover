@@ -66,15 +66,23 @@ app.use((req, res, next) => {
   // Seed database if using PostgreSQL
   if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')) {
     try {
+      console.log('Attempting to seed database...');
       const { seedDatabase } = await import("./seed");
-      await seedDatabase();
-      console.log('Database seeded successfully');
+      
+      // Add timeout to prevent hanging
+      const seedPromise = seedDatabase();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database seeding timeout')), 15000)
+      );
+      
+      await Promise.race([seedPromise, timeoutPromise]);
+      console.log('✅ Database seeded successfully');
     } catch (error) {
-      console.error('Failed to seed database:', error);
-      console.log('Continuing with in-memory storage...');
+      console.error('❌ Failed to seed database:', error?.message || error);
+      console.log('⚠️  Continuing with in-memory storage...');
     }
   } else {
-    console.log('Using in-memory storage');
+    console.log('📝 Using in-memory storage');
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
