@@ -316,7 +316,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Payment Alerts & System Status */}
         <Card className="shadow-material">
           <CardHeader className="border-b border-gray-200">
@@ -460,7 +460,7 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="p-6">
                   <AddTaskDialog 
                     trigger={
@@ -614,7 +614,7 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
-      
+
       {/* Front Door Code Management */}
       <div className="mt-8">
         <Card className="shadow-material">
