@@ -8,8 +8,7 @@ import ErrorBoundary from "@/components/error-boundary";
 // Import pages
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
-import Rooms from "@/pages/rooms";
-import Bookings from "@/pages/bookings";
+import InHouse from './pages/inhouse';
 import Payments from "@/pages/payments";
 //import Cleaning from "@/pages/cleaning"; // Cleaning page removed
 import BannedUsersManagement from "@/pages/banned-users-management";
@@ -47,15 +46,9 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
-          <Route path="/rooms">
+          <Route path="/inhouse">
             <ProtectedRoute>
-              <Rooms />
-            </ProtectedRoute>
-          </Route>
-
-          <Route path="/bookings">
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <Bookings />
+              <InHouse />
             </ProtectedRoute>
           </Route>
 
