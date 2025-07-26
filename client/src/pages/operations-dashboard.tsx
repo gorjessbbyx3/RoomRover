@@ -726,11 +726,13 @@ export default function OperationsDashboard() {
                 <div className="text-center py-6 text-gray-500">
                   <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
                   <p>No active cleaning tasks</p>
+                ```text
+
                 </div>
               )}
             </CardContent>
           </Card>
-        </        </TabsContent>
+        </TabsContent>
 
         <TabsContent valuee="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
@@ -919,10 +921,10 @@ export default function OperationsDashboard() {
                         Add Item
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md" aria-describedby="inventory-dialog-description">
+                    <DialogContent className="max-w-md" aria-describedby="add-inventory-description">
             <DialogHeader>
               <DialogTitle>Add Inventory Item</DialogTitle>
-              <DialogDescription id="inventory-dialog-description">
+              <DialogDescription id="add-inventory-description">
                 Add a new item to the inventory system
               </DialogDescription>
             </DialogHeader>
@@ -1086,10 +1088,10 @@ export default function OperationsDashboard() {
                                         Restock
                                       </Button>
                                     </DialogTrigger>
-                                     <DialogContent className="max-w-md" aria-describedby="restock-dialog-description">
+                                     <DialogContent className="max-w-md" aria-describedby="restock-description">
             <DialogHeader>
               <DialogTitle>Restock {item.item}</DialogTitle>
-              <DialogDescription id="restock-dialog-description">
+              <DialogDescription id="restock-description">
                 Update inventory quantity for selected item
               </DialogDescription>
             </DialogHeader>
@@ -1574,8 +1576,7 @@ export default function OperationsDashboard() {
                             <Label htmlFor="maintenance-priority">Priority</Label>
                             <Select>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
+                                <SelectValue placeholder="Select priority                              </SelectTrigger>
                               <SelectContent>
                                <SelectItem value="low">Low</SelectItem>
                                 <SelectItem value="medium">Medium</SelectItem>
