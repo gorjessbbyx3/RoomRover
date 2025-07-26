@@ -1,12 +1,29 @@
 
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export class AIEngine {
   
+  private static async callReplitAI(prompt: string, temperature: number = 0.3) {
+    const response = await fetch('https://api.replit.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.REPLIT_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'replit-code-v1.5-3b',
+        messages: [{ role: 'user', content: prompt }],
+        temperature,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Replit AI API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  }
+
   // Smart pricing optimization
   static async optimizePricing(roomData: any, marketData: any, historicalData: any) {
     const prompt = `
@@ -16,16 +33,16 @@ export class AIEngine {
     Market Data: ${JSON.stringify(marketData)}
     Historical Performance: ${JSON.stringify(historicalData)}
     
-    Provide pricing recommendations with confidence scores.
+    Provide pricing recommendations with confidence scores in JSON format.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
-    });
-
-    return this.parsePricingResponse(response.choices[0].message.content);
+    try {
+      const response = await this.callReplitAI(prompt, 0.3);
+      return this.parsePricingResponse(response);
+    } catch (error) {
+      console.error('AI pricing optimization error:', error);
+      return { error: "Failed to generate pricing recommendations" };
+    }
   }
 
   // Predictive maintenance
@@ -37,16 +54,16 @@ export class AIEngine {
     History: ${JSON.stringify(roomHistory)}
     Current Status: ${JSON.stringify(currentStatus)}
     
-    Return probability scores and recommended preventive actions.
+    Return probability scores and recommended preventive actions in JSON format.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2,
-    });
-
-    return this.parseMaintenanceResponse(response.choices[0].message.content);
+    try {
+      const response = await this.callReplitAI(prompt, 0.2);
+      return this.parseMaintenanceResponse(response);
+    } catch (error) {
+      console.error('AI maintenance prediction error:', error);
+      return { error: "Failed to generate maintenance predictions" };
+    }
   }
 
   // Guest communication assistant
@@ -61,13 +78,13 @@ export class AIEngine {
     Keep responses concise, friendly, and informative.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-    });
-
-    return response.choices[0].message.content;
+    try {
+      const response = await this.callReplitAI(prompt, 0.7);
+      return response;
+    } catch (error) {
+      console.error('AI guest response error:', error);
+      return "I apologize, but I'm unable to process your request at the moment. Please contact our support team directly.";
+    }
   }
 
   // Smart inventory management
@@ -78,20 +95,19 @@ export class AIEngine {
     Current Inventory: ${JSON.stringify(currentInventory)}
     Usage Patterns: ${JSON.stringify(usagePatterns)}
     
-    Suggest reorder points, quantities, and cost optimizations.
+    Suggest reorder points, quantities, and cost optimizations in JSON format.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
-    });
-
-    return this.parseInventoryResponse(response.choices[0].message.content);
+    try {
+      const response = await this.callReplitAI(prompt, 0.3);
+      return this.parseInventoryResponse(response);
+    } catch (error) {
+      console.error('AI inventory optimization error:', error);
+      return { error: "Failed to generate inventory recommendations" };
+    }
   }
 
   private static parsePricingResponse(content: string | null) {
-    // Parse AI response into structured pricing data
     try {
       return JSON.parse(content || '{}');
     } catch {
@@ -100,7 +116,6 @@ export class AIEngine {
   }
 
   private static parseMaintenanceResponse(content: string | null) {
-    // Parse AI response into structured maintenance predictions
     try {
       return JSON.parse(content || '{}');
     } catch {
@@ -109,7 +124,6 @@ export class AIEngine {
   }
 
   private static parseInventoryResponse(content: string | null) {
-    // Parse AI response into structured inventory recommendations
     try {
       return JSON.parse(content || '{}');
     } catch {

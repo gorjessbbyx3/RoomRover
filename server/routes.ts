@@ -1985,6 +1985,45 @@ const task = await storage.createCleaningTask(cleanTaskData);
     }
   });
 
+  // AI Playground endpoint
+  app.post("/api/ai/playground", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { prompt, temperature = 0.7 } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      const response = await fetch('https://api.replit.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.REPLIT_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'replit-code-v1.5-3b',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: parseFloat(temperature),
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Replit AI API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      res.json({ 
+        response: data.choices[0].message.content,
+        model: 'replit-code-v1.5-3b',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('AI playground error:', error);
+      res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
   // Predictive maintenance endpoint
   app.get("/api/ai/maintenance-predictions/:roomId", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
