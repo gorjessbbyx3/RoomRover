@@ -165,3 +165,91 @@ export interface InquiryStatus {
     endDate: string;
   } | null;
 }
+
+export interface User {
+  id: string;
+  username: string;
+  role: 'admin' | 'manager' | 'helper';
+  property?: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface InventoryItem {
+  id: string;
+  propertyId: string;
+  item: string;
+  quantity: number;
+  threshold: number;
+  unit: string;
+  notes?: string;
+  lastUpdated: Date;
+}
+
+export interface MaintenanceItem {
+  id: string;
+  propertyId: string;
+  roomId?: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  status: 'open' | 'in_progress' | 'completed';
+  dateReported: Date;
+  completedAt?: Date;
+  notes?: string;
+}
+
+export interface Room {
+  id: string;
+  propertyId: string;
+  number: string;
+  status: 'available' | 'occupied' | 'cleaning' | 'maintenance' | 'out_of_order';
+  cleaningStatus: 'clean' | 'dirty' | 'in_progress';
+  linenStatus: 'fresh' | 'used' | 'washing';
+  doorCode?: string;
+  codeExpiry?: Date;
+  lastCleaned?: Date;
+  lastLinenChange?: Date;
+}
+
+export interface Property {
+  id: string;
+  name: string;
+  address: string;
+  frontDoorCode?: string;
+  rateDaily: string;
+  rateWeekly: string;
+  rateMonthly: string;
+}
+
+export interface CleaningTask {
+  id: string;
+  roomId?: string;
+  propertyId: string;
+  type: string;
+  title: string;
+  description?: string;
+  priority: 'low' | 'normal' | 'high' | 'critical';
+  status: 'pending' | 'in_progress' | 'completed';
+  assignedTo?: string;
+  dueDate?: Date;
+  completedAt?: Date;
+  completedBy?: string;
+  notes?: string;
+  createdAt: Date;
+}
+
+export interface Booking {
+  id: string;
+  roomId: string;
+  guestId: string;
+  plan: string;
+  startDate: Date;
+  endDate?: Date;
+  totalAmount: string;
+  paymentStatus: 'pending' | 'paid' | 'overdue';
+  doorCode?: string;
+  frontDoorCode?: string;
+  codeExpiry?: Date;
+  notes?: string;
+}

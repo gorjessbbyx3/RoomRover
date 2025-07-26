@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
@@ -22,6 +21,7 @@ import {
   ClipboardList,
   Zap
 } from 'lucide-react';
+import type { InventoryItem, MaintenanceItem, Room } from '@/lib/types';
 
 interface InventoryItem {
   id: string;
@@ -70,12 +70,12 @@ export default function OperationsDashboard() {
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch inventory`);
       }
       const data = await response.json();
-      
+
       // Validate inventory data structure
       if (!Array.isArray(data)) {
         throw new Error('Invalid inventory data format - expected array');
       }
-      
+
       return data.map((item, index) => {
         if (!item.id || !item.item || typeof item.quantity !== 'number') {
           console.warn(`Invalid inventory item at index ${index}:`, item);
@@ -103,15 +103,15 @@ export default function OperationsDashboard() {
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch maintenance`);
       }
       const data = await response.json();
-      
+
       // Validate maintenance data structure
       if (!Array.isArray(data)) {
         throw new Error('Invalid maintenance data format - expected array');
       }
-      
+
       const validPriorities = ['low', 'medium', 'high', 'critical'];
       const validStatuses = ['open', 'in_progress', 'completed'];
-      
+
       return data.map((item, index) => {
         if (!item.id || !item.issue) {
           console.warn(`Invalid maintenance item at index ${index}:`, item);
@@ -139,15 +139,15 @@ export default function OperationsDashboard() {
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch rooms`);
       }
       const data = await response.json();
-      
+
       // Validate room data structure
       if (!Array.isArray(data)) {
         throw new Error('Invalid rooms data format - expected array');
       }
-      
+
       const validStatuses = ['available', 'occupied', 'cleaning', 'maintenance'];
       const validCleaningStatuses = ['clean', 'dirty', 'in_progress'];
-      
+
       return data.map((room, index) => {
         if (!room.id || !room.propertyId) {
           console.warn(`Invalid room at index ${index}:`, room);
@@ -220,7 +220,7 @@ export default function OperationsDashboard() {
           <Badge className="bg-red-100 text-red-800">URGENT</Badge>
         </div>
       ))}
-      
+
       {outOfStockItems.map(item => (
         <div key={item.id} className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
           <Package className="h-5 w-5 text-red-600 mr-3" />
@@ -231,7 +231,7 @@ export default function OperationsDashboard() {
           <Badge className="bg-red-100 text-red-800">OUT</Badge>
         </div>
       ))}
-      
+
       {lowStockItems.filter(item => item.quantity > 0).map(item => (
         <div key={item.id} className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <TrendingDown className="h-5 w-5 text-yellow-600 mr-3" />
@@ -500,7 +500,7 @@ export default function OperationsDashboard() {
                           {room.status}
                         </Badge>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Cleaning:</span>
@@ -549,7 +549,7 @@ export default function OperationsDashboard() {
                 {inventory.map(item => {
                   const isOutOfStock = item.quantity === 0;
                   const isLowStock = item.quantity <= item.threshold && item.quantity > 0;
-                  
+
                   return (
                     <div key={item.id} className={`border rounded-lg p-4 ${
                       isOutOfStock ? 'border-red-200 bg-red-50' : 
