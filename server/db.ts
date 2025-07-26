@@ -16,5 +16,7 @@ if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
 
 console.log('Connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
 
-const sql = neon(databaseUrl);
+const sql = neon(databaseUrl, {
+  ssl: 'require'
+});
 export const db = drizzle(sql, { schema });
