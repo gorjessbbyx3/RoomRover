@@ -14,7 +14,7 @@ run = ["npm", "run", "start"]
 VITE_API_URL = "http://localhost:5000"
 
 [workflows]
-runButton = "SSL Database Server"
+runButton = "Fixed Database Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -201,6 +201,27 @@ args = "npm run dev"
 
 [[workflows.workflow]]
 name = "SSL Database Server"
+author = 43369170
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"tsx.*server\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"npm run dev\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sleep 3"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Fixed Database Server"
 author = 43369170
 mode = "sequential"
 
