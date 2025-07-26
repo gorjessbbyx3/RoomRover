@@ -130,6 +130,15 @@ export const maintenance = pgTable("maintenance", {
   assignedTo: varchar("assigned_to").references(() => users.id),
   dateReported: timestamp("date_reported").defaultNow(),
   dateCompleted: timestamp("date_completed"),
+  dueDate: timestamp("due_date"),
+  // Repeat schedule fields
+  isRecurring: boolean("is_recurring").default(false),
+  repeatFrequency: text("repeat_frequency"), // daily, weekly, monthly
+  repeatInterval: integer("repeat_interval").default(1), // every X days/weeks/months
+  repeatEndDate: timestamp("repeat_end_date"),
+  parentMaintenanceId: varchar("parent_maintenance_id").references(() => maintenance.id),
+  // Inventory linking
+  linkedInventoryIds: text("linked_inventory_ids"), // JSON array of inventory item IDs
   notes: text("notes"),
 });
 

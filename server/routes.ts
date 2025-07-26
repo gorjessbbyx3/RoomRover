@@ -1351,10 +1351,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Maintenance management endpoints
   app.post("/api/maintenance", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      const maintenanceData = req.body;
+      const maintenanceData = {
+        ...req.body,
+        reportedBy: req.user.id
+      };
+
+      // Handle inventory linking
+      if (req.body.linkedInventoryIds && Array.isArray(req.body.linkedInventoryIds)) {
+        maintenanceData.linkedInventoryIds = JSON.stringify(req.body.linkedInventoryIds);
+      }
+
       const item = await storage.createMaintenanceItem(maintenanceData);
+
+      // Create recurring instances if repeat is enabled
+      if (req.body.isRecurring && req.body.repeatFrequency) {
+        const { repeatFrequency, repeatInterval = 1, repeatEndDate } = req.body;
+        const startDate = new Date(req.body.dueDate || Date.now());
+        const endDate = repeatEndDate ? new Date(repeatEndDate) : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000); // Default 1 year
+
+        let currentDate = new Date(startDate);
+        const instances = [];
+
+        while (currentDate <= endDate && instances.length < 50) { // Limit to 50 instances
+          const nextDate = new Date(currentDate);
+          
+          switch (repeatFrequency) {
+            case 'daily':
+              nextDate.setDate(nextDate.getDate() + repeatInterval);
+              break;
+            case 'weekly':
+              nextDate.setDate(nextDate.getDate() + (7 * repeatInterval));
+              break;
+            case 'monthly':
+              nextDate.setMonth(nextDate.getMonth() + repeatInterval);
+              break;
+          }
+
+          if (nextDate <= endDate) {
+            const instanceData = {
+              ...maintenanceData,
+              dueDate: nextDate,
+              parentMaintenanceId: item.id,
+              isRecurring: false // Child instances are not recurring themselves
+            };
+            delete instanceData.id; // Remove ID so new one is generated
+            
+            instances.push(instanceData);
+          }
+
+          currentDate = nextDate;
+        }
+
+        // Create all recurring instances
+        for (const instanceData of instances) {
+          await storage.createMaintenanceItem(instanceData);
+        }
+      }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'maintenance_created',
+        details: `${req.user.name} created maintenance request: ${maintenanceData.issue}${req.body.isRecurring ? ' (with recurring schedule)' : ''}`
+      });
+
       res.status(201).json(item);
     } catch (error) {
+      console.error('Maintenance creation error:', error);
       res.status(500).json({ error: 'Failed to create maintenance item' });
     }
   });

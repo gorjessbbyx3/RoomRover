@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import AddTaskDialog from '@/components/add-task-dialog';
 import { 
   Package, 
   AlertTriangle, 
@@ -1264,7 +1263,118 @@ export default function OperationsDashboard() {
                   </CardTitle>
                   <CardDescription>Manage cleaning tasks and schedules for all properties</CardDescription>
                 </div>
-                <AddTaskDialog />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Create Cleaning Task</DialogTitle>
+                      <DialogDescription>
+                        Add a new cleaning task for rooms or common areas
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-type">Task Type</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select task type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="room_cleaning">Room Cleaning</SelectItem>
+                              <SelectItem value="deep_cleaning">Deep Cleaning</SelectItem>
+                              <SelectItem value="maintenance_cleaning">Maintenance Cleaning</SelectItem>
+                              <SelectItem value="common_area">Common Area</SelectItem>
+                              <SelectItem value="laundry">Laundry</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-priority">Priority</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="critical">Critical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-title">Task Title</Label>
+                        <Input
+                          id="task-title"
+                          placeholder="e.g., Clean Room P1-R1, Vacuum Common Area"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-property">Property</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select property" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {properties.map(property => (
+                                <SelectItem key={property.id} value={property.id}>
+                                  {property.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-room">Room (Optional)</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select room" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No specific room</SelectItem>
+                              {rooms.map(room => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-description">Description</Label>
+                        <Textarea
+                          id="task-description"
+                          placeholder="Detailed description of the cleaning task..."
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-due-date">Due Date (Optional)</Label>
+                        <Input
+                          id="task-due-date"
+                          type="datetime-local"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline">
+                        Cancel
+                      </Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        Create Task
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -1401,51 +1511,228 @@ export default function OperationsDashboard() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button>
-                    <Wrench className="h-4 w-4 mr-2" />
-                    Report Issue
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Wrench className="h-4 w-4 mr-2" />
+                        Report Issue
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Report Maintenance Issue</DialogTitle>
+                        <DialogDescription>
+                          Create a new maintenance request with optional repeat schedule and inventory linking
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="maintenance-property">Property</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select property" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {properties.map(property => (
+                                  <SelectItem key={property.id} value={property.id}>
+                                    {property.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="maintenance-room">Room (Optional)</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select room" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No specific room</SelectItem>
+                                {rooms.map(room => (
+                                  <SelectItem key={room.id} value={room.id}>
+                                    {room.id}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="maintenance-issue">Issue Title</Label>
+                            <Input
+                              id="maintenance-issue"
+                              placeholder="Brief description of the issue"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="maintenance-priority">Priority</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="critical">Critical</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="maintenance-description">Detailed Description</Label>
+                          <Textarea
+                            id="maintenance-description"
+                            placeholder="Provide detailed information about the maintenance issue..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="maintenance-due-date">Due Date (Optional)</Label>
+                          <Input
+                            id="maintenance-due-date"
+                            type="datetime-local"
+                          />
+                        </div>
+
+                        {/* Repeat Schedule Section */}
+                        <div className="border rounded-lg p-4 space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" id="enable-repeat" className="rounded" />
+                            <Label htmlFor="enable-repeat" className="font-medium">Enable Repeat Schedule</Label>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="repeat-frequency">Frequency</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select frequency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="daily">Daily</SelectItem>
+                                  <SelectItem value="weekly">Weekly</SelectItem>
+                                  <SelectItem value="monthly">Monthly</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="repeat-interval">Every</Label>
+                              <Input
+                                id="repeat-interval"
+                                type="number"
+                                min="1"
+                                placeholder="1"
+                                defaultValue="1"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="repeat-end">End Date</Label>
+                              <Input
+                                id="repeat-end"
+                                type="date"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Inventory Linking Section */}
+                        <div className="border rounded-lg p-4 space-y-4">
+                          <Label className="font-medium">Link Inventory Items (Optional)</Label>
+                          <p className="text-sm text-gray-600">Select items that may be needed for this maintenance task</p>
+                          
+                          <div className="grid gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                            {inventory.map(item => (
+                              <div key={item.id} className="flex items-center space-x-2">
+                                <input 
+                                  type="checkbox" 
+                                  id={`inventory-${item.id}`}
+                                  className="rounded"
+                                />
+                                <Label htmlFor={`inventory-${item.id}`} className="text-sm flex-1">
+                                  {item.item} - {item.quantity} {item.unit} available
+                                  {item.quantity <= item.threshold && (
+                                    <span className="text-orange-600 ml-2">(Low Stock)</span>
+                                  )}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="text-xs text-gray-500">
+                            Selected items will be flagged when maintenance is scheduled and can help with inventory planning.
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline">
+                          Cancel
+                        </Button>
+                        <Button className="bg-red-600 hover:bg-red-700">
+                          <Wrench className="h-4 w-4 mr-2" />
+                          Create Maintenance Request
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              {/* Group maintenance by property */}
-              {properties
-                .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
-                .map(property => {
-                  const propertyMaintenance = maintenance
-                    .filter(item => item.propertyId === property.id)
-                    .filter(item => item.status !== 'completed')
-                    .sort((a, b) => {
-                      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-                      return priorityOrder[b.priority] - priorityOrder[a.priority];
-                    });
-                  
-                  if (propertyMaintenance.length === 0) return null;
-                  
-                  return (
-                    <div key={property.id} className="mb-8">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold flex items-center">
-                          <Home className="h-5 w-5 mr-2" />
-                          {property.name}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {propertyMaintenance.length} open items
+              {/* Always show both properties, even if no maintenance items */}
+              {properties.map(property => {
+                const propertyMaintenance = maintenance
+                  .filter(item => item.propertyId === property.id)
+                  .filter(item => selectedProperty === 'all' || property.id === selectedProperty)
+                  .filter(item => item.status !== 'completed')
+                  .sort((a, b) => {
+                    const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                  });
+                
+                // Skip if property is filtered out
+                if (selectedProperty !== 'all' && selectedProperty !== property.id) {
+                  return null;
+                }
+                
+                return (
+                  <div key={property.id} className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <Home className="h-5 w-5 mr-2" />
+                        {property.name}
+                        <span className="text-sm text-gray-500 ml-2">({property.id})</span>
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {propertyMaintenance.length} open items
+                        </Badge>
+                        {propertyMaintenance.filter(item => item.priority === 'critical').length > 0 && (
+                          <Badge className="bg-red-100 text-red-800 text-xs">
+                            {propertyMaintenance.filter(item => item.priority === 'critical').length} critical
                           </Badge>
-                          {propertyMaintenance.filter(item => item.priority === 'critical').length > 0 && (
-                            <Badge className="bg-red-100 text-red-800 text-xs">
-                              {propertyMaintenance.filter(item => item.priority === 'critical').length} critical
-                            </Badge>
-                          )}
-                        </div>
+                        )}
+                        {propertyMaintenance.filter(item => item.priority === 'high').length > 0 && (
+                          <Badge className="bg-orange-100 text-orange-800 text-xs">
+                            {propertyMaintenance.filter(item => item.priority === 'high').length} high
+                          </Badge>
+                        )}
                       </div>
+                    </div>
+                    
+                    {propertyMaintenance.length > 0 ? (
                       <div className="space-y-4">
                         {propertyMaintenance.map(item => (
                           <div key={item.id} className={`border rounded-lg p-4 ${
                             item.priority === 'critical' ? 'border-red-200 bg-red-50' :
                             item.priority === 'high' ? 'border-orange-200 bg-orange-50' :
+                            item.priority === 'medium' ? 'border-yellow-200 bg-yellow-50' :
                             'border-gray-200'
                           }`}>
                             <div className="flex justify-between items-start">
@@ -1455,42 +1742,59 @@ export default function OperationsDashboard() {
                                   <Badge className={getStatusColor(item.priority, 'maintenance')}>
                                     {item.priority}
                                   </Badge>
+                                  {item.roomId && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.roomId}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="text-sm text-gray-600 mb-2">
-                                  {item.roomId && <span>Room {item.roomId} • </span>}
                                   Reported {new Date(item.dateReported).toLocaleDateString()}
+                                  {item.reportedBy && <span> by Staff</span>}
                                   {item.description && (
-                                    <div className="mt-1 text-gray-500">
+                                    <div className="mt-1 text-gray-500 bg-white bg-opacity-50 p-2 rounded text-xs">
                                       {item.description}
                                     </div>
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  Days open: {Math.floor((new Date().getTime() - new Date(item.dateReported).getTime()) / (1000 * 60 * 60 * 24))}
+                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                  <span>Days open: {Math.floor((new Date().getTime() - new Date(item.dateReported).getTime()) / (1000 * 60 * 60 * 24))}</span>
+                                  {item.assignedTo && <span>Assigned</span>}
+                                  <span className="capitalize">{item.status.replace('_', ' ')}</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 ml-4">
-                                <Badge variant="outline" className="text-xs">
-                                  {item.status.replace('_', ' ')}
-                                </Badge>
                                 <Button size="sm" variant="outline">
                                   <Edit className="h-3 w-3 mr-1" />
                                   Update
                                 </Button>
+                                {item.status === 'open' && (
+                                  <Button size="sm" variant="outline" className="text-green-600">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Complete
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  );
-                })}
+                    ) : (
+                      <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                        <p className="text-sm">No open maintenance requests</p>
+                        <p className="text-xs text-gray-400">Property is in good condition</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               
-              {maintenance.filter(item => item.status !== 'completed').length === 0 && (
+              {/* Show message only when no properties match filter */}
+              {selectedProperty !== 'all' && !properties.find(p => p.id === selectedProperty) && (
                 <div className="text-center py-8 text-gray-500">
                   <Wrench className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No open maintenance requests</p>
-                  <p className="text-sm">All properties are in good condition</p>
+                  <p>No properties found</p>
                 </div>
               )}
             </CardContent>
