@@ -828,9 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove fields that aren't in the schema
       const { isRecurring, recurringType, linkedInventoryItems, ...cleanTaskData } = taskData;
 
-```text
-
-      const task = await storage.createCleaningTask(cleanTaskData);
+const task = await storage.createCleaningTask(cleanTaskData);
 
       // Log task creation
       await storage.createAuditLog({
