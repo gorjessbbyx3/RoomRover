@@ -25,9 +25,12 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
     }
 
     if (!token) {
-      console.log('No token provided');
+      console.log('No token provided. Auth header:', authHeader);
+      console.log('Request headers:', JSON.stringify(req.headers, null, 2));
       return res.status(401).json({ error: 'No token provided' });
     }
+
+    console.log('Token received:', token.substring(0, 10) + '...');
 
     // In a real app, verify JWT token
     // For now, just use the token as user ID
@@ -38,6 +41,7 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
         return res.status(401).json({ error: 'Invalid token' });
       }
 
+      console.log('User authenticated:', user.username);
       req.user = user;
       next();
     } catch (storageError) {
@@ -108,6 +112,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         property: req.user.property,
         name: req.user.name 
       } 
+    });
+  });
+
+  // Test endpoint for debugging authentication
+  app.get("/api/test/auth", (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = localStorage?.getItem ? 'client-side' : 'server-side';
+    
+    res.json({
+      authHeader,
+      hasBearer: authHeader?.startsWith('Bearer '),
+      token: authHeader ? authHeader.substring(0, 20) + '...' : null,
+      environment: token,
+      allHeaders: Object.keys(req.headers)
     });
   });
 

@@ -85,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Password must be at least 6 characters');
       }
 
+      console.log('Attempting login for username:', username);
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,11 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Invalid response from server');
       }
 
+      console.log('Login successful, token received:', token.substring(0, 10) + '...');
       localStorage.setItem('token', token);
 
       // Verify the token immediately
       await verifyToken();
+      console.log('Token verification complete');
     } catch (error) {
+      console.error('Login error:', error);
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       throw new Error(message);
     }
