@@ -24,13 +24,14 @@ import OperationsDashboard from "@/pages/operations-dashboard";
 import Membership from "@/pages/membership";
 import Tracker from "@/pages/tracker";
 import NotFound from "@/pages/not-found";
+import Navigation from "@/components/navigation";
 
 const queryClient = new QueryClient();
 
 function AppRouter() {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
+      <Navigation>
         <Switch>
           <Route path="/login" component={Login} />
           <Route path="/membership" component={Membership} />
@@ -90,7 +91,19 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
+          <Route path="/maintenance-management">
+            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <MaintenanceManagement />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/users">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserManagement />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/user-management">
             <ProtectedRoute allowedRoles={['admin']}>
               <UserManagement />
             </ProtectedRoute>
@@ -102,7 +115,19 @@ function AppRouter() {
             </ProtectedRoute>
           </Route>
 
+          <Route path="/banned-users-management">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <BannedUsersManagement />
+            </ProtectedRoute>
+          </Route>
+
           <Route path="/master-codes">
+            <ProtectedRoute allowedRoles={['admin']}>
+              <MasterCodesManagement />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/master-codes-management">
             <ProtectedRoute allowedRoles={['admin']}>
               <MasterCodesManagement />
             </ProtectedRoute>
@@ -134,7 +159,7 @@ function AppRouter() {
 
           <Route component={NotFound} />
         </Switch>
-      </div>
+      </Navigation>
     </AuthProvider>
   );
 }
