@@ -22,24 +22,29 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
-import * as schema from "../shared/schema";
 
+// Only import database dependencies if DATABASE_URL is available
+let db: any = null;
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is required");
+
+if (databaseUrl) {
+  try {
+    const { drizzle } = await import("drizzle-orm/neon-http");
+    const { neon } = await import("@neondatabase/serverless");
+    const schema = await import("../shared/schema");
+    
+    // Verify we're not using localhost
+    if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
+      console.warn("DATABASE_URL is pointing to localhost. Using in-memory storage instead.");
+    } else {
+      console.log('Storage connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
+      const sql = neon(databaseUrl);
+      db = drizzle(sql, { schema });
+    }
+  } catch (error) {
+    console.warn('Database connection failed, using in-memory storage:', error);
+  }
 }
-
-// Verify we're not using localhost
-if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
-  throw new Error("DATABASE_URL is pointing to localhost. Please use the external database URL from Render.");
-}
-
-console.log('Storage connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
-
-const sql = neon(databaseUrl);
-export const db = drizzle(sql, { schema });
 
 export type DB = typeof db;
 
@@ -575,10 +580,7 @@ export class MemStorage implements IStorage {
     return updatedTask;
   }
 
-  // Complete API coverage - missing methods
-  async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
+  
 
   
 
@@ -722,6 +724,21 @@ export class MemStorage implements IStorage {
     };
     this.bannedList.set(id, bannedUser);
     return bannedUser;
+  }
+
+  async getMasterCodes(): Promise<any[]> {
+    return Array.from(this.masterCodes.values());
+  }
+
+  async addMasterCode(data: {property: string; masterCode: string; notes?: string;}): Promise<any> {
+    const id = randomUUID();
+    const masterCode = {
+      id,
+      ...data,
+      createdAt: new Date(),
+    };
+    this.masterCodes.set(id, masterCode);
+    return masterCode;
   }
 
   

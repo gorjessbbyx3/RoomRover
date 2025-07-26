@@ -1,10 +1,13 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedDatabase } from "./seed";
+
+// Load environment variables
+import { config } from 'dotenv';
+config();
 
 // Ensure environment variables are loaded
-console.log('Environment DATABASE_URL:', process.env.DATABASE_URL?.replace(/:([^:@]{1,}@)/, ':***@'));
+console.log('Environment DATABASE_URL:', process.env.DATABASE_URL?.replace(/:([^:@]{1,}@)/, ':***@') || 'Not set - using in-memory storage');
 
 const app = express();
 app.use(express.json());
@@ -61,12 +64,17 @@ app.use((req, res, next) => {
   }
 
   // Seed database if using PostgreSQL
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')) {
     try {
+      const { seedDatabase } = await import("./seed");
       await seedDatabase();
+      console.log('Database seeded successfully');
     } catch (error) {
       console.error('Failed to seed database:', error);
+      console.log('Continuing with in-memory storage...');
     }
+  } else {
+    console.log('Using in-memory storage');
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
