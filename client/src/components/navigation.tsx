@@ -110,11 +110,15 @@ function AppSidebar() {
                 <SidebarMenuButton 
                   asChild
                   isActive={isActive}
-                  className="text-white hover:bg-primary-600 data-[active=true]:bg-primary-600"
+                  className={`text-white hover:bg-primary-600 transition-colors ${
+                    isActive 
+                      ? 'bg-primary-600 border-l-4 border-white shadow-lg' 
+                      : 'hover:bg-primary-600'
+                  }`}
                 >
                   <Link href={item.href}>
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} />
+                    <span className={isActive ? 'font-semibold' : ''}>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

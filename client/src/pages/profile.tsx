@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User } from 'lucide-react';
+import { User, Camera } from 'lucide-react';
+import ImageUploader from '@/components/image-uploader';
 
 interface ProfileForm {
   name: string;
@@ -25,6 +26,7 @@ export default function Profile() {
     email: '',
     phone: ''
   });
+  const [profilePicture, setProfilePicture] = useState<string>('');
 
   useEffect(() => {
     if (user) {
@@ -33,6 +35,7 @@ export default function Profile() {
         email: user.email || '',
         phone: user.phone || ''
       });
+      setProfilePicture(user.profilePicture || '');
     }
   }, [user]);
 
@@ -129,6 +132,38 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                {profilePicture ? (
+                  <img 
+                    src={profilePicture} 
+                    alt="Profile" 
+                    className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0"
+                >
+                  <Camera className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="w-full">
+                <Label>Profile Picture</Label>
+                <ImageUploader 
+                  onImageUploaded={setProfilePicture}
+                  maxSize={2}
+                  accept="image/*"
+                />
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="name">Full Name *</Label>
               <Input

@@ -4,8 +4,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RoomWithDetails } from '@/lib/types';
+import { Trash2, Eye, Home } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface RoomCardProps {
   room: RoomWithDetails;
@@ -52,6 +65,27 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
     },
   });
 
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: string) => {
+      const response = await apiRequest('DELETE', `/api/rooms/${roomId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Room Deleted',
+        description: `Room ${room.roomNumber} has been successfully deleted.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete room. Please try again.',
+      });
+    },
+  });
+
   const handleBookRoom = () => {
     if (!user) {
       toast({
@@ -76,7 +110,28 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
   };
 
   const handleViewDetails = () => {
-    navigate(`/room/${room.id}`);
+    // Verify room ID exists before navigating
+    if (room.id) {
+      navigate(`/room/${room.id}`);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Room',
+        description: 'Room information is incomplete. Please refresh and try again.',
+      });
+    }
+  };
+
+  const handleDeleteRoom = () => {
+    if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+      toast({
+        variant: 'destructive',
+        title: 'Permission Denied',
+        description: 'You do not have permission to delete rooms.',
+      });
+      return;
+    }
+    deleteRoomMutation.mutate(room.id);
   };
 
   const getStatusColor = () => {
@@ -156,6 +211,65 @@ export default function RoomCard({ room, onClick, size = 'sm' }: RoomCardProps) 
           getStatusDotColor(),
           size === 'sm' ? 'w-2 h-2' : 'w-3 h-3'
         )}></div>
+        
+        {size !== 'sm' && (
+          <div className="mt-4 flex gap-2 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewDetails}
+              className="flex-1"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View
+            </Button>
+            
+            {room.status === 'available' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleBookRoom}
+                disabled={bookRoomMutation.isPending}
+                className="flex-1"
+              >
+                <Home className="h-3 w-3 mr-1" />
+                {bookRoomMutation.isPending ? 'Booking...' : 'Book'}
+              </Button>
+            )}
+            
+            {user && (user.role === 'admin' || user.role === 'manager') && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Room</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete room {room.roomNumber}? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteRoom}
+                      disabled={deleteRoomMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {deleteRoomMutation.isPending ? 'Deleting...' : 'Delete Room'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

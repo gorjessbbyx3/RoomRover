@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,9 @@ export default function Rooms() {
   const [selectedRoom, setSelectedRoom] = useState<RoomWithDetails | null>(null);
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [codeDuration, setCodeDuration] = useState('monthly');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: rooms, isLoading } = useQuery<RoomWithDetails[]>({
     queryKey: ['/api/rooms'],
@@ -112,6 +115,29 @@ export default function Rooms() {
     return new Date(dateString).toLocaleString();
   };
 
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+
+    setIsSearching(true);
+    try {
+      // Simulate search delay for UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // The filtering happens in filteredRooms below
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const filteredRooms = rooms?.filter(room => {
+    const matchesSearch = room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         room.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  // Show empty state when search returns no results
+  const showEmptyState = searchTerm && filteredRooms.length === 0;
+
   if (!user) return null;
 
   return (
@@ -136,6 +162,22 @@ export default function Rooms() {
             </p>
           </div>
           <div className="flex space-x-2">
+            <div className="flex gap-2 max-w-sm">
+              <Input
+                placeholder="Search rooms..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <Button 
+                onClick={handleSearch}
+                disabled={isSearching}
+                variant="outline"
+                size="sm"
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </Button>
+            </div>
             <Button 
               className="bg-primary-500 hover:bg-primary-600"
               data-testid="button-bulk-generate-codes"
@@ -259,6 +301,24 @@ export default function Rooms() {
           )}
         </CardContent>
       </Card>
+      {showEmptyState ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No rooms found matching "{searchTerm}"</p>
+            <Button 
+              variant="outline" 
+              onClick={() => setSearchTerm('')}
+              className="mt-4"
+            >
+              Clear Search
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredRooms.map((room) => (
+              null
+            ))}
+          </div>
+        )}
 
       {/* Generate Code Dialog */}
       <Dialog open={codeDialogOpen} onOpenChange={setCodeDialogOpen}>
