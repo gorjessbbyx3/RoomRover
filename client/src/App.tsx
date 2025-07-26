@@ -12,8 +12,7 @@ import Rooms from "@/pages/rooms";
 import Bookings from "@/pages/bookings";
 import Payments from "@/pages/payments";
 import Cleaning from "@/pages/cleaning";
-import InventoryManagement from "@/pages/inventory-management";
-import MaintenanceManagement from "@/pages/maintenance-management";
+
 import BannedUsersManagement from "@/pages/banned-users-management";
 import MasterCodesManagement from "@/pages/master-codes-management";
 import UserManagement from "@/pages/user-management";
@@ -75,25 +74,31 @@ function AppRouter() {
 
           <Route path="/inventory">
             <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <InventoryManagement />
+              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 
           <Route path="/inventory-management">
             <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <InventoryManagement />
+              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 
           <Route path="/maintenance">
             <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <MaintenanceManagement />
+              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 
           <Route path="/maintenance-management">
             <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <MaintenanceManagement />
+              <OperationsDashboard />
+            </ProtectedRoute>
+          </Route>
+
+          <Route path="/operations">
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'helper']}>
+              <OperationsDashboard />
             </ProtectedRoute>
           </Route>
 
