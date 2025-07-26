@@ -730,7 +730,8 @@ export default function OperationsDashboard() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </Tabs```
+Content>
 
         <TabsContent value="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
@@ -1966,7 +1967,9 @@ export default function OperationsDashboard() {
                 setMaintenanceRequest({
                   issue: '',
                   priority: 'medium',
-                  notes: ''
+                  notes: '',
+                  propertyId: '',
+                  roomId: undefined
                 });
               }}
             >
