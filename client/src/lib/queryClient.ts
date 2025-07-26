@@ -1,3 +1,4 @@
+
 import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
@@ -13,17 +14,22 @@ export const queryClient = new QueryClient({
   },
 });
 
-export async function apiRequest(endpoint: string, options: RequestInit = {}) {
+export async function apiRequest(method: string, endpoint: string, data?: any) {
   const token = localStorage.getItem('token');
   
-  const response = await fetch(endpoint, {
-    ...options,
+  const config: RequestInit = {
+    method,
     headers: {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
     },
-  });
+  };
+
+  if (data && method !== 'GET') {
+    config.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(endpoint, config);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
