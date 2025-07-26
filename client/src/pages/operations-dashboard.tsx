@@ -14,43 +14,12 @@ import {
   Clock, 
   Wrench, 
   Home,
-  Search,
-  Filter,
   TrendingDown,
   ShoppingCart,
   ClipboardList,
   Zap
 } from 'lucide-react';
 import type { InventoryItem, MaintenanceItem, Room } from '@/lib/types';
-
-interface InventoryItem {
-  id: string;
-  propertyId: string;
-  item: string;
-  quantity: number;
-  threshold: number;
-  unit: string;
-  lastUpdated: string;
-}
-
-interface MaintenanceItem {
-  id: string;
-  propertyId: string;
-  roomId?: string;
-  issue: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'open' | 'in_progress' | 'completed';
-  dateReported: string;
-}
-
-interface Room {
-  id: string;
-  propertyId: string;
-  roomNumber: number;
-  status: 'available' | 'occupied' | 'cleaning' | 'maintenance';
-  cleaningStatus: 'clean' | 'dirty' | 'in_progress';
-  lastCleaned: string | null;
-}
 
 export default function OperationsDashboard() {
   const { user } = useAuth();
@@ -175,7 +144,6 @@ export default function OperationsDashboard() {
 
   const getStatusColor = (status: string, type: 'maintenance' | 'inventory' | 'room') => {
     if (type === 'maintenance') {
-      // For maintenance items, status can be priority levels
       const validPriorities = ['low', 'medium', 'high', 'critical'];
       const validStatuses = ['open', 'in_progress', 'completed'];
 
@@ -196,8 +164,9 @@ export default function OperationsDashboard() {
         }
       }
       return 'bg-gray-100 text-gray-800';
-    } else {
-      // For inventory items
+    }
+    
+    if (type === 'inventory') {
       const validStatuses = ['low_stock', 'out_of_stock', 'in_stock'];
       if (!validStatuses.includes(status)) return 'bg-gray-100 text-gray-800';
 
@@ -208,16 +177,33 @@ export default function OperationsDashboard() {
         default: return 'bg-gray-100 text-gray-800';
       }
     }
+    
     if (type === 'room') {
-      if (status === 'available') return 'bg-green-100 text-green-800';
-      if (status === 'occupied') return 'bg-blue-100 text-blue-800';
-      if (status === 'cleaning') return 'bg-yellow-100 text-yellow-800';
-      if (status === 'maintenance') return 'bg-red-100 text-red-800';
+      switch (status) {
+        case 'available': return 'bg-green-100 text-green-800';
+        case 'occupied': return 'bg-blue-100 text-blue-800';
+        case 'cleaning': return 'bg-yellow-100 text-yellow-800';
+        case 'maintenance': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
     }
+    
     return 'bg-gray-100 text-gray-800';
   };
 
-  const QuickActionCard = ({ title, count, icon: Icon, color, action }: any) => (
+  const QuickActionCard = ({ 
+    title, 
+    count, 
+    icon: Icon, 
+    color, 
+    action 
+  }: {
+    title: string;
+    count: number;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    action: () => void;
+  }) => (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={action}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -234,7 +220,7 @@ export default function OperationsDashboard() {
   const AlertsList = () => (
     <div className="space-y-3">
       {criticalMaintenance.map(item => (
-        <div key={item.id} className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div key={`critical-${item.id}`} className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
           <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
           <div className="flex-1">
             <p className="font-medium text-red-800">{item.issue}</p>
@@ -245,7 +231,7 @@ export default function OperationsDashboard() {
       ))}
 
       {outOfStockItems.map(item => (
-        <div key={item.id} className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div key={`outofstock-${item.id}`} className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
           <Package className="h-5 w-5 text-red-600 mr-3" />
           <div className="flex-1">
             <p className="font-medium text-red-800">{item.item}</p>
@@ -256,7 +242,7 @@ export default function OperationsDashboard() {
       ))}
 
       {lowStockItems.filter(item => item.quantity > 0).map(item => (
-        <div key={item.id} className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div key={`lowstock-${item.id}`} className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <TrendingDown className="h-5 w-5 text-yellow-600 mr-3" />
           <div className="flex-1">
             <p className="font-medium text-yellow-800">{item.item}</p>
@@ -330,7 +316,7 @@ export default function OperationsDashboard() {
         {/* Data freshness indicator */}
         <div className="mt-2 text-xs text-gray-500">
           Last updated: {new Date().toLocaleTimeString()} | 
-          Role: {user?.role} | 
+          Role: {user?.role || 'Unknown'} | 
           Property: {user?.property || 'All'}
         </div>
       </div>
@@ -510,8 +496,10 @@ export default function OperationsDashboard() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rooms
-                  .filter(room => filterStatus === 'all' || room.status === filterStatus)
-                  .filter(room => room.id.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .filter(room => 
+                    (filterStatus === 'all' || room.status === filterStatus) &&
+                    room.id.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
                   .map(room => (
                     <div key={room.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-3">
