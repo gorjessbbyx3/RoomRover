@@ -1,30 +1,29 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Route, Switch } from 'wouter';
-import { AuthProvider } from '@/lib/auth';
-import { Toaster } from '@/components/ui/toaster';
-import ErrorBoundary from '@/components/error-boundary';
+import { Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/auth";
+import ProtectedRoute from "@/components/protected-route";
+import ErrorBoundary from "@/components/error-boundary";
 
 // Import pages
-import Dashboard from '@/pages/dashboard';
-import Login from '@/pages/login';
-import UserManagement from '@/pages/user-management';
-import Rooms from '@/pages/rooms';
-import Bookings from '@/pages/bookings';
-import Payments from '@/pages/payments';
-import Cleaning from '@/pages/cleaning';
-import UserManagement from '@/pages/user-management';
-import InventoryManagement from '@/pages/inventory-management';
-import MaintenanceManagement from '@/pages/maintenance-management';
-import BannedUsersManagement from '@/pages/banned-users-management';
-import MasterCodesManagement from '@/pages/master-codes-management';
-import Reports from '@/pages/reports';
-import Inquiries from '@/pages/inquiries';
-import Membership from '@/pages/membership';
-import Tracker from '@/pages/tracker';
-import Analytics from '@/pages/analytics';
-import OperationsDashboard from '@/pages/operations-dashboard';
-import NotFound from '@/pages/not-found';
-import ProtectedRoute from '@/components/protected-route';
+import Login from "@/pages/login";
+import Dashboard from "@/pages/dashboard";
+import Rooms from "@/pages/rooms";
+import Bookings from "@/pages/bookings";
+import Payments from "@/pages/payments";
+import Cleaning from "@/pages/cleaning";
+import InventoryManagement from "@/pages/inventory-management";
+import MaintenanceManagement from "@/pages/maintenance-management";
+import BannedUsersManagement from "@/pages/banned-users-management";
+import MasterCodesManagement from "@/pages/master-codes-management";
+import UserManagement from "@/pages/user-management";
+import Reports from "@/pages/reports";
+import Analytics from "@/pages/analytics";
+import Inquiries from "@/pages/inquiries";
+import OperationsDashboard from "@/pages/operations-dashboard";
+import Membership from "@/pages/membership";
+import Tracker from "@/pages/tracker";
+import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
