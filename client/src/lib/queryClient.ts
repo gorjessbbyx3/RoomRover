@@ -12,3 +12,22 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export async function apiRequest(endpoint: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(endpoint, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
