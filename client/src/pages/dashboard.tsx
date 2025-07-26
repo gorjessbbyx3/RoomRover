@@ -26,7 +26,8 @@ import {
   HandCoins,
   Calendar as CalendarIcon,
   MessageSquare,
-  Bed
+  Bed,
+  Key
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AddTaskDialog from '@/components/add-task-dialog';
