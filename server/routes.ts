@@ -1099,10 +1099,14 @@ const task = await storage.createCleaningTask(cleanTaskData);
         status: inquiry.status 
       });
     } catch (error) {
+      console.error('Inquiry submission error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid inquiry data', details: error.errors });
       }
-      res.status(500).json({ error: 'Failed to submit inquiry' });
+      res.status(500).json({ 
+        error: 'Failed to submit inquiry',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 
