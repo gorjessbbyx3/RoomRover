@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DollarSign, HandCoins, TrendingUp, Clock, CheckCircle, AlertTriangle, CreditCard, Banknote, Building2 } from 'lucide-react';
 import { AdminDrawerStats, AdminCashDrawer } from '@/lib/types';
 
-export default function AdminCashDrawer() {
+export default function AdminCashDrawerComponent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
