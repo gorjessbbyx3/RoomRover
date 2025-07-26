@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  validateToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,12 +121,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  };
+
+  const validateToken = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    try {
+      const response = await fetch('/api/auth/verify', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        console.warn('Token verification failed with status:', response.status);
+        logout();
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      logout();
+      return false;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, validateToken }}>
       {children}
     </AuthContext.Provider>
   );

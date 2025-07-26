@@ -729,9 +729,10 @@ export default function OperationsDashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>        </TabsContent>
+          </Card>
+                </TabsContent>
 
-        <TabsContent valuee="rooms" className="space-y-6">
+        <TabsContent value="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
           {properties
             .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
@@ -918,10 +919,10 @@ export default function OperationsDashboard() {
                         Add Item
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md" aria-describedby="inventory-dialog-description">
+                    <DialogContent className="max-w-md" aria-describedby="add-inventory-description">
             <DialogHeader>
               <DialogTitle>Add Inventory Item</DialogTitle>
-              <DialogDescription id="inventory-dialog-description">
+              <DialogDescription id="add-inventory-description">
                 Add a new item to the inventory system
               </DialogDescription>
             </DialogHeader>
@@ -933,7 +934,6 @@ export default function OperationsDashboard() {
                               <SelectValue placeholder="Select property" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Properties</SelectItem>
                               {properties.map(property => (
                                 <SelectItem key={property.id} value={property.id}>
                                   {property.name}
@@ -1086,10 +1086,10 @@ export default function OperationsDashboard() {
                                         Restock
                                       </Button>
                                     </DialogTrigger>
-                                     <DialogContent className="max-w-md" aria-describedby="restock-dialog-description">
+                                     <DialogContent className="max-w-md" aria-describedby="restock-description">
             <DialogHeader>
               <DialogTitle>Restock {item.item}</DialogTitle>
-              <DialogDescription id="restock-dialog-description">
+              <DialogDescription id="restock-description">
                 Update inventory quantity for selected item
               </DialogDescription>
             </DialogHeader>

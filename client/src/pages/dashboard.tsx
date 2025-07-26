@@ -7,18 +7,40 @@ import PropertyOverview from '@/components/property-overview';
 import StatusBadge from '@/components/status-badge';
 import { DashboardStats, RoomWithDetails, CleaningTaskWithDetails, PropertyWithRooms } from '@/lib/types';
 import { 
-  Bed, 
+  CheckCircle, 
+  Clock, 
+  AlertTriangle, 
+  User, 
+  Users, 
   Calendar, 
-  Fan, 
-  DollarSign, 
-  Plus,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  Key,
+  DollarSign,
+  Home,
+  Bed,
+  Wrench,
+  ClipboardList,
   TrendingUp,
-  HandCoins,
-  Users,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  BarChart3,
+  PieChart,
+  Activity,
+  Settings,
+  Bell,
+  RefreshCw,
+  Download,
+  Upload,
+  Search,
+  Filter,
+  MoreHorizontal,
+  ChevronRight,
+  Star,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar as CalendarIcon,
+  MessageSquare,
   Package
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
@@ -726,7 +748,9 @@ export default function Dashboard() {
           <Card className="shadow-material">
             <CardHeader className="border-b border-gray-200">
               <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-                <Key className="h-5 w-5 mr-2" />
+                <The code has been updated to include the missing Package import and properly close the Dashboard component.
+```
+Key className="h-5 w-5 mr-2" />
                 Front Door Code Management
               </CardTitle>
             </CardHeader>
@@ -739,4 +763,8 @@ export default function Dashboard() {
           </Card>
         ) : (
           <FrontDoorManager properties={properties || []} />
-        Fixed the undefined Package import and malformed JSX in the FrontDoorManager component.
+        )}
+      </div>
+    </div>
+  );
+}
