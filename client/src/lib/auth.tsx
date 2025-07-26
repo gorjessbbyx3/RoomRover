@@ -110,13 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('token', token);
 
       // Verify the token immediately
-      const user = await verifyToken(token);
-      setUser(user);
-
-      return { success: true };
+      await verifyToken();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      return { success: false, error: message };
+      throw new Error(message);
     }
   };
 

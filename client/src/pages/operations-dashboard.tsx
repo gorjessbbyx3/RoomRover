@@ -730,7 +730,7 @@ export default function OperationsDashboard() {
               )}
             </CardContent>
           </Card>
-                </TabsContent>
+                </TabsContent```text
 
         <TabsContent value="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
@@ -933,13 +933,14 @@ export default function OperationsDashboard() {
                             <SelectTrigger>
                               <SelectValue placeholder="Select property" />
                             </SelectTrigger>
-                            <SelectContent>
-                              {properties.map(property => (
-                                <SelectItem key={property.id} value={property.id}>
-                                  {property.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
+                             <SelectContent>
+                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                {properties.map(property => (
+                                  <SelectItem key={property.id} value={property.id}>
+                                    {property.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
                           </Select>
                         </div>
                         <div className="grid gap-2">
@@ -1321,13 +1322,14 @@ export default function OperationsDashboard() {
                             <SelectTrigger>
                               <SelectValue placeholder="Select property" />
                             </SelectTrigger>
-                            <SelectContent>
-                              {properties.map(property => (
-                                <SelectItem key={property.id} value={property.id}>
-                                  {property.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
+                             <SelectContent>
+                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                {properties.map(property => (
+                                  <SelectItem key={property.id} value={property.id}>
+                                    {property.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
                           </Select>
                         </div>
                         <div className="grid gap-2">
@@ -1500,14 +1502,14 @@ export default function OperationsDashboard() {
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Filter by property" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Properties</SelectItem>
-                      {properties.map(property => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                     <SelectContent>
+                                <SelectItem value="all_properties">All Properties</SelectItem>
+                                {properties.map(property => (
+                                  <SelectItem key={property.id} value={property.id}>
+                                    {property.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
                   </Select>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -1534,8 +1536,8 @@ export default function OperationsDashboard() {
                               <SelectTrigger>
                                 <SelectValue placeholder="Select property" />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Properties</SelectItem>
+                               <SelectContent>
+                                <SelectItem value="all_properties">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}

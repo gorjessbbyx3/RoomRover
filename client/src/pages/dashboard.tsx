@@ -41,7 +41,10 @@ import {
   Mail,
   Calendar as CalendarIcon,
   MessageSquare,
-  Package
+  Package,
+  Fan,
+  HandCoins,
+  Key
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AddTaskDialog from '@/components/add-task-dialog';
@@ -235,130 +238,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Payment Tracking Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Pending Payments */}
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-              <Clock className="h-5 w-5 mr-2 text-warning-500" />
-              Pending Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {statsLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-2xl font-bold text-warning-600">
-                  {stats?.pendingPaymentsCount || 0}
-                </div>
-                <div className="text-sm text-gray-600">
-                  Total: {formatCurrency(stats?.pendingPaymentsAmount || 0)}
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Overdue: {stats?.overduePaymentsCount || 0}</span>
-                  <span className="text-error-600">
-                    {formatCurrency(stats?.overduePaymentsAmount || 0)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Payment Methods Breakdown */}
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-              <DollarSign className="h-5 w-5 mr-2 text-success-500" />
-              Payment Methods (Today)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {statsLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-8" />
-                <Skeleton className="h-8" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium">Cash</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">{formatCurrency(stats?.paymentMethodBreakdown?.cash || 0)}</div>
-                    <div className="text-xs text-gray-500">{stats?.todayCashPayments || 0} payments</div>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium">Cash App</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">{formatCurrency(stats?.paymentMethodBreakdown?.cashApp || 0)}</div>
-                    <div className="text-xs text-gray-500">{stats?.todayCashAppPayments || 0} payments</div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="text-xs text-gray-500 mb-1">Cash App payments go to:</div>
-                  <div className="text-sm font-medium text-purple-600">$selarazmami</div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Revenue Trends */}
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2 text-primary-500" />
-              Revenue Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {statsLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-8" />
-                <Skeleton className="h-8" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-gray-600">This Week</div>
-                  <div className="text-xl font-bold text-primary-600">
-                    {formatCurrency(stats?.weeklyRevenue || 0)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {stats?.weeklyGrowth ? (
-                      <span className={stats.weeklyGrowth >= 0 ? 'text-success-600' : 'text-error-600'}>
-                        {stats.weeklyGrowth >= 0 ? '+' : ''}{stats.weeklyGrowth.toFixed(1)}% vs last week
-                      </span>
-                    ) : 'No comparison data'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">This Month</div>
-                  <div className="text-lg font-medium text-gray-900">
-                    {formatCurrency(stats?.monthlyRevenue || 0)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Average: {formatCurrency((stats?.monthlyRevenue || 0) / new Date().getDate())} per day
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Recent Activities & Cleaning Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Cleaning Tasks */}
@@ -437,7 +316,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-
+        
         {/* Payment Alerts & System Status */}
         <Card className="shadow-material">
           <CardHeader className="border-b border-gray-200">
@@ -470,7 +349,6 @@ export default function Dashboard() {
                       </Button>
                     </div>
                   )}
-
                   {(stats?.pendingPaymentsCount || 0) > 0 && (
                     <div className="flex items-center justify-between p-3 bg-warning-50 border border-warning-200 rounded-lg">
                       <div className="flex items-center">
@@ -489,7 +367,6 @@ export default function Dashboard() {
                       </Button>
                     </div>
                   )}
-
                   {(stats?.overduePaymentsCount || 0) === 0 && (stats?.pendingPaymentsCount || 0) === 0 && (
                     <div className="flex items-center justify-between p-3 bg-success-50 border border-success-200 rounded-lg">
                       <div className="flex items-center">
@@ -500,7 +377,6 @@ export default function Dashboard() {
                   )}
                 </>
               )}
-
               {/* System Status */}
               <div className="pt-4 border-t border-gray-200">
                 <div className="space-y-2">
@@ -520,7 +396,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-
               {(user.role === 'admin') && (
                 <div className="pt-4 border-t border-gray-200">
                   <Button variant="outline" size="sm" className="w-full" data-testid="button-view-reports">
@@ -585,7 +460,7 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
-
+                
                 <Card className="p-6">
                   <AddTaskDialog 
                     trigger={
@@ -739,31 +614,27 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
-
-
-
-      {/* Front Door Code Management - Visible to all users */}
+      
+      {/* Front Door Code Management */}
       <div className="mt-8">
-        {propertiesLoading ? (
-          <Card className="shadow-material">
-            <CardHeader className="border-b border-gray-200">
-              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-                <The code has been updated to include the missing Package import and properly close the Dashboard component.
-```
-Key className="h-5 w-5 mr-2" />
-                Front Door Code Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+        <Card className="shadow-material">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
+              <Key className="h-5 w-5 mr-2" />
+              Front Door Code Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {propertiesLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-20" />
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <FrontDoorManager properties={properties || []} />
-        )}
+            ) : (
+              <FrontDoorManager properties={properties || []} />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
