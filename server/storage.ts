@@ -23,27 +23,24 @@ import {
 import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
 
-// Only import database dependencies if DATABASE_URL is available
-let db: any = null;
+// Force PostgreSQL usage - no fallback to in-memory
 const databaseUrl = process.env.DATABASE_URL;
 
-if (databaseUrl) {
-  try {
-    const { drizzle } = await import("drizzle-orm/neon-http");
-    const { neon } = await import("@neondatabase/serverless");
-    const schema = await import("../shared/schema");
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL environment variable is required for PostgreSQL storage");
+}
 
-    // Verify we're not using localhost
-    if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
-      console.warn("DATABASE_URL is pointing to localhost. Using in-memory storage instead.");
-    } else {
-      console.log('Storage connecting to database:', databaseUrl.replace(/:([^:@]{1,}@)/, ':***@'));
-      const sql = neon(databaseUrl);
-      db = drizzle(sql, { schema });
-    }
-  } catch (error) {
-    console.warn('Database connection failed, using in-memory storage:', error);
-  }
+// Initialize PostgreSQL connection
+let postgresStorage: any = null;
+
+try {
+  console.log('Initializing PostgreSQL storage...');
+  const { PostgresStorage } = await import("./postgres-storage");
+  postgresStorage = new PostgresStorage();
+  console.log('✅ PostgreSQL storage initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize PostgreSQL storage:', error);
+  throw new Error(`PostgreSQL storage initialization failed: ${error.message}`);
 }
 
 export type DB = typeof db;
@@ -1078,4 +1075,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Export PostgreSQL storage instance - no in-memory fallback
+export const storage = postgresStorage;

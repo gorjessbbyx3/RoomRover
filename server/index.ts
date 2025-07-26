@@ -63,26 +63,22 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Seed database if using PostgreSQL
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')) {
-    try {
-      console.log('Attempting to seed database...');
-      const { seedDatabase } = await import("./seed");
-      
-      // Add timeout to prevent hanging
-      const seedPromise = seedDatabase();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database seeding timeout')), 15000)
-      );
-      
-      await Promise.race([seedPromise, timeoutPromise]);
-      console.log('✅ Database seeded successfully');
-    } catch (error) {
-      console.error('❌ Failed to seed database:', error?.message || error);
-      console.log('⚠️  Continuing with in-memory storage...');
-    }
-  } else {
-    console.log('📝 Using in-memory storage');
+  // Seed database on startup
+  try {
+    console.log('Attempting to seed PostgreSQL database...');
+    const { seedDatabase } = await import("./seed");
+    
+    // Add timeout to prevent hanging
+    const seedPromise = seedDatabase();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database seeding timeout')), 15000)
+    );
+    
+    await Promise.race([seedPromise, timeoutPromise]);
+    console.log('✅ PostgreSQL database seeded successfully');
+  } catch (error) {
+    console.error('❌ Failed to seed PostgreSQL database:', error?.message || error);
+    console.error('⚠️  Application may not function properly without seeded data');
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT

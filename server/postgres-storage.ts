@@ -98,7 +98,7 @@ export class PostgresStorage implements IStorage {
 
   async updateRoomMasterCode(roomId: string, masterCode: string): Promise<Room | null> {
     try {
-      const [updatedRoom] = await this.db
+      const [updatedRoom] = await db
         .update(rooms)
         .set({ masterCode })
         .where(eq(rooms.id, roomId))
