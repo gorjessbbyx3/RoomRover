@@ -1,0 +1,115 @@
+🔴 Important Missing or Incomplete Tables
+1. bookings
+Tracks when users book a room/listing.
+
+sql
+Copy
+Edit
+create table bookings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade,
+  listing_id uuid references listings on delete cascade,
+  start_date date not null,
+  end_date date not null,
+  status text default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
+  created_at timestamp default now()
+);
+2. helpers
+Assigns helpers to listings (e.g., cleaning staff, maintenance).
+
+sql
+Copy
+Edit
+create table helpers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade,
+  assigned_by uuid references auth.users, -- manager id
+  listing_id uuid references listings,
+  role text default 'cleaning' check (role in ('cleaning', 'maintenance')),
+  status text default 'active',
+  created_at timestamp default now()
+);
+3. tasks
+Tasks for helpers (e.g., "clean unit A", "replace lightbulb").
+
+sql
+Copy
+Edit
+create table tasks (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid references listings,
+  helper_id uuid references helpers,
+  description text,
+  due_date date,
+  status text default 'open' check (status in ('open', 'in_progress', 'done')),
+  created_at timestamp default now()
+);
+4. messages (optional)
+Messaging between managers/helpers or hosts/guests.
+
+sql
+Copy
+Edit
+create table messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid references auth.users,
+  receiver_id uuid references auth.users,
+  content text not null,
+  listing_id uuid references listings,
+  sent_at timestamp default now()
+);
+5. reviews
+Track guest reviews of listings and helpers.
+
+sql
+Copy
+Edit
+create table reviews (
+  id uuid primary key default gen_random_uuid(),
+  reviewer_id uuid references auth.users,
+  target_id uuid references auth.users, -- listing owner or helper
+  listing_id uuid references listings,
+  rating int check (rating between 1 and 5),
+  comment text,
+  created_at timestamp default now()
+);
+6. listing_photos
+Allows multiple images per listing.
+
+sql
+Copy
+Edit
+create table listing_photos (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid references listings on delete cascade,
+  url text not null,
+  uploaded_at timestamp default now()
+);
+7. favorites
+Users can save listings to revisit later.
+
+sql
+Copy
+Edit
+create table favorites (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users,
+  listing_id uuid references listings,
+  created_at timestamp default now(),
+  unique (user_id, listing_id)
+);
+🟢 Optional Enhancements (if scaling)
+Feature	Table
+Stripe plans	billing_plans
+Location search	locations or add geospatial to listings
+Notifications	notifications
+Calendar sync	calendar_events
+
+🧠 Summary of What’s Missing
+Feature Area	Table(s) Missing
+Bookings/reservations	bookings
+Helper workflows	helpers, tasks
+Communication	messages (optional)
+Reviews	reviews
+Photos	listing_photos
+Favorites	favorites
