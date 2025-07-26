@@ -730,7 +730,7 @@ export default function OperationsDashboard() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </        </TabsContent>
 
         <TabsContent valuee="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
@@ -1535,7 +1535,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select property" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="select_property" disabled>Select property</SelectItem>
+                                <SelectItem value="all">All Properties</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1577,7 +1577,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="low">Low</SelectItem>
+                               <SelectItem value="low">Low</SelectItem>
                                 <SelectItem value="medium">Medium</SelectItem>
                                 <SelectItem value="high">High</SelectItem>
                                 <SelectItem value="critical">Critical</SelectItem>
