@@ -86,8 +86,19 @@ export default function InHouse() {
     totalAmount: ''
   });
 
-  const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
-    queryKey: ['/api/rooms'],
+  const { data: rooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useQuery<RoomWithDetails[]>({
+    queryKey: ['rooms'],
+    queryFn: async () => {
+      const response = await fetch('/api/rooms', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch rooms');
+      return response.json();
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 5000 // Consider data stale after 5 seconds
   });
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
@@ -337,142 +348,126 @@ export default function InHouse() {
               </div>
             </div>
           ) : (
-            {/* Group rooms by property */}
-            <div className="space-y-6">
-              {rooms && [...new Set(rooms.map(room => room.propertyId))].map(propertyId => {
-                const propertyRooms = rooms.filter(room => room.propertyId === propertyId);
-                const propertyName = propertyId === 'P1' ? 'Main House' : propertyId === 'P2' ? 'Annex' : `Property ${propertyId}`;
-                
-                return (
-                  <div key={propertyId} className="space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">{propertyName}</h3>
-                    <div className={`grid ${propertyId === 'P1' ? 'grid-cols-4' : 'grid-cols-5'} gap-3`}>
-                      {propertyRooms.map((room) => {
-                        const guest = getGuestForRoom(room.id);
-                        const booking = getBookingForRoom(room.id);
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Door Code</TableHead>
+                    <TableHead>Last Cleaned</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rooms?.map((room) => {
+                    const guest = getGuestForRoom(room.id);
+                    const booking = getBookingForRoom(room.id);
 
-                        const getStatusColor = () => {
-                          switch (room.status) {
-                            case 'available':
-                              return room.cleaningStatus === 'clean' 
-                                ? 'bg-green-100 border-green-300 hover:bg-green-200' 
-                                : 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200';
-                            case 'occupied':
-                              return 'bg-blue-100 border-blue-300 hover:bg-blue-200';
-                            case 'cleaning':
-                              return 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200';
-                            case 'maintenance':
-                              return 'bg-red-100 border-red-300 hover:bg-red-200';
-                            default:
-                              return 'bg-gray-100 border-gray-300 hover:bg-gray-200';
-                          }
-                        };
+                    return (
+                      <TableRow key={room.id} className="hover:bg-gray-50" data-testid={`room-row-${room.id}`}>
+                        <TableCell>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{room.id}</div>
+                            <div className="text-sm text-gray-500">Room {room.roomNumber}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={room.status} type="room" />
+                        </TableCell>
+                        <TableCell>
+                          {guest ? (
+                            <button
+                              onClick={() => {
+                                setSelectedGuest(guest);
+                                setGuestDialogOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                            >
+                              <div className="font-medium">{guest.name}</div>
+                              <div className="text-xs text-gray-500 capitalize">{booking?.plan} plan</div>
+                            </button>
+                          ) : (
+                            <span className="text-gray-400">Vacant</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {guest ? (
+                            <div className="text-sm text-gray-600">{guest.contact}</div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {room.doorCode ? (
+                            <Badge 
+                              variant="default"
+                              className="font-mono"
+                            >
+                              {room.doorCode}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400">No code</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="text-sm text-gray-900">{formatDate(room.lastCleaned)}</div>
+                            <div className="text-xs text-gray-500">Linen: {formatDate(room.lastLinenChange)}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedRoom(room);
+                                setCodeDialogOpen(true);
+                              }}
+                              className="text-warning-600 hover:text-warning-800"
+                              data-testid={`button-generate-code-${room.id}`}
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
 
-                        return (
-                          <Card
-                            key={room.id}
-                            className={`${getStatusColor()} border-2 transition-colors cursor-pointer`}
-                            data-testid={`room-card-${room.id}`}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-semibold text-gray-900">{room.id}</h4>
-                                  <p className="text-xs text-gray-600">Room {room.roomNumber}</p>
-                                </div>
-                                <StatusBadge status={room.status} type="room" />
-                              </div>
+                            <Select
+                              value={room.status}
+                              onValueChange={(value) => handleStatusChange(room.id, value)}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="available">Available</SelectItem>
+                                <SelectItem value="occupied">Occupied</SelectItem>
+                                <SelectItem value="cleaning">Cleaning</SelectItem>
+                                <SelectItem value="maintenance">Maintenance</SelectItem>
+                              </SelectContent>
+                            </Select>
 
-                              {/* Member Info */}
-                              <div className="space-y-1 mb-3">
-                                {guest ? (
-                                  <button
-                                    onClick={() => {
-                                      setSelectedGuest(guest);
-                                      setGuestDialogOpen(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800 hover:underline text-left w-full"
-                                  >
-                                    <div className="font-medium text-sm">{guest.name}</div>
-                                    <div className="text-xs text-gray-500 capitalize">{booking?.plan} plan</div>
-                                    <div className="text-xs text-gray-600">{guest.contact}</div>
-                                  </button>
-                                ) : (
-                                  <div className="text-gray-400 text-sm">Vacant</div>
-                                )}
-                              </div>
-
-                              {/* Door Code */}
-                              <div className="mb-3">
-                                {room.doorCode ? (
-                                  <Badge variant="default" className="font-mono text-xs">
-                                    {room.doorCode}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-gray-400 text-xs">No code</span>
-                                )}
-                              </div>
-
-                              {/* Cleaning Info */}
-                              <div className="text-xs text-gray-600 mb-3">
-                                <div>Cleaned: {formatDate(room.lastCleaned)}</div>
-                                <div>Linen: {formatDate(room.lastLinenChange)}</div>
-                              </div>
-
-                              {/* Actions */}
-                              <div className="flex justify-between items-center">
-                                <div className="flex space-x-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setSelectedRoom(room);
-                                      setCodeDialogOpen(true);
-                                    }}
-                                    className="text-warning-600 hover:text-warning-800 p-1 h-6 w-6"
-                                    data-testid={`button-generate-code-${room.id}`}
-                                  >
-                                    <Key className="h-3 w-3" />
-                                  </Button>
-
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setSelectedRoom(room);
-                                      setRoomNotes(room.notes || '');
-                                      setNotesDialogOpen(true);
-                                    }}
-                                    className="text-gray-600 hover:text-gray-800 p-1 h-6 w-6"
-                                    data-testid={`button-notes-${room.id}`}
-                                  >
-                                    <FileText className="h-3 w-3" />
-                                  </Button>
-                                </div>
-
-                                <Select
-                                  value={room.status}
-                                  onValueChange={(value) => handleStatusChange(room.id, value)}
-                                >
-                                  <SelectTrigger className="w-20 h-6 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="available">Available</SelectItem>
-                                    <SelectItem value="occupied">Occupied</SelectItem>
-                                    <SelectItem value="cleaning">Cleaning</SelectItem>
-                                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedRoom(room);
+                                setRoomNotes(room.notes || '');
+                                setNotesDialogOpen(true);
+                              }}
+                              className="text-gray-600 hover:text-gray-800"
+                              data-testid={`button-notes-${room.id}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

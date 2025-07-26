@@ -45,7 +45,9 @@ export default function Dashboard() {
       });
       if (!response.ok) throw new Error('Failed to fetch dashboard stats');
       return response.json();
-    }
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 5000 // Consider data stale after 5 seconds
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
@@ -58,7 +60,9 @@ export default function Dashboard() {
       });
       if (!response.ok) throw new Error('Failed to fetch rooms');
       return response.json();
-    }
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 5000 // Consider data stale after 5 seconds
   });
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<PropertyWithRooms[]>({
@@ -71,7 +75,9 @@ export default function Dashboard() {
       });
       if (!response.ok) throw new Error('Failed to fetch properties');
       return response.json();
-    }
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 5000 // Consider data stale after 5 seconds
   });
 
   const { data: cleaningTasks, isLoading: tasksLoading } = useQuery<CleaningTaskWithDetails[]>({
@@ -84,7 +90,9 @@ export default function Dashboard() {
       });
       if (!response.ok) throw new Error('Failed to fetch cleaning tasks');
       return response.json();
-    }
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 5000 // Consider data stale after 5 seconds
   });
 
   if (!user) return null;
@@ -235,10 +243,14 @@ export default function Dashboard() {
               </p>
             </div>
             {(user.role === 'admin' || user.role === 'manager') && (
-              <Button size="sm" className="bg-primary-500 hover:bg-primary-600" data-testid="button-add-task">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Task
-              </Button>
+              <AddTaskDialog 
+                trigger={
+                  <Button size="sm" className="bg-primary-500 hover:bg-primary-600" data-testid="button-add-task">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Task
+                  </Button>
+                }
+              />
             )}
           </CardHeader>
           <CardContent className="p-6">
@@ -408,7 +420,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               {/* Quick Actions */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/inhouse'}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/operations'}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
