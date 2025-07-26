@@ -319,11 +319,12 @@ export default function InHouse() {
               New Member
             </Button>
             <Button 
+              onClick={() => window.location.href = '/master-codes-management'}
               className="bg-warning-500 hover:bg-warning-600"
-              data-testid="button-bulk-generate-codes"
+              data-testid="button-master-codes"
             >
               <Key className="h-4 w-4 mr-2" />
-              Bulk Generate Codes
+              Master Codes
             </Button>
           </div>
         </CardHeader>
