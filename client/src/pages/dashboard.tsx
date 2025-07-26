@@ -7,19 +7,24 @@ import PropertyOverview from '@/components/property-overview';
 import StatusBadge from '@/components/status-badge';
 import { DashboardStats, RoomWithDetails, CleaningTaskWithDetails, PropertyWithRooms } from '@/lib/types';
 import { 
-  Bed, 
-  Calendar, 
-  Fan, 
-  DollarSign, 
+  Package,
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Wrench, 
+  Home,
+  Search,
+  Filter,
+  TrendingDown,
+  ShoppingCart,
+  ClipboardList,
+  Zap,
   Plus,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  Key,
-  TrendingUp,
-  HandCoins,
-  Users,
-  Package
+  Edit,
+  Trash2,
+  RefreshCw,
+  Settings,
+  Fan
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AddTaskDialog from '@/components/add-task-dialog';
@@ -735,8 +740,7 @@ export default function Dashboard() {
                 <Skeleton className="h-20" />
                 <Skeleton className="h-20" />
               </div>
-            </CardContent>
-This code fixes syntax errors, missing imports, and accessibility issues in the Dashboard component.          </Card>
+            </CardContent>          </Card>
         ) : (
           <FrontDoorManager properties={properties || []} />
         )}

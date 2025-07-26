@@ -1535,7 +1535,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select property" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none" disabled>Select property</SelectItem>
+                                <SelectItem value="select_property" disabled>Select property</SelectItem>
                                 {properties.map(property => (
                                   <SelectItem key={property.id} value={property.id}>
                                     {property.name}
@@ -1551,7 +1551,7 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select room" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">No specific room</SelectItem>
+                                <SelectItem value="no_room">No specific room</SelectItem>
                                 {rooms.map(room => (
                                   <SelectItem key={room.id} value={room.id}>
                                     {room.id}
@@ -1577,9 +1577,10 @@ export default function OperationsDashboard() {
                                 <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="low">Low</SelectItem                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
                                 <SelectItem value="high">High</SelectItem>
-                                                               <SelectItem value="critical">Critical</SelectItem>
+                                <SelectItem value="critical">Critical</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
