@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { seedDatabase } from "./seed";
 
 const app = express();
 app.use(express.json());
@@ -54,6 +55,15 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+  }
+
+  // Seed database if using PostgreSQL
+  if (process.env.DATABASE_URL) {
+    try {
+      await seedDatabase();
+    } catch (error) {
+      console.error('Failed to seed database:', error);
+    }
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT

@@ -11,7 +11,8 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [env]
-PORT = "5000"
+VITE_API_URL = "http://localhost:5000"
+DATABASE_URL = "postgresql://roomrover_postgres_user:KY2ae8bZ7wwLxPHaTRp7MUe6UE1KeWMD@localhost:5432/roomrover_postgres"
 
 [workflows]
 runButton = "Start application"
