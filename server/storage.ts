@@ -23,6 +23,10 @@ import {
 import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
 
+// Load environment variables
+import { config } from 'dotenv';
+config();
+
 // Force PostgreSQL usage - no fallback to in-memory
 const databaseUrl = process.env.DATABASE_URL;
 

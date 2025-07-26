@@ -1,0 +1,97 @@
+:
+
+🔴 Non-Functional or Buggy Buttons
+1. Submit/Create Button on Room Listing Form
+File: pages/create-listing.tsx
+Issue: Button exists but does not trigger onSubmit logic properly due to:
+
+Missing form onSubmit handler
+
+No useForm() or formState validation
+
+Supabase insert logic might be missing or commented
+
+🔧 Fix:
+
+Wrap form in <form onSubmit={handleCreateListing}>
+
+Make handleCreateListing async and include Supabase insert
+
+2. Sign Out Button
+File: components/Navbar.tsx or layout/Header.tsx
+Issue: If user is not authenticated, clicking "Sign Out" either:
+
+Throws an error
+
+Does nothing silently (because supabase.auth.signOut() fails with no session)
+
+🔧 Fix:
+Add guard like:
+
+ts
+Copy
+Edit
+if (session) {
+  await supabase.auth.signOut()
+}
+Or gray out/hide button when not signed in.
+
+3. "Book Now" / Booking Button
+File: components/RoomCard.tsx or pages/room/[id].tsx
+Issue:
+
+No logic is tied to this button.
+
+No callback like handleBookRoom()
+
+Not connected to Supabase insert or calendar logic
+
+🔧 Fix:
+Implement booking handler:
+
+ts
+Copy
+Edit
+const handleBook = async () => {
+  const { error } = await supabase.from("bookings").insert({ ...data })
+}
+4. Upload Image Button
+File: Possibly components/ImageUploader.tsx or similar
+Issue: If this button exists:
+
+No logic is wired up to Supabase.storage.upload
+
+May accept files but not upload or give confirmation
+
+🔧 Fix:
+Make sure you're calling:
+
+ts
+Copy
+Edit
+const { data, error } = await supabase.storage.from('images').upload(...)
+And preview using URL from:
+
+ts
+Copy
+Edit
+supabase.storage.from('images').getPublicUrl(...)
+5. Profile Save/Update Button
+File: pages/profile.tsx
+Issue: Button exists but does not write changes back to Supabase.
+No form onChange binding or update query attached.
+
+🔧 Fix:
+Bind form state (e.g., useState or react-hook-form) and use:
+
+ts
+Copy
+Edit
+supabase.from('users').update({ ...updatedData }).eq('id', user.id)
+🟡 Buttons That Exist but Feel Incomplete
+Button	Issue	Suggested Fix
+Search	No loading state, no error handling	Add spinner, check empty result message
+Navigation Links	Some buttons may not highlight active page	Use next/router and active class
+Delete Listing	No confirmation dialog	Wrap in confirm() or modal
+"View Room"	Just links to /room/[id] but doesn’t verify ID validity	Add fallback UI for missing room
+
