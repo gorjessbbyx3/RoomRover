@@ -1,0 +1,123 @@
+🔍 Summary: Incomplete or Broken Workflows
+Workflow	Status	Issues
+🔴 Booking a Room	🚧 Incomplete	No logic to reserve, calendar is missing, no conflict check
+🔴 Creating a Listing	🚧 Partial	No validation, image uploads incomplete, missing confirmation
+🔴 Managing Helpers & Assigning Tasks	❌ Not implemented	No UI or DB structure for task assignment or tracking
+🔴 Membership Gating (Free vs Premium)	🚧 Partial	UI mentions exist, but not enforced in routing or features
+🔴 User Role Guard (manager/helper/guest)	🚧 Partial	No middleware or per-page protection by role
+🔴 Viewing or Updating Profile Info	🚧 Partial	Page exists, but does not update data back to Supabase
+🔴 Stripe / Payment Flow	❌ Missing	No backend API or webhook integration
+🔴 Favorites / Saved Listings	❌ Missing	No database logic or UI for saving/favoriting
+🟡 Authentication (Login/Register)	✅ Mostly working	No email verification, forgot password UX may be missing
+🔴 Dashboard (Manager & Helper)	🚧 Static only	No Supabase-connected data, no role-based views
+
+🔎 Workflow Deep Dive
+1. 🛏️ Room Booking Flow
+Goal: User picks a listing, selects date, books it
+
+❌ No calendar or date picker
+
+❌ No check for overlapping bookings
+
+❌ No bookings table or Supabase insert logic
+
+❌ No payment integration (if needed)
+
+Fix suggestion:
+
+Add bookings table
+
+Build a <DateRangePicker /> + <BookNowButton />
+
+Use Supabase RLS to guard bookings per user
+
+2. 🏡 Listing Creation
+Goal: Manager creates a property listing with photos
+
+✅ Basic form exists
+
+❌ Supabase insert may not be triggered properly
+
+❌ No validation (e.g., empty fields, invalid data)
+
+❌ Image upload not wired up fully
+
+❌ No post-submit redirect or success message
+
+3. 🧹 Helper Task Assignment
+Goal: Manager assigns tasks to helpers (cleaning, repairs)
+
+❌ No tasks or helpers table in DB
+
+❌ No UI for managers to assign tasks
+
+❌ No task list UI for helpers
+
+❌ No progress tracking (open → in progress → done)
+
+4. 🪪 Membership Upgrade / Gating
+Goal: Only premium users can access premium features
+
+⚠️ Membership UI references exist
+
+❌ No Supabase memberships table yet (you’re working on it)
+
+❌ No middleware/HOC to block access to premium features
+
+❌ No visual alerts like “Upgrade to access this”
+
+5. 🧑‍💼 Role-Based Dashboards
+Goal: Managers and helpers see different data
+
+✅ Separate dashboard files exist (e.g., /dashboard/manager.tsx)
+
+❌ Data is hardcoded or missing
+
+❌ No role-based redirect guard
+
+❌ No reusable <DashboardCard> components
+
+❌ No visual distinction between helper/manager UIs
+
+6. 🧾 Profile Editing
+Goal: User updates bio, image, or preferences
+
+✅ Page exists
+
+❌ Supabase update not wired to form
+
+❌ No success toast or feedback
+
+❌ No image picker
+
+7. 💳 Stripe Payment Flow
+Goal: Upgrade to premium via card checkout
+
+❌ No checkout flow
+
+❌ No webhook to record payment success
+
+❌ No Stripe customer/subscription mapping to user ID
+
+❌ No plan metadata (e.g., Pro vs Premium tiers)
+
+8. ❤️ Favorites System
+Goal: Users save listings to view later
+
+❌ No favorites table
+
+❌ No “Save” button in listing cards
+
+❌ No GET /favorites for dashboard view
+
+🧠 Most Critical Gaps (for MVP)
+Booking Workflow — needs backend + date conflict logic
+
+Task Assignment Workflow — critical if helpers are a core feature
+
+Membership Enforcement — if monetization is your goal
+
+Protected Routes by Role — needed for helper/manager split
+
+Dynamic Dashboards — static dashboards won’t help real users
+
