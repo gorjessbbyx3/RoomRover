@@ -23,13 +23,25 @@ import {
 } from 'lucide-react';
 
 const inquirySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  contact: z.string().min(10, 'Phone number is required (minimum 10 digits)'),
-  email: z.string().email('Please enter a valid email address'),
-  referralSource: z.string().min(1, 'Please provide who referred you to this site'),
+  name: z.string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes"),
+  contact: z.string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number must be less than 15 digits")
+    .regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be less than 255 characters"),
+  referralSource: z.string()
+    .min(1, "Referral source is required")
+    .max(200, "Referral source must be less than 200 characters"),
   clubhouse: z.string().min(1, 'Please select a clubhouse location'),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
-  message: z.string().optional(),
+  message: z.string()
+    .max(1000, "Message must be less than 1000 characters")
+    .optional(),
 });
 
 type InquiryFormData = z.infer<typeof inquirySchema>;
@@ -113,12 +125,12 @@ export default function Membership() {
 
         {/* Clubhouse Locations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          
+
           {/* P1 ClubHouse */}
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P1 - Queen ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
-              
+
               {/* P1 Daily */}
               <Card className="shadow-material border border-gray-200 overflow-hidden">
                 <CardHeader className="bg-gray-50 border-b border-gray-200">
@@ -215,7 +227,7 @@ export default function Membership() {
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P2 - Kapahulu ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
-              
+
               {/* P2 Daily */}
               <Card className="shadow-material border border-gray-200 overflow-hidden">
                 <CardHeader className="bg-gray-50 border-b border-gray-200">
@@ -347,7 +359,7 @@ export default function Membership() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                   control={form.control}
                   name="email"
@@ -528,7 +540,7 @@ export default function Membership() {
               </div>
             </div>
           </div>
-          
+
           <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
             <div className="flex items-start">
               <div className="h-5 w-5 text-purple-600 mr-3 mt-0.5 flex-shrink-0">🐕</div>

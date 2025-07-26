@@ -70,25 +70,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
+      // Input validation
+      if (!username?.trim()) {
+        throw new Error('Username is required');
+      }
+      if (!password?.trim()) {
+        throw new Error('Password is required');
+      }
+      if (username.length < 3) {
+        throw new Error('Username must be at least 3 characters');
+      }
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Login failed');
+        const errorData = await response.json().catch(() => ({ error: 'Login failed' }));
+        const errorMessage = response.status === 401 ? 'Invalid username or password' :
+                           response.status === 429 ? 'Too many login attempts. Please try again later.' :
+                           response.status >= 500 ? 'Server error. Please try again later.' :
+                           errorData.error || 'Login failed';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
+      const token = data.token;
+
+      if (!token || typeof token !== 'string') {
+        throw new Error('Invalid response from server');
+      }
+
+      localStorage.setItem('token', token);
+
+      // Verify the token immediately
+      const user = await verifyToken(token);
+      setUser(user);
+
+      return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      return { success: false, error: message };
     }
   };
 

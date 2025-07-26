@@ -32,7 +32,7 @@ import {
   Fan
 } from 'lucide-react';
 import type { InventoryItem, MaintenanceItem, Room, Property } from '@/lib/types';
-import { useRealtimeUpdates } from '@/hooks/use-realtime-updates';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OperationsDashboard() {
   const { user } = useAuth();
@@ -69,7 +69,7 @@ export default function OperationsDashboard() {
   });
 
   // Fetch properties
-  const { data: properties = [] } = useQuery<Property[]>({
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ['properties'],
     queryFn: async () => {
       const response = await fetch('/api/properties', {
@@ -440,23 +440,20 @@ export default function OperationsDashboard() {
     </div>
   );
 
-  // Show loading state
-  if (inventoryLoading || maintenanceLoading || roomsLoading || cleaningTasksLoading) {
+  if (roomsLoading || propertiesLoading) {
     return (
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
-          <p className="text-gray-600 mt-2">Loading operational data...</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-8 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-4" />
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -495,28 +492,18 @@ export default function OperationsDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
-            <p className="mt-2 text-gray-600">
-              Unified view of inventory, room status, and maintenance for {user?.property || 'all properties'}
-            </p>
-          </div>
-          <Button 
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['inventory'] });
-              queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-              queryClient.invalidateQueries({ queryKey: ['rooms'] });
-              queryClient.invalidateQueries({ queryKey: ['/api/cleaning-tasks'] });
-            }} 
-            variant="outline" 
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh Data
-          </Button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Operations Dashboard</h1>
+        <p className="text-gray-600 mt-2">
+          Unified view of inventory, room status, and maintenance for {user?.property || 'all properties'}
+        </p>
+        {/* Data freshness indicator */}
+        <div className="mt-2 text-xs text-gray-500">
+          Last updated: {new Date().toLocaleTimeString()} | 
+          Role: {user?.role} | 
+          Property: {user?.property || 'All'}
         </div>
+      </div>
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
@@ -728,8 +715,7 @@ export default function OperationsDashboard() {
                   ))}
                   {[...pendingTasks, ...inProgressTasks].length > 5 && (
                     <div className="text-center text-sm text-gray-500 pt-2 border-t">
-                      {[...pendingTasks, ...inProgressTasks].length - 5} more tasks - ```text
-
+                      {[...pendingTasks, ...inProgressTasks].length - 5} more tasks - 
                       <Button variant="link" className="p-0 h-auto ml-1" onClick={() => setActiveTab('cleaning')}>
                         View all
                       </Button>
@@ -746,7 +732,7 @@ export default function OperationsDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="rooms" className="space-y-6">
+        <TabsContent valuee="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
           {properties
             .filter(property => selectedProperty === 'all' || property.id === selectedProperty)
