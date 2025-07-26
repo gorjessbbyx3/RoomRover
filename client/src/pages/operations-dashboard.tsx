@@ -626,9 +626,9 @@ export default function OperationsDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Today's Tasks</CardTitle>
+                <CardTitle>Operations Summary</CardTitle>
                 <CardDescription>
-                  Quick overview of rooms and supplies
+                  Current status overview of rooms, inventory, and maintenance
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1263,10 +1263,118 @@ export default function OperationsDashboard() {
                   </CardTitle>
                   <CardDescription>Manage cleaning tasks and schedules for all properties</CardDescription>
                 </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Task
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Create Cleaning Task</DialogTitle>
+                      <DialogDescription>
+                        Add a new cleaning task for rooms or common areas
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-type">Task Type</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select task type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="room_cleaning">Room Cleaning</SelectItem>
+                              <SelectItem value="deep_cleaning">Deep Cleaning</SelectItem>
+                              <SelectItem value="maintenance_cleaning">Maintenance Cleaning</SelectItem>
+                              <SelectItem value="common_area">Common Area</SelectItem>
+                              <SelectItem value="laundry">Laundry</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-priority">Priority</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="critical">Critical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-title">Task Title</Label>
+                        <Input
+                          id="task-title"
+                          placeholder="e.g., Clean Room P1-R1, Vacuum Common Area"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-property">Property</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select property" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {properties.map(property => (
+                                <SelectItem key={property.id} value={property.id}>
+                                  {property.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="task-room">Room (Optional)</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select room" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">No specific room</SelectItem>
+                              {rooms.map(room => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-description">Description</Label>
+                        <Textarea
+                          id="task-description"
+                          placeholder="Detailed description of the cleaning task..."
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="task-due-date">Due Date (Optional)</Label>
+                        <Input
+                          id="task-due-date"
+                          type="datetime-local"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline">
+                        Cancel
+                      </Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        Create Task
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
