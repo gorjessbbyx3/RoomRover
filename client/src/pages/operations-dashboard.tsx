@@ -730,7 +730,7 @@ export default function OperationsDashboard() {
               )}
             </CardContent>
           </Card>
-        </Tabs```text
+        </TabsContent>
 
         <TabsContent value="rooms" className="space-y-6">
           {/* Group rooms by property and display in PropertyOverview style */}
