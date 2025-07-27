@@ -4,10 +4,19 @@ import { Badge } from "./ui/badge";
 import { useAuth } from "../lib/auth";
 
 export default function Navigation() {
-  const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
   const isActive = (path: string) => location === path;
+
+  const handleLogout = () => {
+    if (logout && typeof logout === 'function') {
+      logout();
+    }
+    setLocation('/login');
+    setIsOpen(false);
+  };
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard", roles: ["manager", "helper", "guest"] },
@@ -55,7 +64,7 @@ export default function Navigation() {
                   {user.role}
                 </Badge>
                 <span className="text-sm text-gray-700">{user.name}</span>
-                <Button variant="outline" size="sm" onClick={logout}>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
               </>
