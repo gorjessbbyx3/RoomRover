@@ -8,7 +8,7 @@ interface CountdownTimerProps {
   showIcon?: boolean;
 }
 
-export function CountdownTimer({ expiresAt, className, showIcon = true }: CountdownTimerProps) {
+export default function CountdownTimer({ expiresAt, className, showIcon = true }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
