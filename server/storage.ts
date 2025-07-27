@@ -917,8 +917,7 @@ export class MemStorage implements IStorage {
 
     // Calculate cash holdings
     const cashReceived = transactions
-      .filter(t => t => t.type === 'cash_received')
-      ```text
+      .filter(t => t.type === 'cash_received')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const cashDeposited = transactions
