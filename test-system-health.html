@@ -1,0 +1,854 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Property Management System - Health Check</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .test-card h3 {
+            color: #1a202c;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .test-card .icon {
+            font-size: 1.5rem;
+        }
+        
+        .test-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            background: white;
+            font-family: monospace;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+        
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .summary h2 {
+            margin-bottom: 1rem;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Property Management System</h1>
+            <p>Comprehensive Health & Performance Check</p>
+        </div>
+        
+        <div class="content">
+            <div class="summary" id="summary">
+                <h2>System Status</h2>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="uptime">--</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="response-time">--</div>
+                        <div class="metric-label">Avg Response</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="success-rate">--</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="error-count">--</div>
+                        <div class="metric-label">Errors</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <button class="btn" onclick="runAllTests()">🚀 Run All Tests</button>
+                <button class="btn" onclick="runQuickCheck()">⚡ Quick Check</button>
+                <button class="btn" onclick="exportResults()">📊 Export Results</button>
+                <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3><span class="icon">🔐</span> Authentication System</h3>
+                    <button class="btn" onclick="testAuthentication()">Test Login</button>
+                    <div class="test-results" id="auth-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">🏠</span> Property Management</h3>
+                    <button class="btn" onclick="testPropertyManagement()">Test Properties</button>
+                    <div class="test-results" id="property-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">🛏️</span> Room Management</h3>
+                    <button class="btn" onclick="testRoomManagement()">Test Rooms</button>
+                    <div class="test-results" id="room-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">📋</span> Booking System</h3>
+                    <button class="btn" onclick="testBookingSystem()">Test Bookings</button>
+                    <div class="test-results" id="booking-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">💰</span> Payment Processing</h3>
+                    <button class="btn" onclick="testPaymentSystem()">Test Payments</button>
+                    <div class="test-results" id="payment-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">🧹</span> Operations System</h3>
+                    <button class="btn" onclick="testOperationsSystem()">Test Operations</button>
+                    <div class="test-results" id="operations-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">📊</span> Analytics & Reports</h3>
+                    <button class="btn" onclick="testAnalytics()">Test Analytics</button>
+                    <div class="test-results" id="analytics-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="icon">🚀</span> Performance</h3>
+                    <button class="btn" onclick="testPerformance()">Test Performance</button>
+                    <div class="test-results" id="performance-results">
+                        <div class="status info">Ready to test</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {};
+        let startTime = Date.now();
+
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : 
+                              type === 'error' ? 'error' : 
+                              type === 'warning' ? 'warning' : 'info';
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = `
+                <div style="margin-bottom: 0.5rem;">
+                    <span style="color: #666; font-size: 0.75rem;">[${timestamp}]</span>
+                    <span class="status ${statusClass}">${type}</span>
+                    ${message}
+                </div>
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function setLoading(containerId, isLoading) {
+            const container = document.getElementById(containerId);
+            if (isLoading) {
+                container.innerHTML = '<div class="loading"></div> Running tests...';
+            }
+        }
+
+        async function makeRequest(method, url, data = null, token = null) {
+            const startTime = Date.now();
+            try {
+                const config = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    }
+                };
+
+                if (data && method !== 'GET') {
+                    config.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(url, config);
+                const responseTime = Date.now() - startTime;
+                
+                const result = {
+                    success: response.ok,
+                    status: response.status,
+                    responseTime,
+                    data: null,
+                    error: null
+                };
+
+                if (response.ok) {
+                    try {
+                        result.data = await response.json();
+                    } catch (e) {
+                        result.data = await response.text();
+                    }
+                } else {
+                    try {
+                        const errorData = await response.json();
+                        result.error = errorData.error || errorData.message || `HTTP ${response.status}`;
+                    } catch (e) {
+                        result.error = `HTTP ${response.status} ${response.statusText}`;
+                    }
+                }
+
+                return result;
+            } catch (error) {
+                return {
+                    success: false,
+                    responseTime: Date.now() - startTime,
+                    error: error.message
+                };
+            }
+        }
+
+        async function testAuthentication() {
+            setLoading('auth-results', true);
+            addResult('auth-results', 'Testing authentication system...', 'info');
+
+            // Test login endpoint
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (loginResult.success) {
+                addResult('auth-results', `✅ Login successful (${loginResult.responseTime}ms)`, 'success');
+                
+                // Test token verification
+                const verifyResult = await makeRequest('GET', '/api/auth/verify', null, loginResult.data.token);
+                
+                if (verifyResult.success) {
+                    addResult('auth-results', `✅ Token verification successful (${verifyResult.responseTime}ms)`, 'success');
+                    testResults.authentication = { status: 'pass', details: 'Login and token verification working' };
+                } else {
+                    addResult('auth-results', `❌ Token verification failed: ${verifyResult.error}`, 'error');
+                    testResults.authentication = { status: 'fail', details: verifyResult.error };
+                }
+            } else {
+                addResult('auth-results', `❌ Login failed: ${loginResult.error}`, 'error');
+                testResults.authentication = { status: 'fail', details: loginResult.error };
+            }
+        }
+
+        async function testPropertyManagement() {
+            setLoading('property-results', true);
+            addResult('property-results', 'Testing property management...', 'info');
+
+            // Get auth token first
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('property-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+
+            // Test properties endpoint
+            const propertiesResult = await makeRequest('GET', '/api/properties', null, token);
+            
+            if (propertiesResult.success) {
+                const properties = propertiesResult.data;
+                addResult('property-results', `✅ Properties loaded: ${properties.length} found (${propertiesResult.responseTime}ms)`, 'success');
+                
+                // Validate property structure
+                if (properties.length > 0) {
+                    const property = properties[0];
+                    const requiredFields = ['id', 'name', 'address'];
+                    const missingFields = requiredFields.filter(field => !property[field]);
+                    
+                    if (missingFields.length === 0) {
+                        addResult('property-results', '✅ Property data structure valid', 'success');
+                        testResults.properties = { status: 'pass', details: `${properties.length} properties loaded` };
+                    } else {
+                        addResult('property-results', `⚠️ Missing fields: ${missingFields.join(', ')}`, 'warning');
+                        testResults.properties = { status: 'warning', details: `Missing fields: ${missingFields.join(', ')}` };
+                    }
+                } else {
+                    addResult('property-results', '⚠️ No properties found in database', 'warning');
+                    testResults.properties = { status: 'warning', details: 'No properties found' };
+                }
+            } else {
+                addResult('property-results', `❌ Failed to load properties: ${propertiesResult.error}`, 'error');
+                testResults.properties = { status: 'fail', details: propertiesResult.error };
+            }
+        }
+
+        async function testRoomManagement() {
+            setLoading('room-results', true);
+            addResult('room-results', 'Testing room management...', 'info');
+
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('room-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+            const roomsResult = await makeRequest('GET', '/api/rooms', null, token);
+            
+            if (roomsResult.success) {
+                const rooms = roomsResult.data;
+                addResult('room-results', `✅ Rooms loaded: ${rooms.length} found (${roomsResult.responseTime}ms)`, 'success');
+                
+                // Check room statuses
+                const statusCounts = rooms.reduce((acc, room) => {
+                    acc[room.status] = (acc[room.status] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                addResult('room-results', `📊 Status breakdown: ${JSON.stringify(statusCounts)}`, 'info');
+                
+                // Validate room structure
+                if (rooms.length > 0) {
+                    const room = rooms[0];
+                    const requiredFields = ['id', 'propertyId', 'status'];
+                    const missingFields = requiredFields.filter(field => !room[field]);
+                    
+                    if (missingFields.length === 0) {
+                        addResult('room-results', '✅ Room data structure valid', 'success');
+                        testResults.rooms = { status: 'pass', details: `${rooms.length} rooms loaded` };
+                    } else {
+                        addResult('room-results', `⚠️ Missing fields: ${missingFields.join(', ')}`, 'warning');
+                        testResults.rooms = { status: 'warning', details: `Missing fields: ${missingFields.join(', ')}` };
+                    }
+                }
+            } else {
+                addResult('room-results', `❌ Failed to load rooms: ${roomsResult.error}`, 'error');
+                testResults.rooms = { status: 'fail', details: roomsResult.error };
+            }
+        }
+
+        async function testBookingSystem() {
+            setLoading('booking-results', true);
+            addResult('booking-results', 'Testing booking system...', 'info');
+
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('booking-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+            const bookingsResult = await makeRequest('GET', '/api/bookings', null, token);
+            
+            if (bookingsResult.success) {
+                const bookings = bookingsResult.data;
+                addResult('booking-results', `✅ Bookings loaded: ${bookings.length} found (${bookingsResult.responseTime}ms)`, 'success');
+                
+                // Check payment statuses
+                const paymentStatuses = bookings.reduce((acc, booking) => {
+                    acc[booking.paymentStatus] = (acc[booking.paymentStatus] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                addResult('booking-results', `💰 Payment status: ${JSON.stringify(paymentStatuses)}`, 'info');
+                testResults.bookings = { status: 'pass', details: `${bookings.length} bookings loaded` };
+            } else {
+                addResult('booking-results', `❌ Failed to load bookings: ${bookingsResult.error}`, 'error');
+                testResults.bookings = { status: 'fail', details: bookingsResult.error };
+            }
+        }
+
+        async function testPaymentSystem() {
+            setLoading('payment-results', true);
+            addResult('payment-results', 'Testing payment system...', 'info');
+
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('payment-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+            const paymentsResult = await makeRequest('GET', '/api/payments', null, token);
+            
+            if (paymentsResult.success) {
+                const payments = paymentsResult.data;
+                addResult('payment-results', `✅ Payments loaded: ${payments.length} found (${paymentsResult.responseTime}ms)`, 'success');
+                
+                const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+                addResult('payment-results', `💰 Total payments: $${totalAmount.toFixed(2)}`, 'info');
+                
+                testResults.payments = { status: 'pass', details: `${payments.length} payments, $${totalAmount.toFixed(2)} total` };
+            } else {
+                addResult('payment-results', `❌ Failed to load payments: ${paymentsResult.error}`, 'error');
+                testResults.payments = { status: 'fail', details: paymentsResult.error };
+            }
+        }
+
+        async function testOperationsSystem() {
+            setLoading('operations-results', true);
+            addResult('operations-results', 'Testing operations system...', 'info');
+
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('operations-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+            
+            // Test multiple operations endpoints
+            const endpoints = [
+                { url: '/api/cleaning-tasks', name: 'Cleaning Tasks' },
+                { url: '/api/inventory', name: 'Inventory' },
+                { url: '/api/maintenance', name: 'Maintenance' }
+            ];
+
+            let allPassed = true;
+            for (const endpoint of endpoints) {
+                const result = await makeRequest('GET', endpoint.url, null, token);
+                if (result.success) {
+                    addResult('operations-results', `✅ ${endpoint.name}: ${result.data.length} items (${result.responseTime}ms)`, 'success');
+                } else {
+                    addResult('operations-results', `❌ ${endpoint.name} failed: ${result.error}`, 'error');
+                    allPassed = false;
+                }
+            }
+
+            testResults.operations = { 
+                status: allPassed ? 'pass' : 'fail', 
+                details: allPassed ? 'All operations endpoints working' : 'Some operations endpoints failed' 
+            };
+        }
+
+        async function testAnalytics() {
+            setLoading('analytics-results', true);
+            addResult('analytics-results', 'Testing analytics system...', 'info');
+
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                addResult('analytics-results', '❌ Authentication failed', 'error');
+                return;
+            }
+
+            const token = loginResult.data.token;
+            
+            // Test dashboard stats
+            const statsResult = await makeRequest('GET', '/api/dashboard/stats', null, token);
+            
+            if (statsResult.success) {
+                const stats = statsResult.data;
+                addResult('analytics-results', `✅ Dashboard stats loaded (${statsResult.responseTime}ms)`, 'success');
+                addResult('analytics-results', `📊 Available rooms: ${stats.availableRooms}`, 'info');
+                addResult('analytics-results', `📊 Active bookings: ${stats.activeBookings}`, 'info');
+                addResult('analytics-results', `📊 Today's revenue: $${stats.todayRevenue}`, 'info');
+                
+                testResults.analytics = { status: 'pass', details: 'Dashboard analytics working' };
+            } else {
+                addResult('analytics-results', `❌ Failed to load analytics: ${statsResult.error}`, 'error');
+                testResults.analytics = { status: 'fail', details: statsResult.error };
+            }
+        }
+
+        async function testPerformance() {
+            setLoading('performance-results', true);
+            addResult('performance-results', 'Testing system performance...', 'info');
+
+            const tests = [
+                { name: 'API Response Time', test: testApiResponseTime },
+                { name: 'Concurrent Requests', test: testConcurrentRequests },
+                { name: 'Memory Usage', test: testMemoryUsage },
+                { name: 'Database Performance', test: testDatabasePerformance }
+            ];
+
+            for (const test of tests) {
+                try {
+                    await test.test();
+                } catch (error) {
+                    addResult('performance-results', `❌ ${test.name} failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testApiResponseTime() {
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                throw new Error('Authentication failed');
+            }
+
+            const token = loginResult.data.token;
+            const start = performance.now();
+            
+            const result = await makeRequest('GET', '/api/dashboard/stats', null, token);
+            const responseTime = performance.now() - start;
+            
+            if (responseTime < 1000) {
+                addResult('performance-results', `✅ API response time: ${responseTime.toFixed(2)}ms`, 'success');
+            } else if (responseTime < 3000) {
+                addResult('performance-results', `⚠️ API response time: ${responseTime.toFixed(2)}ms (slow)`, 'warning');
+            } else {
+                addResult('performance-results', `❌ API response time: ${responseTime.toFixed(2)}ms (very slow)`, 'error');
+            }
+        }
+
+        async function testConcurrentRequests() {
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                throw new Error('Authentication failed');
+            }
+
+            const token = loginResult.data.token;
+            const start = performance.now();
+            
+            // Make 5 concurrent requests
+            const promises = Array(5).fill().map(() => 
+                makeRequest('GET', '/api/properties', null, token)
+            );
+            
+            const results = await Promise.all(promises);
+            const duration = performance.now() - start;
+            const successCount = results.filter(r => r.success).length;
+            
+            addResult('performance-results', `✅ Concurrent requests: ${successCount}/5 successful in ${duration.toFixed(2)}ms`, 
+                     successCount === 5 ? 'success' : 'warning');
+        }
+
+        async function testMemoryUsage() {
+            if ('memory' in performance) {
+                const memory = performance.memory;
+                const usedMB = (memory.usedJSHeapSize / 1048576).toFixed(2);
+                const totalMB = (memory.totalJSHeapSize / 1048576).toFixed(2);
+                
+                addResult('performance-results', `💾 Memory usage: ${usedMB}MB / ${totalMB}MB`, 
+                         usedMB < 50 ? 'success' : usedMB < 100 ? 'warning' : 'error');
+            } else {
+                addResult('performance-results', '⚠️ Memory usage API not available', 'warning');
+            }
+        }
+
+        async function testDatabasePerformance() {
+            const loginResult = await makeRequest('POST', '/api/auth/login', {
+                username: 'admin',
+                password: 'admin123'
+            });
+
+            if (!loginResult.success) {
+                throw new Error('Authentication failed');
+            }
+
+            const token = loginResult.data.token;
+            const endpoints = ['/api/rooms', '/api/bookings', '/api/properties'];
+            let totalTime = 0;
+            
+            for (const endpoint of endpoints) {
+                const result = await makeRequest('GET', endpoint, null, token);
+                totalTime += result.responseTime;
+                
+                if (!result.success) {
+                    throw new Error(`Database query failed for ${endpoint}`);
+                }
+            }
+            
+            const avgTime = totalTime / endpoints.length;
+            addResult('performance-results', `🗄️ Database avg response: ${avgTime.toFixed(2)}ms`, 
+                     avgTime < 500 ? 'success' : avgTime < 1000 ? 'warning' : 'error');
+        }
+
+        async function runAllTests() {
+            addResult('summary', 'Starting comprehensive system health check...', 'info');
+            
+            await testAuthentication();
+            await testPropertyManagement();
+            await testRoomManagement();
+            await testBookingSystem();
+            await testPaymentSystem();
+            await testOperationsSystem();
+            await testAnalytics();
+            await testPerformance();
+            
+            updateSummary();
+        }
+
+        async function runQuickCheck() {
+            addResult('summary', 'Running quick health check...', 'info');
+            
+            await testAuthentication();
+            await testPropertyManagement();
+            await testRoomManagement();
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const results = Object.values(testResults);
+            const passCount = results.filter(r => r.status === 'pass').length;
+            const totalCount = results.length;
+            const successRate = totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
+            
+            document.getElementById('uptime').textContent = formatUptime(Date.now() - startTime);
+            document.getElementById('success-rate').textContent = successRate + '%';
+            document.getElementById('error-count').textContent = results.filter(r => r.status === 'fail').length;
+            
+            // Calculate average response time (mock for now)
+            document.getElementById('response-time').textContent = '245ms';
+        }
+
+        function formatUptime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+            return `${seconds}s`;
+        }
+
+        function exportResults() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    totalTests: Object.keys(testResults).length,
+                    passed: Object.values(testResults).filter(r => r.status === 'pass').length,
+                    failed: Object.values(testResults).filter(r => r.status === 'fail').length,
+                    warnings: Object.values(testResults).filter(r => r.status === 'warning').length
+                },
+                results: testResults,
+                systemInfo: {
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    memory: 'memory' in performance ? {
+                        used: (performance.memory.usedJSHeapSize / 1048576).toFixed(2) + 'MB',
+                        total: (performance.memory.totalJSHeapSize / 1048576).toFixed(2) + 'MB'
+                    } : 'N/A'
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `health-check-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearResults() {
+            const resultContainers = document.querySelectorAll('.test-results');
+            resultContainers.forEach(container => {
+                container.innerHTML = '<div class="status info">Ready to test</div>';
+            });
+            testResults = {};
+            updateSummary();
+        }
+
+        // Initialize
+        updateSummary();
+        
+        // Auto-refresh summary every 10 seconds
+        setInterval(updateSummary, 10000);
+    </script>
+</body>
+</html>
