@@ -638,10 +638,6 @@ export class MemStorage implements IStorage {
     return this.inventory.delete(id);
   }
 
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    return this.inventory.delete(id);
-  }
-
   // Maintenance methods
   async getMaintenance(): Promise<Maintenance[]> {
     return Array.from(this.maintenance.values());
@@ -894,9 +890,6 @@ export class MemStorage implements IStorage {
       maintenance: transactions
         .filter(t => t.category === 'contractors')
         .reduce((sum, t) => sum + t.amount, 0),
-      maintenance: transactions
-        .filter(t => t.category === 'maintenance')
-        .reduce((sum, t) => sum + t.amount, 0),
       utilities: transactions
         .filter(t => t.category === 'utilities')
         .reduce((sum, t) => sum + t.amount, 0),
@@ -925,6 +918,7 @@ export class MemStorage implements IStorage {
     // Calculate cash holdings
     const cashReceived = transactions
       .filter(t => t => t.type === 'cash_received')
+      ```text
       .reduce((sum, t) => sum + t.amount, 0);
 
     const cashDeposited = transactions
