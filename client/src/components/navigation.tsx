@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useAuth } from "../lib/auth";
 
-export function Navigation() {
+export default function Navigation() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
 
