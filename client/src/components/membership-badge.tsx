@@ -1,13 +1,13 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Crown, Star, User } from 'lucide-react';
+import { Crown, Star, Users } from 'lucide-react';
 
 interface MembershipBadgeProps {
   tier: 'free' | 'pro' | 'premium';
   className?: string;
 }
 
-export function MembershipBadge({ tier, className }: MembershipBadgeProps) {
+export default function MembershipBadge({ tier, className }: MembershipBadgeProps) {
   const getConfig = (tier: string) => {
     switch (tier) {
       case 'premium':
