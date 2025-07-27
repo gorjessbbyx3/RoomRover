@@ -1,7 +1,7 @@
-import { Route, Switch } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import ProtectedRoute from "@/components/protected-route";
 import ErrorBoundary from "@/components/error-boundary";
 
@@ -30,9 +30,11 @@ import HelperDashboard from "@/pages/helper-dashboard";
 const queryClient = new QueryClient();
 
 function AppRouter() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <AuthProvider>
-      <Navigation>
+      {isAuthenticated() && <Navigation>
         <Switch>
           <Route path="/login" component={Login} />
           <Route path="/membership" component={Membership} />
@@ -130,7 +132,7 @@ function AppRouter() {
 
           <Route component={NotFound} />
         </Switch>
-      </Navigation>
+      </Navigation>}
     </AuthProvider>
   );
 }
