@@ -15,7 +15,7 @@ run = ["npm", "run", "start"]
 VITE_API_URL = "http://localhost:5000"
 
 [workflows]
-runButton = "Production Server"
+runButton = "Clean Development Start"
 
 [[workflows.workflow]]
 name = "Project"
@@ -316,6 +316,27 @@ args = "npm run dev"
 
 [[workflows.workflow]]
 name = "Production Server"
+author = 43369170
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"tsx.*server\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill -f \"npm run dev\" || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "sleep 3"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Clean Development Start"
 author = 43369170
 mode = "sequential"
 
