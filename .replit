@@ -15,7 +15,7 @@ run = ["npm", "run", "start"]
 VITE_API_URL = "http://localhost:5000"
 
 [workflows]
-runButton = "Clean Development Start"
+runButton = "Start application"
 
 [[workflows.workflow]]
 name = "Project"
