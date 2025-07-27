@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,6 +81,7 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
       return;
     }
 
+    // Calculate minimum stay based on plan
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     if (formData.plan === 'monthly' && daysDiff < 30) {
       toast({
@@ -95,6 +95,7 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
     assignRoomMutation.mutate(formData);
   };
 
+  // Calculate default end date based on plan
   const updateEndDate = (plan: string, startDate: string) => {
     if (!startDate) return;
 
