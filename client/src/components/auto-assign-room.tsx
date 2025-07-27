@@ -245,10 +245,6 @@ export default function AutoAssignRoom({ inquiryId, inquiryName, onAssigned }: A
     };
   }, [formData, filteredProperties]);
 
-  const filteredProperties = user?.role === 'manager' && user.property 
-    ? properties?.filter(p => p.id === user.property) 
-    : properties;
-
   if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
     return null;
   }
