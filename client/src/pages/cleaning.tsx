@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,7 @@ import {
   Calendar,
   User
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface CleaningTask {
   id: string;
@@ -366,7 +366,7 @@ export default function Cleaning() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={taskForm.control}
                           name="priority"
@@ -431,7 +431,7 @@ export default function Cleaning() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={taskForm.control}
                           name="propertyId"
@@ -483,7 +483,7 @@ export default function Cleaning() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={taskForm.control}
                           name="dueDate"
@@ -561,16 +561,16 @@ export default function Cleaning() {
                           <h4 className="font-medium text-gray-900">{task.title}</h4>
                           <StatusBadge status={task.status} type="task" />
                         </div>
-                        
+
                         <div className="text-sm text-gray-600 mb-2">
                           <span className="font-medium">{getTaskTypeLabel(task.type)}</span>
                           {task.roomId && <span> • Room {task.roomId}</span>}
                         </div>
-                        
+
                         {task.description && (
                           <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                         )}
-                        
+
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <span>{formatDate(task.dueDate)}</span>
                           {task.assignedTo && (
@@ -581,10 +581,10 @@ export default function Cleaning() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2 ml-4">
                         <StatusBadge status={task.priority} type="priority" />
-                        
+
                         {canCompleteAllTasks && (
                           <div className="flex space-x-1">
                             {task.status === 'pending' && (
@@ -598,7 +598,7 @@ export default function Cleaning() {
                                 Start
                               </Button>
                             )}
-                            
+
                             <Button 
                               size="sm" 
                               variant="ghost"
