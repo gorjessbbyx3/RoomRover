@@ -1309,8 +1309,6 @@ const task = await storage.createCleaningTask(cleanTaskData);
         storage.getProperties()
       ]);
 
-      // Remove compliance monitoring since advertising as memberships
-
       // Payment status analysis
       const pendingPayments = bookings.filter(booking => booking.paymentStatus === 'pending');
       const overduePayments = bookings.filter(booking => booking.paymentStatus === 'overdue');
@@ -1343,22 +1341,19 @@ const task = await storage.createCleaningTask(cleanTaskData);
         new Date(item.dateReported) < sevenDaysAgo
       );
 
-      // Return dashboard summary
-      res.json({
-        pendingPayments: pendingPayments.length,
-        overduePayments: overduePayments.length,
-        inquirySummary,
-        cleaningIssues: cleaningIssues.length,
-        expiredCodes: expiredCodes.length,
-        staleInventory: staleInventory.length,
-        staleMaintenance: staleMaintenance.length,
-        lowStockItems,
-        openMaintenance
-      });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch dashboard data' });
-    }
-  });
+      // Revenue calculations
+      const thisMonth = new Date().getMonth();
+      const thisYear = new Date().getFullYear();
+      const monthlyRevenue = payments.filter(payment => {
+        const paymentDate = new Date(payment.dateReceived);
+        return paymentDate.getMonth() === thisMonth && paymentDate.getFullYear() === thisYear;
+      }).reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+      const totalRevenue = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+      // Critical alerts count
+      const criticalMaintenance = openMaintenance.filter(item => item.priority === 'critical').length;
+      const outOfStock = lowStockItems.filter(item => item.quantity === 0).length;
 
       res.json({
         summary: {
