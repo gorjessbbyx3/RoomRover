@@ -913,7 +913,8 @@ export class MemStorage implements IStorage {
     const transactions = Array.from(this.houseBankTransactions.values());
 
     const transfersIn = transactions
-      .filter(t => t.type === 'transfer_in')
+      .filter```text
+(t => t.type === 'transfer_in')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const expenses = transactions

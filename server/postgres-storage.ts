@@ -420,9 +420,22 @@ export class PostgresStorage implements IStorage {
   }
   async updateUserPrivileges(id: string, updates: { role: string; property: string | null }): Promise<User | undefined> {
     const result = await db.update(users)
-      .set({ role: updates.role as any, property: updates.property })
+      .set({ 
+        role: updates.role as any, 
+        property: updates.property,
+        name: updates.name,
+        allowedPages: updates.allowedPages
+      })
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning();
+    return result.length > 0;
   }
 }

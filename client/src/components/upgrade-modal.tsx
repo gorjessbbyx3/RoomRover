@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
             Upgrade Your Plan
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="grid md:grid-cols-3 gap-6 mt-6">
           {plans.map((plan) => (
             <Card 
@@ -86,7 +85,7 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
                   </Badge>
                 </div>
               )}
-              
+
               <CardHeader className="text-center">
                 <CardTitle className="text-xl">{plan.name}</CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
@@ -95,7 +94,7 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
                   <span className="text-gray-500">/{plan.period}</span>
                 </div>
               </CardHeader>
-              
+
               <CardContent>
                 <ul className="space-y-3">
                   {plan.features.map((feature) => (
@@ -105,7 +104,7 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
                     </li>
                   ))}
                 </ul>
-                
+
                 <Button 
                   className={`w-full mt-6 ${
                     plan.popular 
@@ -127,7 +126,7 @@ export default function UpgradeModal({ trigger, open, onOpenChange }: UpgradeMod
             </Card>
           ))}
         </div>
-        
+
         {selectedPlan && (
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-blue-800">

@@ -306,7 +306,14 @@
             try {
                 const response = await fetch('/operations');
                 if (response.ok) {
-                    addResult('component-results', '✅ Operations dashboard accessible', 'success');
+                    addResult('component-results', '✅ Operations dashboard loads successfully', 'success');
+                } else {
+                    addResult('component-results', '❌ Operations dashboard failed to load', 'error');
+                }
+            } catch (error) {
+                addResult('component-results', `❌ Component test error: ${error.message}`, 'error');
+            }
+        }ent-results', '✅ Operations dashboard accessible', 'success');
                 } else {
                     addResult('component-results', '❌ Operations dashboard not accessible', 'error');
                 }

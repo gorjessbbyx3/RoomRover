@@ -636,6 +636,25 @@ class OperationsDashboardWorkflowTester {
       await this.testRoleBasedAccess();
       await this.testErrorHandling(this.currentUserToken);
 
+      // Final summary
+      const endTime = Date.now();
+      const duration = Math.round((endTime - startTime) / 1000);
+      
+      this.log('================================================================');
+      this.log(`🏁 Test Suite Complete in ${duration}s`);
+      this.log(`✅ Passed: ${this.passedTests} | ❌ Failed: ${this.failedTests}`);
+      
+      if (this.failedTests === 0) {
+        this.log('🎉 All tests passed!', 'success');
+      } else {
+        this.log(`⚠️  ${this.failedTests} test(s) failed`, 'error');
+      }
+
+    } catch (error) {
+      this.log(`❌ Test suite error: ${error.message}`, 'error');
+    }
+  }ait this.testErrorHandling(this.currentUserToken);
+
       const endTime = Date.now();
       const duration = ((endTime - startTime) / 1000).toFixed(2);
 

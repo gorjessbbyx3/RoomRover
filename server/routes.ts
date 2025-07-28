@@ -1343,6 +1343,23 @@ const task = await storage.createCleaningTask(cleanTaskData);
         new Date(item.dateReported) < sevenDaysAgo
       );
 
+      // Return dashboard summary
+      res.json({
+        pendingPayments: pendingPayments.length,
+        overduePayments: overduePayments.length,
+        inquirySummary,
+        cleaningIssues: cleaningIssues.length,
+        expiredCodes: expiredCodes.length,
+        staleInventory: staleInventory.length,
+        staleMaintenance: staleMaintenance.length,
+        lowStockItems,
+        openMaintenance
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    }
+  });
+
       // Revenue metrics
       const thisMonth = new Date().getMonth();
       const thisYear = new Date().getFullYear();
