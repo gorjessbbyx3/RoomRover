@@ -1578,7 +1578,8 @@ export default function OperationsDashboard() {
                           <div className="grid gap-2">
                             <Label htmlFor="maintenance-priority">Priority</Label>
                             <Select>
-                              <SelectTrigger>                                <SelectValue placeholder="Select priority                              </SelectValue>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
                                <SelectItem value="low">Low</SelectItem>

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Calendar, Repeat, Package } from 'lucide-react';
-import type { Property, Inventory } from '@/lib/types';
+import type { Property } from '@/lib/types';
 
 interface AddTaskDialogProps {
   trigger?: React.ReactNode;
@@ -56,13 +56,13 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
       });
       if (!response.ok) throw new Error('Failed to fetch rooms');
       const allRooms = await response.json();
-      return taskData.propertyId ? allRooms.filter(room => room.propertyId === taskData.propertyId) : allRooms;
+      return taskData.propertyId ? allRooms.filter((room: any) => room.propertyId === taskData.propertyId) : allRooms;
     },
     enabled: !!taskData.propertyId
   });
 
   // Fetch inventory for selected property
-  const { data: inventory = [] } = useQuery<Inventory[]>({
+  const { data: inventory = [] } = useQuery<any[]>({
     queryKey: ['inventory', taskData.propertyId],
     queryFn: async () => {
       const response = await fetch('/api/inventory', {
@@ -70,7 +70,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
       });
       if (!response.ok) throw new Error('Failed to fetch inventory');
       const allInventory = await response.json();
-      return taskData.propertyId ? allInventory.filter(item => item.propertyId === taskData.propertyId) : allInventory;
+      return taskData.propertyId ? allInventory.filter((item: any) => item.propertyId === taskData.propertyId) : allInventory;
     },
     enabled: !!taskData.propertyId
   });
@@ -250,7 +250,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No specific room</SelectItem>
-                  {rooms.map(room => (
+                  {rooms.map((room: any) => (
                     <SelectItem key={room.id} value={room.id}>
                       {room.id}
                     </SelectItem>

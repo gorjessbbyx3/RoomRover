@@ -64,6 +64,25 @@ const requireRole = (roles: string[]) => {
   };
 };
 
+// Global error handling middleware
+const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Unhandled error:', error);
+  
+  // Check if response was already sent
+  if (res.headersSent) {
+    return next(error);
+  }
+  
+  // Default error response
+  const statusCode = error.statusCode || error.status || 500;
+  const message = error.message || 'Internal server error';
+  
+  res.status(statusCode).json({
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
@@ -2243,6 +2262,9 @@ senderId: req.user.id
       res.status(500).json({ error: 'Failed to generate maintenance predictions' });
     }
   });
+
+  // Apply global error handling middleware (must be last)
+  app.use(errorHandler);
 
   const httpServer = createServer(app);
   return httpServer;
