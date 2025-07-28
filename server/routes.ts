@@ -299,7 +299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(rooms);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch rooms' });
+      console.error('Failed to fetch rooms:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch rooms',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   });
 

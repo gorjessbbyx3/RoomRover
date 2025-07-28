@@ -63,7 +63,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     };
 
     console.log('Error report:', errorReport);
-    // TODO: Send to monitoring service like Sentry, LogRocket, etc.
+
+    // Send to monitoring service in production
+    if (process.env.NODE_ENV === 'production' && process.env.VITE_ERROR_REPORTING_URL) {
+      fetch(process.env.VITE_ERROR_REPORTING_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorReport)
+      }).catch(err => console.error('Failed to report error:', err));
+    }
   };
 
   handleRetry = () => {

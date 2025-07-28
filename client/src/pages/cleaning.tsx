@@ -167,6 +167,14 @@ export default function Cleaning() {
     updateTaskMutation.mutate({
       taskId,
       updates: { status: 'completed' }
+    }, {
+      onSuccess: () => {
+        console.log('Task completed successfully');
+      },
+      onError: (error) => {
+        console.error('Failed to complete task:', error);
+        // Show user-friendly error message
+      }
     });
   };
 
@@ -174,6 +182,14 @@ export default function Cleaning() {
     updateTaskMutation.mutate({
       taskId,
       updates: { status: newStatus }
+    }, {
+      onSuccess: () => {
+        console.log('Task status updated successfully');
+      },
+      onError: (error) => {
+        console.error('Failed to update task status:', error);
+        // Show user-friendly error message
+      }
     });
   };
 

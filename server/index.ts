@@ -1,10 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { validateEnvironment } from "./env-validation";
 
 // Load environment variables
 import { config } from 'dotenv';
 config();
+
+// Validate environment variables
+validateEnvironment();
 
 // Ensure environment variables are loaded
 console.log('Environment DATABASE_URL:', process.env.DATABASE_URL?.replace(/:([^:@]{1,}@)/, ':***@') || 'Not set - using in-memory storage');
@@ -79,6 +83,12 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error('❌ Failed to seed PostgreSQL database:', error?.message || error);
     console.error('⚠️  Application may not function properly without seeded data');
+    
+    // Don't exit the process, but log the issue for monitoring
+    if (process.env.NODE_ENV === 'production') {
+      // In production, continue without seeding but alert monitoring
+      console.error('PRODUCTION ALERT: Database seeding failed');
+    }
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
@@ -87,6 +97,7 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
+    log(`✅ Server listening on 0.0.0.0:${port}`);
+    console.log(`🌐 Application available at http://localhost:${port}`);
   });
 })();
