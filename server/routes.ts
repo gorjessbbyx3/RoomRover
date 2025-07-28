@@ -10,7 +10,7 @@ interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
-// Authentication middleware with security improvements
+// Authentication middleware
 const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -25,18 +25,9 @@ const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: 
     }
 
     if (!token) {
-      // Security: Don't log sensitive headers in production
-      const sanitizedHeaders = process.env.NODE_ENV === 'development' ? req.headers : {};
-      console.log('No token provided. Environment:', process.env.NODE_ENV);
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Rate limiting check
-    const clientIP = req.ip || req.connection.remoteAddress;
-    
-    // Validate token format
-    if (typeof token !== 'string' || token.length < 10) {
-      return res.status(401).json({ error: 'Invalid token format' });
+      console.log('No token provided. Auth header:', authHeader);
+      console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+      return res.status(401).json({ error: 'No token provided' });
     }
 
     console.log('Token received:', token.substring(0, 10) + '...');
@@ -73,124 +64,32 @@ const requireRole = (roles: string[]) => {
   };
 };
 
-import { securityHeaders, sanitizeRequest, SecurityAuditLogger, TokenManager, SessionManager } from './security';
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Apply security middleware
-  app.use(securityHeaders);
-  app.use(sanitizeRequest);
-  
-  // CORS configuration
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'https://*.replit.dev'];
-    const origin = req.headers.origin;
-    
-    if (origin && allowedOrigins.some(allowed => 
-      allowed === '*' || origin === allowed || 
-      (allowed.includes('*') && origin.includes(allowed.replace('*', '')))
-    )) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
-    } else {
-      next();
-    }
-  });
-  
-  // HTTPS enforcement in production
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (process.env.NODE_ENV === 'production' && !req.secure && req.get('x-forwarded-proto') !== 'https') {
-      return res.redirect('https://' + req.get('host') + req.url);
-    }
-    next();
-  });
 
   // Authentication routes
-  app.post("/api/auth/login", authLimiter, async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-      const userAgent = req.get('User-Agent') || 'unknown';
 
       if (!username || !password) {
-        await SecurityAuditLogger.logSecurityEvent({
-          action: 'login_attempt',
-          resource: '/api/auth/login',
-          ip: clientIP,
-          userAgent,
-          success: false,
-          details: 'Missing credentials',
-          severity: 'low'
-        });
         return res.status(400).json({ error: 'Username and password required' });
       }
 
-      // Input sanitization
-      const sanitizedUsername = username.toString().substring(0, 100);
-      
-      const user = await storage.getUserByUsername(sanitizedUsername);
+      const user = await storage.getUserByUsername(username);
       if (!user) {
-        await SecurityAuditLogger.logSecurityEvent({
-          action: 'login_attempt',
-          resource: '/api/auth/login',
-          ip: clientIP,
-          userAgent,
-          success: false,
-          details: `User not found: ${sanitizedUsername}`,
-          severity: 'medium'
-        });
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        await SecurityAuditLogger.logSecurityEvent({
-          userId: user.id,
-          action: 'login_failed',
-          resource: '/api/auth/login',
-          ip: clientIP,
-          userAgent,
-          success: false,
-          details: 'Invalid password',
-          severity: 'high'
-        });
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      // Generate secure tokens
-      const { accessToken, refreshToken } = TokenManager.generateTokenPair(user.id, user.role);
-      const sessionId = SessionManager.createSession(user.id, clientIP);
-
-      // Log successful login
-      await SecurityAuditLogger.logSecurityEvent({
-        userId: user.id,
-        action: 'login_success',
-        resource: '/api/auth/login',
-        ip: clientIP,
-        userAgent,
-        success: true,
-        details: `User ${user.username} logged in successfully`,
-        severity: 'low'
-      });
-
-      // Audit log in database
-      await storage.createAuditLog({
-        userId: user.id,
-        action: 'user_login',
-        details: `User ${user.username} logged in from ${clientIP}`
-      });
+      // In a real app, generate a proper JWT token
+      const token = user.id;
 
       res.json({ 
-        token: accessToken,
-        refreshToken,
-        sessionId,
+        token, 
         user: { 
           id: user.id, 
           username: user.username, 
@@ -200,8 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } 
       });
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ error: 'Authentication service temporarily unavailable' });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -245,6 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       res.json(sanitizedUsers);
     } catch (error) {
+      console.error('Failed to fetch users:', error);
       res.status(500).json({ error: 'Failed to fetch users' });
     }
   });
@@ -270,54 +169,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id/password", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+  app.put("/api/users/:id/password", authenticateUser, requireRole(['admin']), async (req, res) => {
     try {
       const { newPassword } = req.body;
 
-      // Enhanced password validation
-      if (!newPassword || typeof newPassword !== 'string') {
-        return res.status(400).json({ error: 'Password is required' });
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
       }
 
-      if (newPassword.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
-      }
-
-      // Check password complexity
-      const hasUpperCase = /[A-Z]/.test(newPassword);
-      const hasLowerCase = /[a-z]/.test(newPassword);
-      const hasNumbers = /\d/.test(newPassword);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
-
-      if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-        return res.status(400).json({ 
-          error: 'Password must contain at least one uppercase letter, lowercase letter, number, and special character' 
-        });
-      }
-
-      // Check against common passwords
-      const commonPasswords = ['password', '123456789', 'qwerty123', 'admin123'];
-      if (commonPasswords.some(common => newPassword.toLowerCase().includes(common.toLowerCase()))) {
-        return res.status(400).json({ error: 'Password cannot contain common words' });
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 12); // Increased cost factor
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       const updated = await storage.updateUserPassword(req.params.id, hashedPassword);
 
       if (!updated) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Log password change
-      await storage.createAuditLog({
-        userId: req.user.id,
-        action: 'password_changed',
-        details: `Admin ${req.user.name} changed password for user ${req.params.id}`
-      });
-
       res.json({ success: true });
     } catch (error) {
-      console.error('Password change error:', error);
       res.status(500).json({ error: 'Failed to change password' });
     }
   });
@@ -401,6 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const properties = await storage.getProperties();
       res.json(properties);
     } catch (error) {
+      console.error('Error fetching properties:', error);
       res.status(500).json({ error: 'Failed to fetch properties' });
     }
   });
@@ -584,36 +453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      // Input validation and sanitization
-      if (!req.body.roomId || !req.body.guestId || !req.body.startDate) {
-        return res.status(400).json({ error: 'Missing required fields: roomId, guestId, startDate' });
-      }
-
-      // Validate date formats
-      const startDate = new Date(req.body.startDate);
-      if (isNaN(startDate.getTime())) {
-        return res.status(400).json({ error: 'Invalid start date format' });
-      }
-
-      // Sanitize string inputs to prevent injection
-      const sanitizeString = (str: any) => {
-        if (typeof str !== 'string') return null;
-        return str.replace(/[<>]/g, '').substring(0, 1000);
-      };
-
       // Parse dates from string format and ensure strings are properly handled
       const parsedData = {
         ...req.body,
-        startDate,
+        startDate: new Date(req.body.startDate),
         endDate: req.body.endDate ? new Date(req.body.endDate) : null,
-        isTenant: Boolean(req.body.isTenant) || false,
-        plan: ['daily', 'weekly', 'monthly'].includes(req.body.plan) ? req.body.plan : 'daily',
-        totalAmount: parseFloat(req.body.totalAmount) || 0,
-        paymentStatus: ['pending', 'paid', 'overdue'].includes(req.body.paymentStatus) ? req.body.paymentStatus : 'pending',
-        status: ['active', 'completed', 'cancelled'].includes(req.body.status) ? req.body.status : 'active',
-        doorCode: sanitizeString(req.body.doorCode),
-        frontDoorCode: sanitizeString(req.body.frontDoorCode),
-        notes: sanitizeString(req.body.notes)
+        isTenant: req.body.isTenant || false,
+        plan: req.body.plan?.toString() || 'daily',
+        totalAmount: req.body.totalAmount?.toString() || '0',
+        paymentStatus: req.body.paymentStatus?.toString() || 'pending',
+        status: req.body.status?.toString() || 'active',
+        doorCode: req.body.doorCode?.toString() || null,
+        frontDoorCode: req.body.frontDoorCode?.toString() || null,
+        notes: req.body.notes?.toString() || null
       };
 
       const bookingData = insertBookingSchema.parse(parsedData);
@@ -626,26 +478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Use transaction for booking creation
-      try {
-        const booking = await storage.createBooking(bookingData);
+      const booking = await storage.createBooking(bookingData);
 
-        // Update room status to occupied
-        await storage.updateRoom(bookingData.roomId, { status: 'occupied' });
+      // Update room status to occupied
+      await storage.updateRoom(bookingData.roomId, { status: 'occupied' });
 
-        // Create audit log
-        await storage.createAuditLog({
-          userId: req.user.id,
-          action: 'booking_created',
-          details: `Created booking for room ${bookingData.roomId} by ${req.user.name}`
-        });
-
-        res.status(201).json(booking);
-      } catch (transactionError) {
-        // Rollback any partial changes
-        console.error('Booking transaction failed:', transactionError);
-        res.status(500).json({ error: 'Booking creation failed - transaction rolled back' });
-      }
+      res.status(201).json(booking);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid booking data', details: error.errors });
@@ -1841,7 +1679,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
     try {
       const messageData = {
         ...req.body,
-        senderId: req.user.id
+senderId: req.user.id
       };
       const message = await storage.createMessage(messageData);
       res.status(201).json(message);
@@ -2330,7 +2168,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
   app.post("/api/ai/playground", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const { prompt, temperature = 0.7 } = req.body;
-      
+
       if (!prompt) {
         return res.status(400).json({ error: 'Prompt is required' });
       }

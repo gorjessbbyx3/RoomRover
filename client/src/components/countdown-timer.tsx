@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, AlertTriangle } from "lucide-react";
 
@@ -23,8 +23,15 @@ export default function CountdownTimer({ expiresAt, className, showIcon = true }
     isExpired: false
   });
 
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
+
   useEffect(() => {
+    mountedRef.current = true;
+
     const calculateTimeLeft = () => {
+      if (!mountedRef.current) return;
+
       const targetDate = new Date(expiresAt);
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
@@ -37,6 +44,10 @@ export default function CountdownTimer({ expiresAt, className, showIcon = true }
           seconds: 0,
           isExpired: true
         });
+
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
         return;
       }
 
@@ -49,9 +60,15 @@ export default function CountdownTimer({ expiresAt, className, showIcon = true }
     };
 
     calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
+    timerRef.current = setInterval(calculateTimeLeft, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      mountedRef.current = false;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [expiresAt]);
 
   const formatTime = (value: number) => value.toString().padStart(2, '0');

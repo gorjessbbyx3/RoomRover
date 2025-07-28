@@ -1,6 +1,7 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
-export interface User {
+interface User {
   id: string;
   username: string;
   role: string;
@@ -10,115 +11,90 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
+  token: string | null;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  loading: boolean;
-  validateToken: () => Promise<boolean>;
-  isAuthenticated: () => boolean;
+  isAuthenticated: boolean;
+  refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// Token refresh interval (15 minutes)
+const TOKEN_REFRESH_INTERVAL = 15 * 60 * 1000;
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+  const [sessionTimeout, setSessionTimeout] = useState<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    verifyToken();
-  }, []);
-
-  const verifyToken = async () => {
+  const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      const currentToken = token || localStorage.getItem('token');
+      if (!currentToken) return false;
 
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${currentToken}`,
+          'Content-Type': 'application/json',
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setUser(data.user);
-        } else {
-          console.warn('No user data in response');
-          localStorage.removeItem('token');
-        }
-      } else {
-        console.warn('Token verification failed with status:', response.status);
-        localStorage.removeItem('token');
+      if (!response.ok) {
+        logout();
+        return false;
       }
+
+      const data = await response.json();
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
+      return true;
     } catch (error) {
-      console.error('Token verification failed:', error);
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
+      console.error('Token refresh failed:', error);
+      logout();
+      return false;
     }
-  };
+  }, [token]);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      // Input validation
-      if (!username?.trim()) {
-        throw new Error('Username is required');
-      }
-      if (!password?.trim()) {
-        throw new Error('Password is required');
-      }
-      if (username.length < 3) {
-        throw new Error('Username must be at least 3 characters');
-      }
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
-
       console.log('Attempting login for username:', username);
 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Login failed' }));
-        const errorMessage = response.status === 401 ? 'Invalid username or password' :
-                           response.status === 429 ? 'Too many login attempts. Please try again later.' :
-                           response.status >= 500 ? 'Server error. Please try again later.' :
-                           errorData.error || 'Login failed';
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        console.error('Login failed:', errorData);
+        return false;
       }
 
       const data = await response.json();
-      const token = data.token;
+      console.log('Login successful, token received:', data.token?.substring(0, 10) + '...');
 
-      if (!token || typeof token !== 'string') {
-        throw new Error('Invalid response from server');
-      }
+      setUser(data.user);
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      console.log('Login successful, token received:', token.substring(0, 10) + '...');
-      localStorage.setItem('token', token);
+      // Set up automatic token refresh
+      if (sessionTimeout) clearTimeout(sessionTimeout);
+      const timeout = setTimeout(() => {
+        refreshToken();
+      }, TOKEN_REFRESH_INTERVAL);
+      setSessionTimeout(timeout);
 
-      // Verify the token immediately
-      await verifyToken();
-      console.log('Token verification complete');
+      return true;
     } catch (error) {
       console.error('Login error:', error);
-      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      throw new Error(message);
+      return false;
     }
   };
 
@@ -128,47 +104,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isAuthenticated = () => {
-    return user !== null;
+    return user !== null && token !== null;
   };
 
-  const validateToken = async (): Promise<boolean> => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return false;
+  // Load stored token and user on component mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
 
-      const response = await fetch('/api/auth/verify', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    if (storedToken && storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setUser(data.user);
-          return true;
-        }
+        // Set up automatic token refresh
+        if (sessionTimeout) clearTimeout(sessionTimeout);
+        const timeout = setTimeout(() => {
+          refreshToken();
+        }, TOKEN_REFRESH_INTERVAL);
+        setSessionTimeout(timeout);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        // Clear potentially corrupted data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
-      
-      localStorage.removeItem('token');
-      return false;
-    } catch (error) {
-      console.error('Token validation failed:', error);
-      localStorage.removeItem('token');
-      return false;
     }
+  }, [refreshToken, sessionTimeout]);
+
+  const contextValue: AuthContextType = {
+    user,
+    token,
+    login,
+    logout,
+    isAuthenticated,
+    refreshToken,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      loading, 
-      validateToken,
-      isAuthenticated 
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

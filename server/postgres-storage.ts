@@ -1,4 +1,4 @@
-import { eq, desc, and, lte, gte, or } from 'drizzle-orm';
+import { eq, desc, and, lte, gte, or, sql } from 'drizzle-orm';
 import { db } from './db';
 import { 
   users, properties, rooms, guests, bookings, payments, 
@@ -12,11 +12,36 @@ import {
 import type { IStorage } from './storage';
 import * as bcrypt from 'bcrypt';
 
+// Connection pool monitoring
+let connectionAttempts = 0;
+const MAX_RETRIES = 3;
+
 export class PostgresStorage implements IStorage {
+  private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        connectionAttempts++;
+        if (attempt === MAX_RETRIES) {
+          console.error(`Database operation failed after ${MAX_RETRIES} attempts:`, error);
+          throw new Error(`Database connection failed: ${error.message}`);
+        }
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      }
+    }
+    throw new Error('Maximum retry attempts exceeded');
+  }
+
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
+    return this.executeWithRetry(async () => {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Invalid user ID provided');
+      }
+      const result = await db.select().from(users).where(eq(users.id, sql`${id}`)).limit(1);
+      return result[0];
+    });
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
