@@ -1,4 +1,65 @@
 
+// Type definitions for AI engine parameters
+interface RoomData {
+  id: string;
+  propertyId: string;
+  number: string;
+  type: string;
+  rate: number;
+  status: string;
+  occupancy?: any;
+}
+
+interface MarketData {
+  averageRate: number;
+  occupancyRate: number;
+  competitorRates: number[];
+  seasonality: string;
+  demandLevel: string;
+}
+
+interface HistoricalData {
+  averageRevenue: number;
+  occupancyHistory: number[];
+  seasonalTrends: any[];
+  guestFeedback: any[];
+}
+
+interface RoomHistory {
+  maintenanceEvents: any[];
+  lastInspection: string;
+  issues: any[];
+  repairs: any[];
+}
+
+interface CurrentStatus {
+  condition: string;
+  lastCleaning: string;
+  lastMaintenance: string;
+  upcomingBookings: any[];
+}
+
+interface UsagePatterns {
+  dailyUsage: any[];
+  weeklyTrends: any[];
+  seasonalVariation: any[];
+  peakUsage: any[];
+}
+
+interface CurrentInventory {
+  items: any[];
+  levels: any[];
+  costs: any[];
+  suppliers: any[];
+}
+
+interface InquiryContext {
+  propertyId: string;
+  roomType: string;
+  guestHistory?: any[];
+  preferences?: any[];
+}
+
 export class AIEngine {
   
   private static async callReplitAI(prompt: string, temperature: number = 0.3) {
@@ -25,7 +86,7 @@ export class AIEngine {
   }
 
   // Smart pricing optimization
-  static async optimizePricing(roomData: any, marketData: any, historicalData: any) {
+  static async optimizePricing(roomData: RoomData, marketData: MarketData, historicalData: HistoricalData) {
     const prompt = `
     Analyze this STR data and recommend optimal pricing:
     
@@ -46,7 +107,7 @@ export class AIEngine {
   }
 
   // Predictive maintenance
-  static async predictMaintenance(roomHistory: any, currentStatus: any) {
+  static async predictMaintenance(roomHistory: RoomHistory, currentStatus: CurrentStatus) {
     const prompt = `
     Based on this room's maintenance history and current status, 
     predict what maintenance issues might occur in the next 30 days:
@@ -67,7 +128,7 @@ export class AIEngine {
   }
 
   // Guest communication assistant
-  static async generateGuestResponse(inquiry: string, context: any) {
+  static async generateGuestResponse(inquiry: string, context: InquiryContext) {
     const prompt = `
     You are a professional STR property manager assistant. 
     Respond to this guest inquiry professionally and helpfully:
@@ -88,7 +149,7 @@ export class AIEngine {
   }
 
   // Smart inventory management
-  static async optimizeInventory(currentInventory: any, usagePatterns: any) {
+  static async optimizeInventory(currentInventory: CurrentInventory, usagePatterns: UsagePatterns) {
     const prompt = `
     Analyze inventory usage patterns and recommend optimal stock levels:
     

@@ -183,10 +183,7 @@ async function testMaintenanceAccuracy(token, userRole) {
   const openMaintenance = maintenance.filter(item => item.status === 'open');
   
   console.log(`🔧 Critical maintenance items: ${criticalMaintenance.length}`);
-  console.log(`📋 Open maintenance items: ${openMaintenance.length}`);tem => item.status !== 'completed');
-  
-  console.log(`   Critical maintenance: ${criticalMaintenance.length}`);
-  console.log(`   Open maintenance: ${openMaintenance.length}`);
+  console.log(`📋 Open maintenance items: ${openMaintenance.length}`);
   
   return true;
 }

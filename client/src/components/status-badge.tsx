@@ -8,7 +8,7 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, type = 'room', className }: StatusBadgeProps) {
-  const getStatusConfig = () => {
+  const getStatusConfig = (): { label: string; className: string } => {
     switch (type) {
       case 'room':
         switch (status) {
