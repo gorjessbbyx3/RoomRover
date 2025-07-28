@@ -1360,20 +1360,6 @@ const task = await storage.createCleaningTask(cleanTaskData);
     }
   });
 
-      // Revenue metrics
-      const thisMonth = new Date().getMonth();
-      const thisYear = new Date().getFullYear();
-      const monthlyRevenue = payments.filter(payment => {
-        const paymentDate = new Date(payment.dateReceived);
-        return paymentDate.getMonth() === thisMonth && paymentDate.getFullYear() === thisYear;
-      }).reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-
-      const totalRevenue = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-
-      // Critical alerts count
-      const criticalMaintenance = openMaintenance.filter(item => item.priority === 'critical').length;
-      const outOfStock = lowStockItems.filter(item => item.quantity === 0).length;
-
       res.json({
         summary: {
           criticalAlerts: criticalMaintenance + outOfStock,

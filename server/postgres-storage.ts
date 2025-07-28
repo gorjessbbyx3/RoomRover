@@ -33,6 +33,10 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
     const updateData = { ...updates };
     if (updates.password) {
@@ -278,6 +282,11 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async deleteInventoryItem(id: string): Promise<boolean> {
+    const result = await db.delete(inventory).where(eq(inventory.id, id));
+    return true;
+  }
+
   // Maintenance methods
   async getMaintenance(): Promise<Maintenance[]> {
     return await db.select().from(maintenance);
@@ -431,8 +440,26 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async getUserPermissions(userId: string): Promise<any[]> {
+    // This would need a separate permissions table in a real implementation
+    return [];
+  }
+
+  async updateUserPermissions(userId: string, permissions: any[]): Promise<boolean> {
+    // This would need a separate permissions table in a real implementation
+    return true;
+  }
+
+  async getUserWithPermissions(userId: string): Promise<any> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const permissions = await this.getUserPermissions(userId);
+    return { ...user, permissions };
+  }
+
   async deleteUser(id: string): Promise<boolean> {
-    const result = await this.db
+    const result = await db
       .delete(users)
       .where(eq(users.id, id))
       .returning();

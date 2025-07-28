@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Upload, Check } from 'lucide-react';
+import { X, Upload, Check, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImageUploaded: (imageUrl: string) => void;
