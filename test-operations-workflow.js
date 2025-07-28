@@ -490,6 +490,9 @@ class OperationsDashboardWorkflowTester {
       } else {
         this.log('✅ Invalid inventory data properly rejected', 'success');
         this.passedTests++;
+      }e {
+        this.log('✅ Invalid inventory data properly rejected', 'success');
+        this.passedTests++;
       }
 
       // 2. Test SQL injection attempt

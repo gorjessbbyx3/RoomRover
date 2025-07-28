@@ -100,11 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
+    setToken(null);
   };
 
   const isAuthenticated = () => {
-    return user !== null && token !== null;
+    return !!token && !!user;
   };
 
   // Load stored token and user on component mount

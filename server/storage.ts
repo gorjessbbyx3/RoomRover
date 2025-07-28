@@ -979,7 +979,7 @@ export class MemStorage implements IStorage {
 
     const cashAppDeposits = transactions
       .filter(t => t.type === 'bank_deposit_cashapp')
-      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());Time());
 
     return {
       currentCashHolding: Math.max(0, cashReceived - cashDeposited),

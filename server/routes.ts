@@ -2029,7 +2029,7 @@ senderId: req.user.id
 
       // Market intelligence (using actual data where possible)
       const avgRate = recentPayments.length > 0 ? 
-        Math.round(recentPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0) / recentPayments.length) : 85;
+        Math.round(recentPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) / recentPayments.length) : 85;
 
       const insights = {
         revenue: {

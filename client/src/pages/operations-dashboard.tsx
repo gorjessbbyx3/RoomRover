@@ -117,9 +117,12 @@ export default function OperationsDashboard() {
           console.warn(`Invalid inventory item at index ${index}:`, item);
         }
         return {
-          ...item,
+          id: item.id || `temp-${index}`,
+          item: item.item || 'Unknown Item',
           quantity: Math.max(0, Number(item.quantity) || 0),
           threshold: Math.max(0, Number(item.threshold) || 5),
+          unit: item.unit || 'units',
+          category: item.category || 'general',
           lastUpdated: item.lastUpdated || new Date().toISOString()
         };
       });

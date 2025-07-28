@@ -180,7 +180,10 @@ async function testMaintenanceAccuracy(token, userRole) {
   
   // Test priority calculations
   const criticalMaintenance = maintenance.filter(item => item.priority === 'critical' && item.status !== 'completed');
-  const openMaintenance = maintenance.filter(item => item.status !== 'completed');
+  const openMaintenance = maintenance.filter(item => item.status === 'open');
+  
+  console.log(`🔧 Critical maintenance items: ${criticalMaintenance.length}`);
+  console.log(`📋 Open maintenance items: ${openMaintenance.length}`);tem => item.status !== 'completed');
   
   console.log(`   Critical maintenance: ${criticalMaintenance.length}`);
   console.log(`   Open maintenance: ${openMaintenance.length}`);
