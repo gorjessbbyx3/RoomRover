@@ -27,6 +27,8 @@ import * as bcrypt from "bcrypt";
 import { config } from 'dotenv';
 config();
 
+export type DB = any;
+
 // Force PostgreSQL usage - no fallback to in-memory
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -35,19 +37,18 @@ if (!databaseUrl) {
 }
 
 // Initialize PostgreSQL connection
-let postgresStorage: any = null;
-
-try {
-  console.log('Initializing PostgreSQL storage...');
-  const { PostgresStorage } = await import("./postgres-storage");
-  postgresStorage = new PostgresStorage();
-  console.log('✅ PostgreSQL storage initialized successfully');
-} catch (error) {
-  console.error('❌ Failed to initialize PostgreSQL storage:', error);
-  throw new Error(`PostgreSQL storage initialization failed: ${error.message}`);
+async function initializeStorage() {
+  try {
+    console.log('Initializing PostgreSQL storage...');
+    const { PostgresStorage } = await import("./postgres-storage");
+    const postgresStorage = new PostgresStorage();
+    console.log('✅ PostgreSQL storage initialized successfully');
+    return postgresStorage;
+  } catch (error: any) {
+    console.error('❌ Failed to initialize PostgreSQL storage:', error);
+    throw new Error(`PostgreSQL storage initialization failed: ${error.message}`);
+  }
 }
-
-export type DB = typeof db;
 
 export interface IStorage {
   // Users
@@ -78,7 +79,7 @@ export interface IStorage {
 
   // Bookings
   getBookings(): Promise<Booking[]>;
-  getBookingsByRoom(roomId: string): Promise<Room[]>;
+  getBookingsByRoom(roomId: string): Promise<Booking[]>;
   getBookingsByGuest(guestId: string): Promise<Booking[]>;
   getActiveBookings(): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
@@ -175,6 +176,7 @@ export class MemStorage implements IStorage {
       role: "admin",
       property: null,
       name: "Admin User",
+      allowedPages: null,
       createdAt: new Date(),
     };
     this.users.set(admin.id, admin);
@@ -188,6 +190,7 @@ export class MemStorage implements IStorage {
       role: "manager",
       property: "P1",
       name: "P1 Manager",
+      allowedPages: null,
       createdAt: new Date(),
     };
     this.users.set(p1Manager.id, p1Manager);
@@ -200,6 +203,7 @@ export class MemStorage implements IStorage {
       role: "manager",
       property: "P2",
       name: "P2 Manager",
+      allowedPages: null,
       createdAt: new Date(),
     };
     this.users.set(p2Manager.id, p2Manager);
@@ -213,6 +217,7 @@ export class MemStorage implements IStorage {
       role: "helper",
       property: null,
       name: "Cleaning Helper",
+      allowedPages: null,
       createdAt: new Date(),
     };
     this.users.set(helper.id, helper);
@@ -251,6 +256,7 @@ export class MemStorage implements IStorage {
         status: "available",
         doorCode: null,
         codeExpiry: null,
+        masterCode: "1234",
         cleaningStatus: "clean",
         linenStatus: "fresh",
         lastCleaned: new Date(),
@@ -269,6 +275,7 @@ export class MemStorage implements IStorage {
         status: "available",
         doorCode: null,
         codeExpiry: null,
+        masterCode: "5678",
         cleaningStatus: "clean",
         linenStatus: "fresh",
         lastCleaned: new Date(),
@@ -353,6 +360,7 @@ export class MemStorage implements IStorage {
       name: insertUser.name,
       username: insertUser.username,
       password: hashedPassword,
+      allowedPages: insertUser.allowedPages ?? null,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -426,6 +434,7 @@ export class MemStorage implements IStorage {
       propertyId: insertRoom.propertyId,
       roomNumber: insertRoom.roomNumber,
       doorCode: insertRoom.doorCode ?? null,
+      masterCode: insertRoom.masterCode ?? null,
       cleaningStatus: insertRoom.cleaningStatus ?? 'clean',
       linenStatus: insertRoom.linenStatus ?? 'clean',
       lastCleaned: insertRoom.lastCleaned ?? null,
@@ -463,6 +472,9 @@ export class MemStorage implements IStorage {
     const guest: Guest = {
       ...insertGuest,
       id,
+      notes: insertGuest.notes ?? null,
+      referralSource: insertGuest.referralSource ?? null,
+      cashAppTag: insertGuest.cashAppTag ?? null,
       createdAt: new Date(),
     };
     this.guests.set(id, guest);
@@ -504,6 +516,13 @@ export class MemStorage implements IStorage {
     const booking: Booking = {
       ...insertBooking,
       id,
+      status: insertBooking.status ?? 'active',
+      paymentStatus: insertBooking.paymentStatus ?? 'pending',
+      doorCode: insertBooking.doorCode ?? null,
+      frontDoorCode: insertBooking.frontDoorCode ?? null,
+      codeExpiry: insertBooking.codeExpiry ?? null,
+      notes: insertBooking.notes ?? null,
+      isTenant: insertBooking.isTenant ?? false,
       createdAt: new Date(),
     };
     this.bookings.set(id, booking);
@@ -537,15 +556,17 @@ export class MemStorage implements IStorage {
     const payment: Payment = {
       ...insertPayment,
       id,
-      discountAmount: insertPayment.discountAmount || '0.00',
-      discountReason: insertPayment.discountReason || null,
-      hasSecurityDeposit: insertPayment.hasSecurityDeposit || false,
-      securityDepositAmount: insertPayment.securityDepositAmount || '0.00',
-      securityDepositDiscount: insertPayment.securityDepositDiscount || '0.00',
-      hasPetFee: insertPayment.hasPetFee || false,
-      petFeeAmount: insertPayment.petFeeAmount || '0.00',
-      petFeeDiscount: insertPayment.petFeeDiscount || '0.00',
-      totalPaid: insertPayment.totalPaid || insertPayment.amount,
+      discountAmount: insertPayment.discountAmount ?? '0.00',
+      discountReason: insertPayment.discountReason ?? null,
+      hasSecurityDeposit: insertPayment.hasSecurityDeposit ?? false,
+      securityDepositAmount: insertPayment.securityDepositAmount ?? '0.00',
+      securityDepositDiscount: insertPayment.securityDepositDiscount ?? '0.00',
+      hasPetFee: insertPayment.hasPetFee ?? false,
+      petFeeAmount: insertPayment.petFeeAmount ?? '0.00',
+      petFeeDiscount: insertPayment.petFeeDiscount ?? '0.00',
+      totalPaid: insertPayment.totalPaid ?? insertPayment.amount,
+      transactionId: insertPayment.transactionId ?? null,
+      notes: insertPayment.notes ?? null,
       createdAt: new Date(),
     };
     this.payments.set(id, payment);
@@ -578,6 +599,16 @@ export class MemStorage implements IStorage {
     const task: CleaningTask = {
       ...insertTask,
       id,
+      status: insertTask.status ?? 'pending',
+      priority: insertTask.priority ?? 'normal',
+      description: insertTask.description ?? null,
+      roomId: insertTask.roomId ?? null,
+      propertyId: insertTask.propertyId ?? null,
+      assignedTo: insertTask.assignedTo ?? null,
+      dueDate: insertTask.dueDate ?? null,
+      completedAt: insertTask.completedAt ?? null,
+      completedBy: insertTask.completedBy ?? null,
+      notes: insertTask.notes ?? null,
       createdAt: new Date(),
     };
     this.cleaningTasks.set(id, task);
@@ -619,6 +650,10 @@ export class MemStorage implements IStorage {
     const item: Inventory = {
       ...insertItem,
       id,
+      quantity: insertItem.quantity ?? 0,
+      threshold: insertItem.threshold ?? 5,
+      unit: insertItem.unit ?? 'pieces',
+      notes: insertItem.notes ?? null,
       lastUpdated: new Date(),
     };
     this.inventory.set(id, item);
@@ -708,6 +743,11 @@ export class MemStorage implements IStorage {
       id,
       trackerToken,
       tokenExpiry,
+      status: insertInquiry.status ?? 'pending',
+      message: insertInquiry.message ?? null,
+      notes: insertInquiry.notes ?? null,
+      referralSource: insertInquiry.referralSource ?? null,
+      bookingId: insertInquiry.bookingId ?? null,
       createdAt: new Date(),
     };
     this.inquiries.set(id, inquiry);
@@ -1072,5 +1112,20 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Export PostgreSQL storage instance - no in-memory fallback
-export const storage = postgresStorage;
+// Create storage instance - use PostgreSQL
+let storageInstance: IStorage;
+
+export const getStorage = async (): Promise<IStorage> => {
+  if (!storageInstance) {
+    try {
+      storageInstance = await initializeStorage();
+    } catch (error) {
+      console.warn('⚠️  Falling back to in-memory storage for development');
+      storageInstance = new MemStorage();
+    }
+  }
+  return storageInstance;
+};
+
+// For backwards compatibility, export a storage instance
+export const storage = new MemStorage();

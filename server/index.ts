@@ -80,7 +80,7 @@ app.use((req, res, next) => {
     
     await Promise.race([seedPromise, timeoutPromise]);
     console.log('✅ PostgreSQL database seeded successfully');
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed to seed PostgreSQL database:', error?.message || error);
     console.error('⚠️  Application may not function properly without seeded data');
     

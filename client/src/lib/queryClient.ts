@@ -41,7 +41,7 @@ export async function apiRequest(
   } = {}
 ) {
   const { timeout = 30000, retries = 0, signal } = options;
-  const token = localStorage.getItem('auth-token');
+  const token = localStorage.getItem('token');
 
   const config: RequestInit = {
     method,
@@ -70,8 +70,7 @@ export async function apiRequest(
 
     // Handle authentication errors
     if (response.status === 401) {
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('token');
       window.location.href = '/login';
       throw new Error('Unauthorized - Please log in again');
     }

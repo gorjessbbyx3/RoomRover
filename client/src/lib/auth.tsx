@@ -1,5 +1,4 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 
 export interface User {
   id: string;
@@ -15,6 +14,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   validateToken: () => Promise<boolean>;
+  isAuthenticated: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -123,35 +123,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
     localStorage.removeItem('token');
+    setUser(null);
   };
 
-  const validateToken = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
+  const isAuthenticated = () => {
+    return user !== null;
+  };
 
+  const validateToken = async (): Promise<boolean> => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+
       const response = await fetch('/api/auth/verify', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
-      if (!response.ok) {
-        console.warn('Token verification failed with status:', response.status);
-        logout();
-        return false;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setUser(data.user);
+          return true;
+        }
       }
-      return true;
+      
+      localStorage.removeItem('token');
+      return false;
     } catch (error) {
-      console.error('Token validation error:', error);
-      logout();
+      console.error('Token validation failed:', error);
+      localStorage.removeItem('token');
       return false;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, validateToken }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loading, 
+      validateToken,
+      isAuthenticated 
+    }}>
       {children}
     </AuthContext.Provider>
   );
