@@ -96,8 +96,11 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen(port, "0.0.0.0", () => {
-    log(`✅ Server listening on 0.0.0.0:${port}`);
-    console.log(`🌐 Application available at http://localhost:${port}`);
+  
+  // Ensure we're using port 5000 for the web server
+  const webPort = 5000;
+  server.listen(webPort, "0.0.0.0", () => {
+    log(`✅ Server listening on 0.0.0.0:${webPort}`);
+    console.log(`🌐 Application available at http://localhost:${webPort}`);
   });
 })();
