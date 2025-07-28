@@ -512,21 +512,50 @@ export class MemStorage implements IStorage {
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    const id = randomUUID();
-    const booking: Booking = {
-      ...insertBooking,
-      id,
-      status: insertBooking.status ?? 'active',
-      paymentStatus: insertBooking.paymentStatus ?? 'pending',
-      doorCode: insertBooking.doorCode ?? null,
-      frontDoorCode: insertBooking.frontDoorCode ?? null,
-      codeExpiry: insertBooking.codeExpiry ?? null,
-      notes: insertBooking.notes ?? null,
-      isTenant: insertBooking.isTenant ?? false,
-      createdAt: new Date(),
-    };
-    this.bookings.set(id, booking);
-    return booking;
+    try {
+      // Validate room availability
+      const room = await this.getRoom(insertBooking.roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      if (room.status === 'occupied') {
+        throw new Error('Room is already occupied');
+      }
+
+      // Check for conflicting bookings
+      const conflictingBookings = Array.from(this.bookings.values()).filter(b => 
+        b.roomId === insertBooking.roomId && 
+        b.status === 'active' &&
+        ((insertBooking.startDate >= b.startDate && insertBooking.startDate <= (b.endDate || new Date())) ||
+         (insertBooking.endDate && insertBooking.endDate >= b.startDate && insertBooking.endDate <= (b.endDate || new Date())))
+      );
+
+      if (conflictingBookings.length > 0) {
+        throw new Error('Room has conflicting bookings for the selected dates');
+      }
+
+      const id = randomUUID();
+      const booking: Booking = {
+        ...insertBooking,
+        id,
+        status: insertBooking.status ?? 'active',
+        paymentStatus: insertBooking.paymentStatus ?? 'pending',
+        doorCode: insertBooking.doorCode ?? null,
+        frontDoorCode: insertBooking.frontDoorCode ?? null,
+        codeExpiry: insertBooking.codeExpiry ?? null,
+        notes: insertBooking.notes ?? null,
+        isTenant: insertBooking.isTenant ?? false,
+        createdAt: new Date(),
+      };
+
+      this.bookings.set(id, booking);
+      return booking;
+      
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      throw error;
+    }
   }
 
   async updateBooking(id: string, updates: Partial<InsertBooking>): Promise<Booking | undefined> {
@@ -881,8 +910,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.adminCashDrawer.set(id, transaction);
-    return transaction;
-  }
+    return transaction;  }
 
   // HouseBank methods
   async getHouseBankTransactions(): Promise<any[]> {
@@ -913,8 +941,7 @@ export class MemStorage implements IStorage {
     const transactions = Array.from(this.houseBankTransactions.values());
 
     const transfersIn = transactions
-      .filter```text
-(t => t.type === 'transfer_in')
+      .filter(t => t.type === 'transfer_in')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const expenses = transactions

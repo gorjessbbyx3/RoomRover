@@ -169,11 +169,18 @@ export const inquiries = pgTable("inquiries", {
 
 export const auditLog = pgTable("audit_log", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   action: text("action").notNull(),
   details: text("details"),
   timestamp: timestamp("timestamp").defaultNow(),
-});
+  ipAddress: text("ip_address"), // Track IP for security
+  userAgent: text("user_agent"), // Track user agent
+  severity: text("severity").default("info"), // low, medium, high, critical
+}, (table) => ({
+  timestampIdx: index('audit_log_timestamp_idx').on(table.timestamp),
+  userIdx: index('audit_log_user_idx').on(table.userId),
+  actionIdx: index('audit_log_action_idx').on(table.action),
+}));
 
 export const bannedUsers = pgTable("banned_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
