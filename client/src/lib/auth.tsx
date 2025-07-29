@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 interface User {
@@ -50,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const isAuthenticated = useCallback((): boolean => {
+    const token = localStorage.getItem('token');
+    return !!(token && user);
+  }, [user]);
+
   const verifyToken = useCallback(async (token: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/verify', {
@@ -57,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+        const data = await response.json();
+        setUser(data.user);
         return true;
       } else {
         logout();
@@ -71,14 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logout]);
 
-  const isAuthenticated = useCallback((): boolean => {
-    const token = localStorage.getItem('token');
-    return !!(token && user);
-  }, [user]);
-
   useEffect(() => {
     const initializeAuth = async () => {
-      setIsLoading(true);
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
 
@@ -86,8 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
-          // Verify token in background
-          await verifyToken(storedToken);
+          // Verify token in background without blocking UI
+          verifyToken(storedToken).catch(() => {
+            // Token verification failed, but don't block initialization
+            console.log('Token verification failed during initialization');
+          });
         } catch (error) {
           console.error('Error parsing stored user data:', error);
           logout();
@@ -97,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [verifyToken, logout]);
+  }, [logout, verifyToken]);
 
   const contextValue: AuthContextType = {
     user,

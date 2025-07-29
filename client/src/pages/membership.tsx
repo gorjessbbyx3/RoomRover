@@ -67,12 +67,12 @@ export default function Membership() {
     mutationFn: async (data: InquiryFormData) => {
       console.log('Submitting inquiry data:', data);
       const response = await apiRequest('POST', '/api/inquiries', data);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
         throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -102,11 +102,11 @@ export default function Membership() {
 
   const onSubmit = (data: InquiryFormData) => {
     console.log('Form data being submitted:', data);
-    
+
     // Additional client-side validation
     const requiredFields = ['name', 'contact', 'email', 'referralSource', 'clubhouse', 'preferredPlan'];
     const missingFields = requiredFields.filter(field => !data[field as keyof InquiryFormData]?.toString().trim());
-    
+
     if (missingFields.length > 0) {
       toast({
         variant: 'destructive',
@@ -116,7 +116,7 @@ export default function Membership() {
       });
       return;
     }
-    
+
     submitInquiryMutation.mutate(data);
   };
 
@@ -264,7 +264,7 @@ export default function Membership() {
                 <CardContent className="p-4">
                   <div className="text-center mb-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      $100<span className="text-sm font-medium text-gray-600">/day</span>
+                      $80<span className="text-sm font-medium text-gray-600">/day</span>
                     </div>
                   </div>
                   <ul className="space-y-2 text-sm text-gray-600">
@@ -293,7 +293,7 @@ export default function Membership() {
                 <CardContent className="p-4">
                   <div className="text-center mb-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      $500<span className="text-sm font-medium text-gray-600">/week</span>
+                      $400<span className="text-sm font-medium text-gray-600">/week</span>
                     </div>
                   </div>
                   <ul className="space-y-2 text-sm text-gray-600">
