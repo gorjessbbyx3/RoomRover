@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout();
       return false;
     }
-  }, [token, logout]);
+  }, [logout, token]);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -109,30 +109,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !!token && !!user;
   };
 
-  // Load stored token and user on component mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setToken(storedToken);
-
-        // Set up automatic token refresh
-        if (sessionTimeout) clearTimeout(sessionTimeout);
-        const timeout = setTimeout(() => {
-          refreshToken();
-        }, TOKEN_REFRESH_INTERVAL);
-        setSessionTimeout(timeout);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        // Clear potentially corrupted data
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
+    const token = localStorage.getItem('token');
+    if (token) {
+      verifyToken(token);
     }
-  }, [refreshToken, sessionTimeout]);
+  }, []);
+
+  const verifyToken = useCallback(async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/verify', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        return true;
+      } else {
+        localStorage.removeItem('token');
+        setUser(null);
+        return false;
+      }
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      localStorage.removeItem('token');
+      setUser(null);
+      return false;
+    }
+  }, []);
+
+  const isAuthenticated = useCallback(() => {
+    const token = localStorage.getItem('token');
+    return !!(token && user);
+  }, [user]);
 
   const contextValue: AuthContextType = {
     user,
