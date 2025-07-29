@@ -30,12 +30,12 @@ const inquirySchema = z.object({
   contact: z.string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number must be less than 15 digits")
-    .regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number"),
+    .regex(/^[\d\s\-\+\(\)]+$/, "Please enter a valid phone number"),
   email: z.string()
     .email("Please enter a valid email address")
     .max(255, "Email must be less than 255 characters"),
   referralSource: z.string()
-    .min(1, "Referral source is required")
+    .min(1, "Please tell us who referred you")
     .max(200, "Referral source must be less than 200 characters"),
   clubhouse: z.string().min(1, 'Please select a clubhouse location'),
   preferredPlan: z.string().min(1, 'Please select a membership plan'),
@@ -65,12 +65,21 @@ export default function Membership() {
 
   const submitInquiryMutation = useMutation({
     mutationFn: async (data: InquiryFormData) => {
+      console.log('Submitting inquiry data:', data);
       const response = await apiRequest('POST', '/api/inquiries', data);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+        throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
+      console.log('Inquiry submitted successfully:', data);
+      form.reset();
       toast({
-        title: 'Inquiry Submitted',
+        title: 'Inquiry Submitted Successfully!',
         description: `Your membership request has been received. IMPORTANT: Save this tracking token for your records: ${data.trackerToken}`,
         duration: 10000,
       });
@@ -81,15 +90,33 @@ export default function Membership() {
       }, 3000);
     },
     onError: (error: any) => {
+      console.error('Inquiry submission error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to submit inquiry',
+        title: 'Submission Failed',
+        description: error.message || 'Failed to submit inquiry. Please check all fields and try again.',
+        duration: 8000,
       });
     },
   });
 
   const onSubmit = (data: InquiryFormData) => {
+    console.log('Form data being submitted:', data);
+    
+    // Additional client-side validation
+    const requiredFields = ['name', 'contact', 'email', 'referralSource', 'clubhouse', 'preferredPlan'];
+    const missingFields = requiredFields.filter(field => !data[field as keyof InquiryFormData]?.toString().trim());
+    
+    if (missingFields.length > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Required Fields',
+        description: `Please fill in: ${missingFields.join(', ')}`,
+        duration: 5000,
+      });
+      return;
+    }
+    
     submitInquiryMutation.mutate(data);
   };
 
@@ -128,7 +155,7 @@ export default function Membership() {
 
           {/* P1 ClubHouse */}
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P1 - Queen ClubHouse</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">934 ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
 
               {/* P1 Daily */}
@@ -225,7 +252,7 @@ export default function Membership() {
 
           {/* P2 ClubHouse */}
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">P2 - Kapahulu ClubHouse</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">944 ClubHouse</h2>
             <div className="grid grid-cols-1 gap-4">
 
               {/* P2 Daily */}
@@ -331,6 +358,19 @@ export default function Membership() {
           <CardContent className="p-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="membership-form">
+                {/* Debug form errors - remove in production */}
+                {Object.keys(form.formState.errors).length > 0 && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h4 className="font-medium text-red-800 mb-2">Form Validation Errors:</h4>
+                    <ul className="text-sm text-red-700 space-y-1">
+                      {Object.entries(form.formState.errors).map(([field, error]) => (
+                        <li key={field}>
+                          <strong>{field}:</strong> {error?.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -394,8 +434,8 @@ export default function Membership() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="p1">P1 - Queen ClubHouse</SelectItem>
-                            <SelectItem value="p2">P2 - Kapahulu ClubHouse (Premium)</SelectItem>
+                            <SelectItem value="P1">934 ClubHouse</SelectItem>
+                            <SelectItem value="P2">944 ClubHouse (Premium)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
