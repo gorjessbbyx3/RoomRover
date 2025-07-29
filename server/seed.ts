@@ -54,27 +54,28 @@ export async function seedDatabase() {
   }).onConflictDoNothing();
 
   // Create properties
-  await db.insert(properties).values({
-    id: "P1",
-    name: "Premium Location",
-    description: "8 Rooms • Premium location with higher rates",
-    frontDoorCode: "1234",
-    codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    rateDaily: "100.00",
-    rateWeekly: "500.00",
-    rateMonthly: "2000.00",
-  }).onConflictDoNothing();
-
-  await db.insert(properties).values({
-    id: "P2",
-    name: "Value Location",
-    description: "10 Rooms • Value location with competitive rates",
-    frontDoorCode: "5678",
-    codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    rateDaily: "60.00",
-    rateWeekly: "300.00",
-    rateMonthly: "1200.00",
-  }).onConflictDoNothing();
+  await db.insert(properties).values([
+    {
+      id: 'P1',
+      name: '934 ClubHouse',
+      description: '8 Rooms • Premium location with higher rates',
+      frontDoorCode: '1234',
+      codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      rateDaily: '100.00',
+      rateWeekly: '500.00',
+      rateMonthly: '2000.00',
+    },
+    {
+      id: 'P2',
+      name: '944 ClubHouse',
+      description: '10 Rooms • Value location with competitive rates',
+      frontDoorCode: '5678',
+      codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      rateDaily: '60.00',
+      rateWeekly: '300.00',
+      rateMonthly: '1200.00',
+    }
+  ]).onConflictDoNothing();
 
   // Create rooms for P1 (8 rooms)
   const p1Rooms = Array.from({ length: 8 }, (_, i) => ({
