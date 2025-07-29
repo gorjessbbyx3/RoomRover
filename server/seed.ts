@@ -67,13 +67,13 @@ export async function seedDatabase() {
     },
     {
       id: 'P2',
-      name: '944 ClubHouse',
-      description: '10 Rooms • Value location with competitive rates',
+      name: '934 ClubHouse Premium',
+      description: '8 Rooms • Premium location with higher rates',
       frontDoorCode: '5678',
       codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      rateDaily: '60.00',
-      rateWeekly: '300.00',
-      rateMonthly: '1200.00',
+      rateDaily: '160.00',
+      rateWeekly: '800.00',
+      rateMonthly: '3500.00',
     }
   ]).onConflictDoNothing();
 
@@ -93,15 +93,15 @@ export async function seedDatabase() {
     notes: null,
   }));
 
-  // Create rooms for P2 (10 rooms)
-  const p2Rooms = Array.from({ length: 10 }, (_, i) => ({
+  // Create rooms for P2 (8 rooms) - Updated to 8 rooms based on the requirement
+  const p2Rooms = Array.from({ length: 8 }, (_, i) => ({
     id: `P2-R${i + 1}`,
     propertyId: "P2",
     roomNumber: i + 1,
     status: "available",
     doorCode: null,
     codeExpiry: null,
-    masterCode: '1234',
+    masterCode: '5678',
     cleaningStatus: "clean",
     linenStatus: "fresh",
     lastCleaned: new Date(),

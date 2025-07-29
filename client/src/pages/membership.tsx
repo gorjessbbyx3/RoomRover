@@ -259,7 +259,7 @@ export default function Membership() {
               <Card className="shadow-material border border-gray-200 overflow-hidden">
                 <CardHeader className="bg-gray-50 border-b border-gray-200">
                   <CardTitle className="text-lg font-semibold text-gray-900">Daily Access</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">Premium location</p>
+                  <p className="text-sm text-gray-600 mt-1">Premium 934 location - 8 rooms</p>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="text-center mb-4">
@@ -317,12 +317,12 @@ export default function Membership() {
               <Card className="shadow-material border border-gray-200 overflow-hidden">
                 <CardHeader className="bg-warning-50 border-b border-warning-200">
                   <CardTitle className="text-lg font-semibold text-gray-900">Monthly Membership</CardTitle>
-                  <p className="text-sm text-warning-600 mt-1">Premium value</p>
+                  <p className="text-sm text-warning-600 mt-1">Premium 934 location - Best value</p>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="text-center mb-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      $2000<span className="text-sm font-medium text-gray-600">/month</span>
+                      $2500<span className="text-sm font-medium text-gray-600">/month</span>
                     </div>
                   </div>
                   <ul className="space-y-2 text-sm text-gray-600">

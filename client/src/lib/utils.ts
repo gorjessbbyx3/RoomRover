@@ -5,6 +5,33 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export async function apiRequest(method: string, url: string, data?: any) {
+  const token = localStorage.getItem('token');
+  
+  const config: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    },
+  };
+
+  if (data && method !== 'GET') {
+    config.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, config);
+  
+  if (response.status === 401) {
+    // Token expired or invalid
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+    throw new Error('Authentication failed');
+  }
+
+  return response;
+}
+
 // Form validation utilities
 export const validators = {
   email: (email: string) => {
