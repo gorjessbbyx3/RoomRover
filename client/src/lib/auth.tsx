@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -29,6 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [sessionTimeout, setSessionTimeout] = useState<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setToken(null);
+    if (sessionTimeout) {
+      clearTimeout(sessionTimeout);
+      setSessionTimeout(null);
+    }
+  }, [sessionTimeout]);
+
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
       const currentToken = token || localStorage.getItem('token');
@@ -56,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout();
       return false;
     }
-  }, [logout, token]);
+  }, [token, logout]);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -98,51 +110,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setToken(null);
-  };
+  const isAuthenticated = useCallback(() => {
+    const currentToken = localStorage.getItem('token');
+    return !!(currentToken && user);
+  }, [user]);
 
-  const isAuthenticated = () => {
-    return !!token && !!user;
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      verifyToken(token);
-    }
-  }, []);
-
-  const verifyToken = useCallback(async (token: string): Promise<boolean> => {
+  const verifyToken = useCallback(async (tokenToVerify: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/verify', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${tokenToVerify}` }
       });
 
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData);
+        setUser(userData.user);
+        setToken(tokenToVerify);
         return true;
       } else {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
+        setToken(null);
         return false;
       }
     } catch (error) {
       console.error('Token verification failed:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUser(null);
+      setToken(null);
       return false;
     }
   }, []);
 
-  const isAuthenticated = useCallback(() => {
-    const token = localStorage.getItem('token');
-    return !!(token && user);
-  }, [user]);
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    if (storedToken && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setToken(storedToken);
+        verifyToken(storedToken);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+  }, [verifyToken]);
 
   const contextValue: AuthContextType = {
     user,
