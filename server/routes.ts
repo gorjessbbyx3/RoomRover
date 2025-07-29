@@ -1100,9 +1100,12 @@ const task = await storage.createCleaningTask(cleanTaskData);
   // Public inquiry routes (no authentication required)
   app.post("/api/inquiries", async (req, res) => {
     try {
-      const { name, contact, email, referralSource, plan, message } = req.body;
+      const { name, contact, email, referralSource, clubhouse, preferredPlan, message } = req.body;
 
-      if (!name || !contact || !email || !plan) {
+      console.log('Received inquiry data:', req.body);
+
+      if (!name || !contact || !email || !preferredPlan || !clubhouse) {
+        console.log('Missing fields - name:', !!name, 'contact:', !!contact, 'email:', !!email, 'preferredPlan:', !!preferredPlan, 'clubhouse:', !!clubhouse);
         return res.status(400).json({ error: "Missing required fields" });
       }
 
@@ -1127,7 +1130,8 @@ const task = await storage.createCleaningTask(cleanTaskData);
         contact,
         email,
         referralSource,
-        preferredPlan: plan,
+        clubhouse,
+        preferredPlan,
         message
       });
 
