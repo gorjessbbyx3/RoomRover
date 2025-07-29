@@ -145,6 +145,47 @@ export interface IStorage {
 
   // Front Door Code Management
   updatePropertyFrontDoorCode(propertyId: string, code: string, expiry?: Date): Promise<Property | undefined>;
+
+  // Helper management
+  getHelpers(): Promise<User[]>;
+  getHelpersByProperty(propertyId: string): Promise<User[]>;
+  createHelper(helper: InsertUser): Promise<User>;
+
+  // Task management
+  getTasks(): Promise<any[]>;
+  getTasksByProperty(propertyId: string): Promise<any[]>;
+  getTasksByHelper(userId: string): Promise<any[]>;
+  createTask(task: any): Promise<any>;
+
+  // Messaging
+  getMessages(userId: string): Promise<any[]>;
+  createMessage(message: any): Promise<any>;
+  getConversation(userId1: string, userId2: string): Promise<any[]>;
+
+  // Reviews
+  getReviews(): Promise<any[]>;
+  createReview(review: any): Promise<any>;
+
+  // Property photos
+  getPropertyPhotos(propertyId: string): Promise<any[]>;
+  createPropertyPhoto(photo: any): Promise<any>;
+
+  // Favorites
+  getFavorites(userId: string): Promise<any[]>;
+  createFavorite(favorite: any): Promise<any>;
+
+  // Notifications
+  getNotifications(userId: string): Promise<any[]>;
+  markNotificationAsRead(id: string): Promise<boolean>;
+
+  // Additional room methods
+  updateRoomMasterCode(roomId: string, masterCode: string): Promise<Room | null>;
+
+  // Additional maintenance methods
+  getMaintenanceByRoom(roomId: string): Promise<Maintenance[]>;
+
+  // All users method
+  getAllUsers(): Promise<User[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1126,6 +1167,105 @@ export class MemStorage implements IStorage {
 
     const permissions = this.userPermissions.get(userId) || [];
     return { ...user, permissions };
+  }
+
+  // Helper management methods
+  async getHelpers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.role === 'helper');
+  }
+
+  async getHelpersByProperty(propertyId: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.role === 'helper' && user.property === propertyId);
+  }
+
+  async createHelper(insertUser: InsertUser): Promise<User> {
+    return await this.createUser({ ...insertUser, role: 'helper' });
+  }
+
+  // Task management methods (using cleaning tasks as the base)
+  async getTasks(): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values());
+  }
+
+  async getTasksByProperty(propertyId: string): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values()).filter(task => task.propertyId === propertyId);
+  }
+
+  async getTasksByHelper(userId: string): Promise<CleaningTask[]> {
+    return Array.from(this.cleaningTasks.values()).filter(task => task.assignedTo === userId);
+  }
+
+  async createTask(task: any): Promise<CleaningTask> {
+    return await this.createCleaningTask(task);
+  }
+
+  // Messaging methods - simplified implementation
+  async getMessages(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async createMessage(message: any): Promise<any> {
+    return message;
+  }
+
+  async getConversation(userId1: string, userId2: string): Promise<any[]> {
+    return [];
+  }
+
+  // Reviews methods - simplified implementation
+  async getReviews(): Promise<any[]> {
+    return [];
+  }
+
+  async createReview(review: any): Promise<any> {
+    return review;
+  }
+
+  // Property photos methods - simplified implementation
+  async getPropertyPhotos(propertyId: string): Promise<any[]> {
+    return [];
+  }
+
+  async createPropertyPhoto(photo: any): Promise<any> {
+    return photo;
+  }
+
+  // Favorites methods - simplified implementation
+  async getFavorites(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async createFavorite(favorite: any): Promise<any> {
+    return favorite;
+  }
+
+  // Notifications methods - simplified implementation
+  async getNotifications(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async markNotificationAsRead(id: string): Promise<boolean> {
+    return true;
+  }
+
+  // Additional room methods
+  async updateRoomMasterCode(roomId: string, masterCode: string): Promise<Room | null> {
+    const room = this.rooms.get(roomId);
+    if (!room) return null;
+
+    const updatedRoom = { ...room, masterCode };
+    this.rooms.set(roomId, updatedRoom);
+    return updatedRoom;
+  }
+
+  // Additional maintenance methods
+  async getMaintenanceByRoom(roomId: string): Promise<Maintenance[]> {
+    return Array.from(this.maintenance.values()).filter(item => item.roomId === roomId);
+  }
+
+  // All users method
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 }
 

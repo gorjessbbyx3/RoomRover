@@ -127,7 +127,7 @@ export const inventory = pgTable("inventory", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-export const maintenance = pgTable("maintenance", {
+export const maintenance: any = pgTable("maintenance", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   roomId: text("room_id").references(() => rooms.id),
   propertyId: text("property_id").references(() => properties.id),
@@ -145,7 +145,7 @@ export const maintenance = pgTable("maintenance", {
   repeatFrequency: text("repeat_frequency"), // daily, weekly, monthly
   repeatInterval: integer("repeat_interval").default(1), // every X days/weeks/months
   repeatEndDate: timestamp("repeat_end_date"),
-  parentMaintenanceId: varchar("parent_maintenance_id").references(() => maintenance.id),
+  parentMaintenanceId: varchar("parent_maintenance_id").references((): any => maintenance.id),
   // Inventory linking
   linkedInventoryIds: text("linked_inventory_ids"), // JSON array of inventory item IDs
   notes: text("notes"),

@@ -137,13 +137,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test endpoint for debugging authentication
   app.get("/api/test/auth", (req, res) => {
     const authHeader = req.headers.authorization;
-    const token = localStorage?.getItem ? 'client-side' : 'server-side';
+    const environment = 'server-side';
 
     res.json({
       authHeader,
       hasBearer: authHeader?.startsWith('Bearer '),
       token: authHeader ? authHeader.substring(0, 20) + '...' : null,
-      environment: token,
+      environment,
       allHeaders: Object.keys(req.headers)
     });
   });
@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(rooms);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch rooms:', error);
       res.status(500).json({ 
         error: 'Failed to fetch rooms',
@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Room not found' });
       }
       res.json(room);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update room:', error);
       res.status(500).json({ 
         error: 'Failed to update room',
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Booking routes
   app.get("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      let bookings;
+      let bookings: any[] = [];
 
       if (req.user.role === 'admin') {
         bookings = await storage.getBookings();
@@ -847,7 +847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cleaning task routes
   app.get("/api/cleaning-tasks", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      let tasks;
+      let tasks: any[] = [];
 
       if (req.user.role === 'admin') {
         tasks = await storage.getCleaningTasks();
@@ -865,7 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cleaning-tasks", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+  app.post("/api/cleaning-tasks", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
       const taskData = {
         ...req.body,
@@ -998,7 +998,9 @@ const task = await storage.createCleaningTask(cleanTaskData);
   // Dashboard stats
   app.get("/api/dashboard/stats", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      let rooms, bookings, cleaningTasks;
+      let rooms: any[] = [];
+      let bookings: any[] = [];
+      let cleaningTasks: any[] = [];
 
       if (req.user.role === 'admin') {
         rooms = await storage.getRooms();
@@ -1125,7 +1127,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
         contact,
         email,
         referralSource,
-        plan,
+        preferredPlan: plan,
         message
       });
 
@@ -1141,7 +1143,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
       }
       res.status(500).json({ 
         error: 'Failed to submit inquiry',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
       });
     }
   });
@@ -1188,7 +1190,7 @@ const task = await storage.createCleaningTask(cleanTaskData);
       console.error('Failed to fetch inquiries:', error);
       res.status(500).json({ 
         error: 'Failed to fetch inquiries',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
       });
     }
   });
@@ -1355,11 +1357,11 @@ const task = await storage.createCleaningTask(cleanTaskData);
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const staleInventory = lowStockItems.filter(item => 
-        new Date(item.lastUpdated) < sevenDaysAgo
+        item.lastUpdated && new Date(item.lastUpdated) < sevenDaysAgo
       );
 
       const staleMaintenance = openMaintenance.filter(item => 
-        new Date(item.dateReported) < sevenDaysAgo
+        item.dateReported && new Date(item.dateReported) < sevenDaysAgo
       );
 
       // Revenue calculations
@@ -1967,23 +1969,25 @@ senderId: req.user.id
         .filter(b => b.endDate)
         .map(b => {
           const start = new Date(b.startDate);
-          const end = new Date(b.endDate);
+          const end = new Date(b.endDate!);
           return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         });
       const averageStayLength = stayLengths.length > 0 ? 
         Math.round((stayLengths.reduce((sum, length) => sum + length, 0) / stayLengths.length) * 10) / 10 : 0;
 
       // Calculate repeat customer rate
-      const guestCounts = {};
+      const guestCounts: Record<string, number> = {};
       recentBookingsData.forEach(booking => {
-        guestCounts[booking.guestId] = (guestCounts[booking.guestId] || 0) + 1;
+        if (booking.guestId) {
+          guestCounts[booking.guestId] = (guestCounts[booking.guestId] || 0) + 1;
+        }
       });
-      const repeatCustomers = Object.values(guestCounts).filter(count => count > 1).length;
+      const repeatCustomers = Object.values(guestCounts).filter((count: number) => count > 1).length;
       const totalCustomers = Object.keys(guestCounts).length;
       const repeatCustomerRate = totalCustomers > 0 ? Math.round((repeatCustomers / totalCustomers) * 100) : 0;
 
       // Referral source analysis
-      const referralSources = {};
+      const referralSources: Record<string, number> = {};
       guests.forEach(guest => {
         if (guest.referralSource) {
           referralSources[guest.referralSource] = (referralSources[guest.referralSource] || 0) + 1;
