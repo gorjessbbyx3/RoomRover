@@ -266,7 +266,7 @@ export class MemStorage implements IStorage {
     // Create properties
     const p1: Property = {
       id: "P1",
-      name: "Premium Location",
+      name: "934 ClubHouse Premium",
       description: "8 Rooms • Premium location with higher rates",
       frontDoorCode: "1234",
       codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
@@ -278,7 +278,7 @@ export class MemStorage implements IStorage {
 
     const p2: Property = {
       id: "P2",
-      name: "Value Location",
+      name: "944 ClubHouse",
       description: "10 Rooms • Value location with competitive rates",
       frontDoorCode: "5678",
       codeExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
