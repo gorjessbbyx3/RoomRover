@@ -523,6 +523,7 @@ export class MemStorage implements IStorage {
       codeExpiry: insertBooking.codeExpiry ?? null,
       notes: insertBooking.notes ?? null,
       isTenant: insertBooking.isTenant ?? false,
+      endDate: insertBooking.endDate ?? null,
       createdAt: new Date(),
     };
     this.bookings.set(id, booking);
@@ -693,9 +694,25 @@ export class MemStorage implements IStorage {
   async createMaintenanceItem(insertItem: InsertMaintenance): Promise<Maintenance> {
     const id = randomUUID();
     const item: Maintenance = {
-      ...insertItem,
       id,
+      roomId: insertItem.roomId || null,
+      propertyId: insertItem.propertyId || null,
+      issue: insertItem.issue as string,
+      description: insertItem.description || null,
+      priority: (insertItem.priority as string) || 'normal',
+      status: (insertItem.status as string) || 'open',
+      reportedBy: insertItem.reportedBy as string,
+      assignedTo: insertItem.assignedTo || null,
       dateReported: new Date(),
+      dateCompleted: null,
+      dueDate: insertItem.dueDate || null,
+      isRecurring: insertItem.isRecurring || false,
+      repeatFrequency: insertItem.repeatFrequency || null,
+      repeatInterval: (insertItem.repeatInterval as number) || 1,
+      repeatEndDate: insertItem.repeatEndDate || null,
+      parentMaintenanceId: insertItem.parentMaintenanceId || null,
+      linkedInventoryIds: insertItem.linkedInventoryIds || null,
+      notes: insertItem.notes || null,
     };
     this.maintenance.set(id, item);
     return item;
@@ -706,7 +723,7 @@ export class MemStorage implements IStorage {
     if (!item) return undefined;
 
     // Validate priority if being updated
-    if (updates.priority && !['low', 'medium', 'high', 'critical'].includes(updates.priority)) {
+    if (updates.priority && !['low', 'normal', 'high', 'critical'].includes(updates.priority)) {
       throw new Error('Invalid priority value');
     }
 
@@ -913,8 +930,7 @@ export class MemStorage implements IStorage {
     const transactions = Array.from(this.houseBankTransactions.values());
 
     const transfersIn = transactions
-      .filter```text
-(t => t.type === 'transfer_in')
+      .filter(t => t.type === 'transfer_in')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const expenses = transactions
@@ -979,7 +995,7 @@ export class MemStorage implements IStorage {
 
     const cashAppDeposits = transactions
       .filter(t => t.type === 'bank_deposit_cashapp')
-      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());Time());
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
 
     return {
       currentCashHolding: Math.max(0, cashReceived - cashDeposited),

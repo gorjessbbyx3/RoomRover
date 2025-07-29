@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, decimal, boolean, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, decimal, boolean, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -400,8 +400,8 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type BannedUser = typeof bannedUsers.$inferSelect;
 export type InsertBannedUser = z.infer<typeof insertBannedUserSchema>;
 
-export type AuditLogs = typeof auditLogs.$inferSelect;
-export type InsertAuditLogs = z.infer<typeof insertAuditLogs>;
+export type AuditLogs = typeof auditLog.$inferSelect;
+export type InsertAuditLogs = z.infer<typeof insertAuditLogSchema>;
 
 export type Helper = typeof helpers.$inferSelect;
 export type InsertHelper = z.infer<typeof insertHelperSchema>;
