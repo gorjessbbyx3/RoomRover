@@ -156,6 +156,7 @@ export const inquiries = pgTable("inquiries", {
   name: text("name").notNull(),
   contact: text("contact").notNull(),
   email: text("email").notNull(),
+  clubhouse: text("clubhouse").notNull(), // P1 or P2 property preference
   referralSource: text("referral_source"),
   preferredPlan: text("preferred_plan").notNull(), // daily, weekly, monthly
   message: text("message"),

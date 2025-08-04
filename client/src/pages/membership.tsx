@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,16 @@ export default function Membership() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Fetch properties from database
+  const { data: properties, isLoading: propertiesLoading } = useQuery({
+    queryKey: ['/api/properties'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties');
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    },
+  });
+
   const form = useForm<InquiryFormData>({
     resolver: zodResolver(inquirySchema),
     defaultValues: {
@@ -84,9 +94,9 @@ export default function Membership() {
         duration: 10000,
       });
 
-      // Redirect to tracker page
+      // Redirect to success page
       setTimeout(() => {
-        setLocation(`/tracker/${data.trackerToken}`);
+        setLocation('/track/success');
       }, 3000);
     },
     onError: (error: any) => {
@@ -151,199 +161,126 @@ export default function Membership() {
         </div>
 
         {/* Clubhouse Locations */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        {propertiesLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded mx-auto w-48"></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded mx-auto w-48"></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {properties?.map((property: any) => (
+              <div key={property.id}>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">{property.name}</h2>
+                <div className="grid grid-cols-1 gap-4">
+                  
+                  {/* Daily Plan */}
+                  <Card className="shadow-material border border-gray-200 overflow-hidden">
+                    <CardHeader className="bg-gray-50 border-b border-gray-200">
+                      <CardTitle className="text-lg font-semibold text-gray-900">Daily Access</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">{property.description}</p>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="text-center mb-4">
+                        <div className="text-2xl font-bold text-gray-900">
+                          ${property.rateDaily}<span className="text-sm font-medium text-gray-600">/day</span>
+                        </div>
+                      </div>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Private room access
+                        </li>
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Secure keyless entry
+                        </li>
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Essential amenities
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
 
-          {/* P1 ClubHouse */}
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">934 ClubHouse</h2>
-            <div className="grid grid-cols-1 gap-4">
+                  {/* Weekly Plan */}
+                  <Card className="shadow-material border border-gray-200 overflow-hidden">
+                    <CardHeader className="bg-primary-50 border-b border-primary-200">
+                      <CardTitle className="text-lg font-semibold text-gray-900">Weekly Residency</CardTitle>
+                      <p className="text-sm text-primary-600 mt-1">Popular choice</p>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="text-center mb-4">
+                        <div className="text-2xl font-bold text-gray-900">
+                          ${property.rateWeekly}<span className="text-sm font-medium text-gray-600">/week</span>
+                        </div>
+                      </div>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          All daily benefits
+                        </li>
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Weekly housekeeping
+                        </li>
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Priority support
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
 
-              {/* P1 Daily */}
-              <Card className="shadow-material border border-gray-200 overflow-hidden">
-                <CardHeader className="bg-gray-50 border-b border-gray-200">
-                  <CardTitle className="text-lg font-semibold text-gray-900">Daily Access</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">Premium 934 location - 8 rooms</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $60<span className="text-sm font-medium text-gray-600">/day</span>
+                  {/* Monthly Plan */}  
+                  <Card className="shadow-material border-2 border-primary-500 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 bg-primary-500 text-white px-2 py-1 text-xs font-medium rounded-bl-lg">
+                      RECOMMENDED
                     </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Private room access
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Secure keyless entry
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Essential amenities
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* P1 Weekly */}
-              <Card className="shadow-material border border-gray-200 overflow-hidden">
-                <CardHeader className="bg-primary-50 border-b border-primary-200">
-                  <CardTitle className="text-lg font-semibold text-gray-900">Weekly Residency</CardTitle>
-                  <p className="text-sm text-primary-600 mt-1">Popular choice</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $300<span className="text-sm font-medium text-gray-600">/week</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      All daily benefits
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Weekly housekeeping
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Priority support
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* P1 Monthly */}
-              <Card className="shadow-material border-2 border-primary-500 overflow-hidden relative">
-                <div className="absolute top-0 right-0 bg-primary-500 text-white px-2 py-1 text-xs font-medium rounded-bl-lg">
-                  RECOMMENDED
+                    <CardHeader className="bg-primary-500 text-white border-b border-primary-600">
+                      <CardTitle className="text-lg font-semibold">Monthly Membership</CardTitle>
+                      <p className="text-sm text-primary-100 mt-1">Best value</p>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="text-center mb-4">
+                        <div className="text-2xl font-bold text-gray-900">
+                          ${property.rateMonthly}<span className="text-sm font-medium text-gray-600">/month</span>
+                        </div>
+                      </div>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          All residency benefits
+                        </li>
+                        <li className="flex items-center">
+                          <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
+                          Bi-weekly housekeeping
+                        </li>
+                        <li className="flex items-center">
+                          <Star className="h-3 w-3 text-warning-500 mr-2 flex-shrink-0" />
+                          Guaranteed availability
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
                 </div>
-                <CardHeader className="bg-primary-500 text-white border-b border-primary-600">
-                  <CardTitle className="text-lg font-semibold">Monthly Membership</CardTitle>
-                  <p className="text-sm text-primary-100 mt-1">Best value</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $1200<span className="text-sm font-medium text-gray-600">/month</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      All residency benefits
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Bi-weekly housekeeping
-                    </li>
-                    <li className="flex items-center">
-                      <Star className="h-3 w-3 text-warning-500 mr-2 flex-shrink-0" />
-                      Guaranteed availability
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+              </div>
+            ))}
           </div>
-
-          {/* P2 ClubHouse */}
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">944 ClubHouse</h2>
-            <div className="grid grid-cols-1 gap-4">
-
-              {/* P2 Daily */}
-              <Card className="shadow-material border border-gray-200 overflow-hidden">
-                <CardHeader className="bg-gray-50 border-b border-gray-200">
-                  <CardTitle className="text-lg font-semibold text-gray-900">Daily Access</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">Standard 944 location</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $80<span className="text-sm font-medium text-gray-600">/day</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Private room access
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Secure keyless entry
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Premium amenities
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* P2 Weekly */}
-              <Card className="shadow-material border border-gray-200 overflow-hidden">
-                <CardHeader className="bg-primary-50 border-b border-primary-200">
-                  <CardTitle className="text-lg font-semibold text-gray-900">Weekly Residency</CardTitle>
-                  <p className="text-sm text-primary-600 mt-1">Premium choice</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $400<span className="text-sm font-medium text-gray-600">/week</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      All daily benefits
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Weekly housekeeping
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Premium support
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* P2 Monthly */}
-              <Card className="shadow-material border border-gray-200 overflow-hidden">
-                <CardHeader className="bg-warning-50 border-b border-warning-200">
-                  <CardTitle className="text-lg font-semibold text-gray-900">Monthly Membership</CardTitle>
-                  <p className="text-sm text-warning-600 mt-1">Standard 944 location - Best value</p>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">
-                      $2500<span className="text-sm font-medium text-gray-600">/month</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      All premium benefits
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 text-success-500 mr-2 flex-shrink-0" />
-                      Bi-weekly housekeeping
-                    </li>
-                    <li className="flex items-center">
-                      <Star className="h-3 w-3 text-warning-500 mr-2 flex-shrink-0" />
-                      Premium location perks
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Inquiry Form */}
         <Card className="shadow-material-lg">
@@ -434,8 +371,11 @@ export default function Membership() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="P1">934 ClubHouse</SelectItem>
-                            <SelectItem value="P2">944 ClubHouse (Premium)</SelectItem>
+                            {properties?.map((property: any) => (
+                              <SelectItem key={property.id} value={property.id}>
+                                {property.name} - {property.description}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />

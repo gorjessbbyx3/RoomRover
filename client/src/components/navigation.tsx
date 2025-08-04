@@ -21,14 +21,20 @@ export default function Navigation() {
   };
 
   const navItems = [
-    { path: "/dashboard", label: "Dashboard", roles: ["manager", "helper", "guest"] },
-    { path: "/rooms", label: "Rooms", roles: ["manager", "helper", "guest"] },
-    { path: "/bookings", label: "Bookings", roles: ["manager", "helper"] },
-    { path: "/operations-dashboard", label: "Operations", roles: ["manager"] },
-    { path: "/cleaning", label: "Cleaning", roles: ["manager", "helper"] },
-    { path: "/payments", label: "Payments", roles: ["manager"] },
-    { path: "/inquiries", label: "Inquiries", roles: ["manager", "helper"] },
-    { path: "/profile", label: "Profile", roles: ["manager", "helper", "guest"] },
+    { path: "/dashboard", label: "Dashboard", roles: ["admin", "manager", "helper", "guest"] },
+    { path: "/inhouse", label: "In-House", roles: ["admin", "manager", "helper", "guest"] },
+    { path: "/payments", label: "Payments", roles: ["admin", "manager"] },
+    { path: "/operations", label: "Operations", roles: ["admin", "manager", "helper"] },
+    { path: "/inquiries", label: "Inquiries", roles: ["admin", "manager", "helper"] },
+    { path: "/user-management", label: "Users", roles: ["admin"] },
+    { path: "/banned-users-management", label: "Banned Users", roles: ["admin"] },
+    { path: "/master-codes-management", label: "Master Codes", roles: ["admin"] },
+    { path: "/financial-management", label: "Finances", roles: ["admin"] },
+    { path: "/reports", label: "Reports", roles: ["admin"] },
+    { path: "/analytics", label: "Analytics", roles: ["admin"] },
+    { path: "/manager-dashboard", label: "Manager View", roles: ["manager"] },
+    { path: "/helper-dashboard", label: "Helper View", roles: ["helper"] },
+    { path: "/profile", label: "Profile", roles: ["admin", "manager", "helper", "guest"] },
   ];
 
   const visibleItems = navItems.filter(item => 

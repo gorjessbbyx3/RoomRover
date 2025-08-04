@@ -54,6 +54,32 @@ function AppContent() {
         <Route path="/login" component={Login} />
         <Route path="/membership" component={Membership} />
         <Route path="/track/:token" component={Tracker} />
+        <Route path="/track/success" component={() => (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+              <div className="mb-6">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Inquiry Submitted Successfully!</h1>
+              <p className="text-gray-600 mb-6">
+                Thank you for your interest in our properties. We've received your membership inquiry and will review it shortly.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                You can track the status of your inquiry using the tracker link we provided.
+              </p>
+              <a 
+                href="/membership" 
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Back to Home
+              </a>
+            </div>
+          </div>
+        )} />
 
         <Route path="/">
           <ProtectedRoute>
