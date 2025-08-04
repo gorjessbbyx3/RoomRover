@@ -59,6 +59,7 @@
 - `SESSION_SECRET` – Session encryption key
 - `NODE_ENV` – `development` or `production`
 - `PORT` – (optional, default: 3000)
+- `XAI_API_KEY` – API key for external AI/automation provider (required for AI features)
 
 ---
 
