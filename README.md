@@ -1,178 +1,138 @@
 
-# Honolulu Private Residency Club CRM
+# RoomRover – Enterprise-Grade Property & Operations Platform
 
-A comprehensive Customer Relationship Management (CRM) system designed for boutique short-term rental operations managing multiple properties in Honolulu. The application serves as both a private CRM for internal operations and a public membership inquiry portal for potential guests.
+> Modern, mobile-first, and AI-augmented platform for managing boutique hospitality, short-term rentals, and private clubs.
 
-## Features
+---
 
-- **Property Management**: Manage multiple properties with room-level control
-- **Booking System**: Handle reservations, check-ins, and check-outs
-- **Inquiry Portal**: Public-facing membership inquiry system with tracking
-- **Cleaning Management**: Task management for housekeeping operations
-- **Payment Tracking**: Monitor payments and financial transactions
-- **Door Code Management**: Automated door code generation and management
-- **Role-based Access**: Admin, manager, and staff role permissions
-- **Reports**: Comprehensive reporting dashboard
+## 🚀 Features
 
-## Tech Stack
+- **Mobile-First Responsive UI**: PWA-ready, touch-friendly, and accessible on all devices
+- **Booking & Calendar**: Advanced booking, availability, check-in/out, and calendar sync
+- **Task & Workflow Automation**: Assign, track, and comment on tasks (cleaning, maintenance, etc.)
+- **Payments**: Cash/Cash App checkout flows, payment receipts, and dispute management
+- **Membership & Profiles**: Role-based access, guest/host/manager/admin, and profile management
+- **Dashboards & Analytics**: Real-time dashboards, audit logs, and exportable analytics
+- **Inventory & Maintenance**: Usage, restock, scheduling, and maintenance logs
+- **Notifications**: In-app and email notifications for all critical events
+- **AI/Automation**: Room assignment, maintenance prediction, and auto-scheduling
+- **Audit Logging**: Full audit trail for all critical actions
+- **Accessibility (a11y)**: Keyboard navigation, ARIA, and color contrast
+- **Testing**: Automated and manual tests for all workflows
 
-### Frontend
-- **React 18** with TypeScript
-- **Wouter** for client-side routing
-- **Radix UI** components with shadcn/ui design system
-- **Tailwind CSS** for styling
-- **TanStack Query** for server state management
-- **React Hook Form** with Zod validation
+---
 
-### Backend
-- **Node.js** with Express.js
-- **TypeScript** throughout the entire stack
-- **Drizzle ORM** with PostgreSQL
-- **Passport.js** for authentication
-- **Express Sessions** for session management
+## 🛠️ Tech Stack
 
-### Database
-- **PostgreSQL** (Neon Database serverless)
-- **Drizzle Kit** for migrations
+**Frontend**: React + TypeScript, React Router, Tailwind CSS, shadcn/ui, React Query, Zod, Jest, Testing Library, Heroicons
 
-## Development Setup on Replit
+**Backend**: Node.js, Express, TypeScript, Drizzle ORM, PostgreSQL, Zod, Passport.js, Supertest, AI/automation endpoints
 
-1. **Fork this Repl** or import from GitHub
-2. **Install dependencies** (automatic on Replit)
-3. **Set up environment variables** in the Secrets tab:
+**Database**: PostgreSQL (Neon or Supabase), Drizzle migrations
+
+**DevOps**: Replit, Vite, PWA, CI/CD ready
+
+---
+
+## ⚡ Quick Start
+
+1. **Clone or Fork** this repo
+2. **Install dependencies**
+   ```bash
+   npm install
    ```
-   DATABASE_URL=your_neon_database_url
-   SESSION_SECRET=your_session_secret_key
-   NODE_ENV=development
-   ```
-4. **Run the development server**:
+3. **Set up environment variables** (see below)
+4. **Run the app**
    ```bash
    npm run dev
    ```
-5. **Push database schema**:
+5. **Push DB schema**
    ```bash
    npm run db:push
    ```
 
-## Environment Variables
+---
 
-Required environment variables for deployment:
+## 🔑 Environment Variables
 
-- `DATABASE_URL`: PostgreSQL connection string (Neon Database recommended)
-- `SESSION_SECRET`: Secret key for session encryption
-- `NODE_ENV`: Set to "production" for production deployment
-- `PORT`: Port number (automatically set by Replit)
+- `DATABASE_URL` – PostgreSQL connection string
+- `SESSION_SECRET` – Session encryption key
+- `NODE_ENV` – `development` or `production`
+- `PORT` – (optional, default: 3000)
 
-## Deployment on Replit
+---
 
-### Quick Deploy
-
-1. **Click the Deploy button** in your Repl
-2. **Choose Autoscale deployment**
-3. **Configure deployment settings**:
-   - **Build command**: `npm run build`
-   - **Run command**: `npm run start`
-   - **Machine configuration**: Default (1vCPU, 2 GiB RAM)
-
-### Manual Deployment Configuration
-
-1. **Set up secrets** in the Replit Secrets tab:
-   ```
-   DATABASE_URL=your_production_database_url
-   SESSION_SECRET=your_production_session_secret
-   NODE_ENV=production
-   ```
-
-2. **Build the application**:
-   ```bash
-   npm run build
-   ```
-
-3. **Deploy using Replit's deployment feature**:
-   - Navigate to the Deployments tab
-   - Click "New Deployment"
-   - Select "Autoscale"
-   - Configure build and run commands as above
-
-### Database Setup
-
-1. **Create a Neon Database account** (free tier available)
-2. **Create a new database project**
-3. **Copy the connection string** to your environment variables
-4. **Run migrations**:
-   ```bash
-   npm run db:push
-   ```
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
-├── client/                 # Frontend React application
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/         # Route components
-│   │   ├── lib/           # Utilities and configurations
-│   │   └── hooks/         # Custom React hooks
-├── server/                # Backend Express application
-│   ├── index.ts          # Server entry point
-│   ├── routes.ts         # API routes
-│   └── storage.ts        # Database configuration
-├── shared/               # Shared types and schemas
-│   └── schema.ts         # Database schema definitions
-└── package.json          # Dependencies and scripts
+client/           # React frontend (mobile-first, PWA-ready)
+  src/
+    components/   # UI & workflow components
+    pages/        # Route-level components
+    assets/       # Images, icons, mobile assets
+    __tests__/    # Frontend tests (Jest, a11y)
+server/           # Express backend (REST, AI, automation)
+  routes.ts       # API endpoints
+  db.ts           # DB logic (Drizzle)
+  ai-engine.ts    # AI/automation endpoints
+migrations/       # DB migrations (Drizzle SQL)
+shared/           # Shared types, Zod schemas
 ```
 
-## Available Scripts
+---
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run check` - Type checking
-- `npm run db:push` - Push database schema changes
+## 🧪 Testing
 
-## API Endpoints
+- `npm run test` – Run all tests
+- `npm run test:frontend` – Frontend tests (Jest, a11y)
+- `npm run test:backend` – Backend API tests (Supertest)
 
-### Authentication
-- `POST /api/auth/login` - User login
-- `GET /api/auth/verify` - Verify authentication
-- `POST /api/auth/logout` - User logout
+---
 
-### Properties & Rooms
-- `GET /api/properties` - Get all properties
-- `GET /api/rooms` - Get all rooms
-- `PUT /api/rooms/:id` - Update room details
-- `PUT /api/properties/:id/front-door-code` - Update front door code
+## 🔥 Key Workflows
 
-### Bookings & Inquiries
-- `GET /api/bookings` - Get all bookings
-- `POST /api/bookings` - Create new booking
-- `GET /api/inquiries` - Get all inquiries
-- `POST /api/inquiries` - Create new inquiry
+- **Bookings**: Create, update, cancel, attach notes/files, audit
+- **Tasks**: Assign, comment, attach files, audit, complete
+- **Payments**: Cash/Cash App checkout, upload receipts, dispute
+- **Analytics**: Real-time dashboards, export, audit logs
+- **Inventory**: Usage, restock, maintenance, scheduling
+- **Notifications**: In-app, email, mobile push (PWA)
+- **User Management**: Profiles, roles, onboarding tour
 
-### Cleaning & Maintenance
-- `GET /api/cleaning-tasks` - Get cleaning tasks
-- `POST /api/cleaning-tasks` - Create cleaning task
-- `PUT /api/cleaning-tasks/:id` - Update cleaning task
+---
 
-## Default Users
+## 🛡️ Security & Compliance
 
-The system includes default admin users for initial setup:
-- **Admin**: `admin@company.com` / `admin123`
-- **Manager**: `manager@company.com` / `manager123`
+- Password hashing (bcrypt)
+- Session & role-based access
+- Input validation (Zod)
+- Audit logging
+- CORS & environment variable protection
 
-## Security Features
+---
 
-- Password hashing with bcrypt
-- Session-based authentication
-- Role-based access control
-- Input validation with Zod
-- CORS protection
-- Environment variable protection
+## 📱 Mobile & Accessibility
 
-## Support
+- Fully responsive, mobile-first UI
+- Keyboard navigation, ARIA, color contrast
+- PWA installable on iOS/Android
 
-For technical support or questions about deployment, refer to the Replit documentation or create an issue in the project repository.
+---
 
-## License
+## 💸 Payments
 
-This project is licensed under the MIT License.
+- Cash/Cash App checkout flows (no Stripe)
+- Payment receipt upload & dispute
+- Plan metadata for subscription tiers
+
+---
+
+## 🧑‍💻 Contributing
+
+PRs welcome! Please add tests for new features and follow the code style.
+
+---
+
+## 📄 License
+
+MIT License
