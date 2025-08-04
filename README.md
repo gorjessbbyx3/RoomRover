@@ -34,22 +34,34 @@
 
 ---
 
+
 ## ⚡ Quick Start
 
 1. **Clone or Fork** this repo
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-3. **Set up environment variables** (see below)
-4. **Run the app**
-   ```bash
-   npm run dev
-   ```
-5. **Push DB schema**
-   ```bash
-   npm run db:push
-   ```
+2. **Azure One-Click Deploy (Recommended)**
+   - Install [Azure Developer CLI](https://aka.ms/azure-dev/install)
+   - Login: `azd auth login`
+   - Provision & deploy (auto-detects `azure.yaml`):
+     ```bash
+     azd up
+     ```
+   - Follow prompts to set environment variables and select Azure subscription.
+   - Your backend (App Service), frontend (Static Web App), and database (PostgreSQL) will be provisioned and deployed automatically.
+
+3. **Manual Local Run**
+   - Install dependencies:
+     ```bash
+     npm install
+     ```
+   - Set up environment variables (see below)
+   - Run the app:
+     ```bash
+     npm run dev
+     ```
+   - Push DB schema:
+     ```bash
+     npm run db:push
+     ```
 
 ---
 

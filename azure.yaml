@@ -1,0 +1,27 @@
+name: RoomRover Azure Deployment
+metadata:
+  template: node-express-react
+services:
+  backend:
+    project: ./server
+    language: js
+    host: appservice
+    azure:
+      appService:
+        runtime: node
+        nodeVersion: 18
+    env:
+      - DATABASE_URL
+      - SESSION_SECRET
+      - XAI_API_KEY
+      - NODE_ENV
+      - PORT
+  frontend:
+    project: ./client
+    language: js
+    host: staticwebapp
+    azure:
+      staticWebApp:
+        appLocation: ./client
+        outputLocation: dist
+    env: []
