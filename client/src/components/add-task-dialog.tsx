@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as z from 'zod';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -33,6 +34,20 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
     isRecurring: false,
     recurringType: '',
     linkedInventoryItems: [] as string[]
+  });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // Zod schema for validation
+  const taskSchema = z.object({
+    type: z.string().min(1, 'Task type is required'),
+    title: z.string().min(1, 'Task title is required'),
+    propertyId: z.string().min(1, 'Property is required'),
+    priority: z.string(),
+    description: z.string().optional(),
+    roomId: z.string().optional(),
+    dueDate: z.string().optional(),
+    isRecurring: z.boolean(),
+    recurringType: z.string().optional(),
+    linkedInventoryItems: z.array(z.string()).optional()
   });
 
   // Fetch properties
@@ -116,27 +131,26 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
   };
 
   const handleSubmit = () => {
-    if (!taskData.type || !taskData.title || !taskData.propertyId) {
-      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+    setFieldErrors({});
+    const parseResult = taskSchema.safeParse(taskData);
+    if (!parseResult.success) {
+      const errors: Record<string, string> = {};
+      parseResult.error.errors.forEach(err => {
+        if (err.path[0]) errors[err.path[0]] = err.message;
+      });
+      setFieldErrors(errors);
+      toast({ title: "Error", description: "Please fix the highlighted errors.", variant: "destructive" });
       return;
     }
-
     const newTask = {
-      type: taskData.type,
-      title: taskData.title,
-      description: taskData.description,
-      priority: taskData.priority,
-      propertyId: taskData.propertyId,
-      roomId: taskData.roomId || null,
+      ...taskData,
       dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
       status: 'pending',
       assignedTo: null,
       notes: taskData.linkedInventoryItems.length > 0 ? 
         `Linked inventory items: ${taskData.linkedInventoryItems.join(', ')}` : null,
-      isRecurring: taskData.isRecurring,
       recurringType: taskData.isRecurring ? taskData.recurringType : null
     };
-
     createTaskMutation.mutate(newTask);
   };
 
@@ -174,7 +188,8 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
           {/* Task Type and Priority */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="task-type">Task Type *</Label>
+            <Label htmlFor="task-type">Task Type *</Label>
+            {fieldErrors.type && <span className="text-red-600 text-xs">{fieldErrors.type}</span>}
               <Select value={taskData.type} onValueChange={(value) => setTaskData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select task type" />
@@ -210,6 +225,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
           {/* Task Title */}
           <div className="grid gap-2">
             <Label htmlFor="task-title">Task Title *</Label>
+            {fieldErrors.title && <span className="text-red-600 text-xs">{fieldErrors.title}</span>}
             <Input
               id="task-title"
               value={taskData.title}
@@ -222,6 +238,7 @@ export default function AddTaskDialog({ trigger }: AddTaskDialogProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="task-property">Property *</Label>
+              {fieldErrors.propertyId && <span className="text-red-600 text-xs">{fieldErrors.propertyId}</span>}
               <Select 
                 value={taskData.propertyId} 
                 onValueChange={(value) => setTaskData(prev => ({ ...prev, propertyId: value, roomId: '' }))}

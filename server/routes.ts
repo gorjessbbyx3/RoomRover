@@ -1,3 +1,295 @@
+  // --- BOOKING MANAGEMENT ---
+  // Update booking
+  app.put("/api/bookings/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const updated = await storage.updateBooking(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Booking not found' });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update booking' });
+    }
+  });
+
+  // Cancel booking
+  app.delete("/api/bookings/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const cancelled = await storage.cancelBooking(req.params.id, req.user.id);
+      if (!cancelled) return res.status(404).json({ error: 'Booking not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to cancel booking' });
+    }
+  });
+
+  // Booking calendar/availability
+  app.get("/api/rooms/:id/availability", authenticateUser, async (req, res) => {
+    try {
+      const { start, end } = req.query;
+      const bookings = await storage.getBookingsForRoom(req.params.id, start, end);
+      res.json({ bookings });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch availability' });
+    }
+  });
+
+  // Webhook for payment confirmation (cash/cashapp)
+  app.post("/api/webhooks/payment", async (req, res) => {
+    try {
+      // Validate and process payment notification
+      const { bookingId, amount, method, reference } = req.body;
+      // TODO: Validate webhook signature if needed
+      const payment = await storage.recordExternalPayment({ bookingId, amount, method, reference });
+      res.json({ success: true, payment });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to process payment webhook' });
+    }
+  });
+
+  // Guest check-in
+  app.post("/api/bookings/:id/check-in", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const result = await storage.checkInGuest(req.params.id, req.user.id);
+      if (!result) return res.status(404).json({ error: 'Booking not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to check in guest' });
+    }
+  });
+
+  // Guest check-out
+  app.post("/api/bookings/:id/check-out", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const result = await storage.checkOutGuest(req.params.id, req.user.id);
+      if (!result) return res.status(404).json({ error: 'Booking not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to check out guest' });
+    }
+  });
+
+  // Booking notes
+  app.post("/api/bookings/:id/notes", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const note = await storage.addBookingNote(req.params.id, req.user.id, req.body.note);
+      res.status(201).json(note);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to add booking note' });
+    }
+  });
+  app.get("/api/bookings/:id/notes", authenticateUser, async (req, res) => {
+    try {
+      const notes = await storage.getBookingNotes(req.params.id);
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch booking notes' });
+    }
+  });
+
+  // Booking attachments (file upload stub)
+  app.post("/api/bookings/:id/attachments", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    // TODO: Implement file upload logic
+    res.status(501).json({ error: 'Not implemented' });
+  });
+  app.get("/api/bookings/:id/attachments", authenticateUser, async (req, res) => {
+    try {
+      const files = await storage.getBookingAttachments(req.params.id);
+      res.json(files);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch booking attachments' });
+    }
+  });
+
+  // Booking audit trail
+  app.get("/api/bookings/:id/audit", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const logs = await storage.getBookingAuditTrail(req.params.id);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch booking audit trail' });
+    }
+  });
+
+  // --- TASK ASSIGNMENT ---
+  // Assign helper to task
+  app.post("/api/cleaning-tasks/:id/assign", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const { helperId } = req.body;
+      const result = await storage.assignHelperToTask(req.params.id, helperId, req.user.id);
+      res.json({ success: true, result });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to assign helper' });
+    }
+  });
+  // Unassign helper from task
+  app.post("/api/cleaning-tasks/:id/unassign", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const result = await storage.unassignHelperFromTask(req.params.id, req.body.helperId, req.user.id);
+      res.json({ success: true, result });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to unassign helper' });
+    }
+  });
+  // Task comments
+  app.post("/api/cleaning-tasks/:id/comments", authenticateUser, async (req, res) => {
+    try {
+      const comment = await storage.addTaskComment(req.params.id, req.user.id, req.body.comment);
+      res.status(201).json(comment);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to add comment' });
+    }
+  });
+  app.get("/api/cleaning-tasks/:id/comments", authenticateUser, async (req, res) => {
+    try {
+      const comments = await storage.getTaskComments(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+  // Task attachments (file upload stub)
+  app.post("/api/cleaning-tasks/:id/attachments", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    // TODO: Implement file upload logic
+    res.status(501).json({ error: 'Not implemented' });
+  });
+  app.get("/api/cleaning-tasks/:id/attachments", authenticateUser, async (req, res) => {
+    try {
+      const files = await storage.getTaskAttachments(req.params.id);
+      res.json(files);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch task attachments' });
+    }
+  });
+  // Task audit log
+  app.get("/api/cleaning-tasks/:id/audit", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const logs = await storage.getTaskAuditTrail(req.params.id);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch task audit trail' });
+    }
+  });
+
+  // --- PAYMENTS ---
+  // Upload payment receipt (file upload stub)
+  app.post("/api/payments/:id/receipt", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    // TODO: Implement file upload logic
+    res.status(501).json({ error: 'Not implemented' });
+  });
+  // Payment dispute/issue reporting
+  app.post("/api/payments/:id/dispute", authenticateUser, async (req, res) => {
+    try {
+      const dispute = await storage.createPaymentDispute(req.params.id, req.user.id, req.body.reason);
+      res.status(201).json(dispute);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create payment dispute' });
+    }
+  });
+
+  // --- ANALYTICS & EXPORT ---
+  // Analytics widgets
+  app.get("/api/analytics/widgets", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const data = await storage.getAnalyticsWidgets(req.user.role, req.user.property);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch analytics widgets' });
+    }
+  });
+  // Export reports
+  app.get("/api/reports/export", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      // TODO: Implement CSV/PDF export logic
+      res.status(501).json({ error: 'Not implemented' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to export reports' });
+    }
+  });
+
+  // --- USER & ROLE MANAGEMENT ---
+  // Switch role
+  app.post("/api/users/:id/switch-role", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const { role, property } = req.body;
+      const updated = await storage.switchUserRole(req.params.id, role, property);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to switch user role' });
+    }
+  });
+  // Update user profile
+  app.put("/api/users/:id/profile", authenticateUser, async (req, res) => {
+    try {
+      const updated = await storage.updateUserProfile(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update user profile' });
+    }
+  });
+  // User activity log
+  app.get("/api/users/:id/activity", authenticateUser, requireRole(['admin']), async (req, res) => {
+    try {
+      const logs = await storage.getUserActivityLog(req.params.id);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user activity log' });
+    }
+  });
+
+  // --- INVENTORY & MAINTENANCE ---
+  // Inventory usage tracking
+  app.post("/api/inventory/:id/usage", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const usage = await storage.createInventoryUsage(req.params.id, req.user.id, req.body.amount, req.body.notes);
+      res.status(201).json(usage);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to record inventory usage' });
+    }
+  });
+  // Inventory restock request
+  app.post("/api/inventory/:id/restock", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const restock = await storage.createInventoryRestockRequest(req.params.id, req.user.id, req.body.amount, req.body.notes);
+      res.status(201).json(restock);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create restock request' });
+    }
+  });
+  // Maintenance scheduling
+  app.post("/api/maintenance/:id/schedule", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const schedule = await storage.createMaintenanceSchedule(req.params.id, req.user.id, req.body.date, req.body.notes);
+      res.status(201).json(schedule);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to schedule maintenance' });
+    }
+  });
+  // Maintenance completion
+  app.post("/api/maintenance/:id/complete", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    try {
+      const result = await storage.completeMaintenance(req.params.id, req.user.id, req.body.notes);
+      res.json({ success: true, result });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to complete maintenance' });
+    }
+  });
+
+  // --- GENERAL ---
+  // File/image upload (stub)
+  app.post("/api/upload", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    // TODO: Implement file upload logic
+    res.status(501).json({ error: 'Not implemented' });
+  });
+  // Notifications (stub)
+  app.post("/api/notifications", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {
+    // TODO: Implement notification logic (email/SMS/push)
+    res.status(501).json({ error: 'Not implemented' });
+  });
+
+  // --- ERROR HANDLING MIDDLEWARE (at end of routes) ---
+  app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  });
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -470,13 +762,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced booking creation with Zod validation and error handling
   app.post("/api/bookings", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      // Parse dates from string format and ensure strings are properly handled
-      const parsedData = {
+      // Validate input using insertBookingSchema
+      const parseResult = insertBookingSchema.safeParse({
         ...req.body,
-        startDate: new Date(req.body.startDate),
-        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
         isTenant: req.body.isTenant || false,
         plan: req.body.plan?.toString() || 'daily',
         totalAmount: req.body.totalAmount?.toString() || '0',
@@ -485,29 +778,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doorCode: req.body.doorCode?.toString() || null,
         frontDoorCode: req.body.frontDoorCode?.toString() || null,
         notes: req.body.notes?.toString() || null
-      };
-
-      const bookingData = insertBookingSchema.parse(parsedData);
-
+        // Plan metadata support
+        , planMeta: req.body.planMeta || null
+      });
+      if (!parseResult.success) {
+        // Log audit for booking creation error
+        await storage.createAuditLog({
+          userId: req.user.id,
+          action: 'booking_error',
+          details: `Booking creation failed (validation): ${JSON.stringify(parseResult.error.errors)}`
+        });
+        return res.status(400).json({ error: 'Invalid booking data', details: parseResult.error.errors });
+      }
+      const bookingData = parseResult.data;
       // Check if manager has access to this room's property
       if (req.user.role === 'manager') {
         const room = await storage.getRoom(bookingData.roomId);
         if (!room || req.user.property !== room.propertyId) {
+          await storage.createAuditLog({
+            userId: req.user.id,
+            action: 'booking_error',
+            details: `Booking creation failed (access denied): manager ${req.user.id} tried to book room ${bookingData.roomId}`
+          });
           return res.status(403).json({ error: 'Access denied' });
         }
       }
-
+      // Prevent booking overlap (double-booking)
+      const overlappingBookings = await storage.getBookingsForRoom(bookingData.roomId, bookingData.startDate, bookingData.endDate);
+      if (overlappingBookings && overlappingBookings.length > 0) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          action: 'booking_error',
+          details: `Booking creation failed (overlap): attempted booking for room ${bookingData.roomId} from ${bookingData.startDate} to ${bookingData.endDate} overlaps with existing booking(s)`
+        });
+        return res.status(409).json({ error: 'Room is already booked for the selected dates', overlaps: overlappingBookings });
+      }
+      // Attach customer mapping if available
+      if (req.user && req.user.id) {
+        bookingData.customerId = req.user.id;
+      }
       const booking = await storage.createBooking(bookingData);
-
       // Update room status to occupied
       await storage.updateRoom(bookingData.roomId, { status: 'occupied' });
-
+      // Log successful booking creation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'booking_created',
+        details: `Booking created for room ${bookingData.roomId} from ${bookingData.startDate} to ${bookingData.endDate} by user ${req.user.id}`
+      });
       res.status(201).json(booking);
     } catch (error) {
+      // Log audit for booking creation error
+      await storage.createAuditLog({
+        userId: req.user?.id || 'system',
+        action: 'booking_error',
+        details: `Booking creation failed: ${error instanceof Error ? error.message : error}`
+      });
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid booking data', details: error.errors });
       }
-      res.status(500).json({ error: 'Failed to create booking' });
+      res.status(500).json({ error: 'Failed to create booking', details: error instanceof Error ? error.message : error });
     }
   });
 
@@ -526,6 +856,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentData = {
         ...req.body,
         receivedBy: req.user.id
+        // Plan metadata and customer mapping
+        , planMeta: req.body.planMeta || null
+        , customerId: req.user.id
       };
 
       const payment = await storage.createPayment(paymentData);
@@ -651,6 +984,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'booking_error',
+        details: `Booking creation failed: ${error instanceof Error ? error.message : error}`
+      });
   // Admin Cash Drawer endpoints
   app.get("/api/admin/cash-drawer", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
     try {
@@ -1681,12 +2019,45 @@ const task = await storage.createCleaningTask(cleanTaskData);
     }
   });
 
+  // Enhanced task creation with Zod validation and assignment logic
   app.post("/api/tasks", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
     try {
-      const task = await storage.createTask(req.body);
+      // Validate input using insertCleaningTaskSchema
+      const parseResult = insertCleaningTaskSchema.safeParse({
+        ...req.body,
+        title: req.body.title?.toString() || '',
+        description: req.body.description?.toString() || null,
+        type: req.body.type?.toString() || 'general',
+        priority: req.body.priority?.toString() || 'normal',
+        status: req.body.status?.toString() || 'pending',
+        notes: req.body.notes?.toString() || null,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined
+      });
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid task data', details: parseResult.error.errors });
+      }
+      let taskData = parseResult.data;
+      // Assignment logic: if manager, auto-assign propertyId
+      if (req.user.role === 'manager' && req.user.property) {
+        taskData = { ...taskData, propertyId: req.user.property };
+      }
+      const task = await storage.createTask(taskData);
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'task_created',
+        details: `${req.user.name} created task: ${taskData.title} (${taskData.type})`
+      });
       res.status(201).json(task);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create task' });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Invalid task data', details: error.errors });
+      }
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'task_error',
+        details: `Task creation failed: ${error instanceof Error ? error.message : error}`
+      });
+      res.status(500).json({ error: 'Failed to create task', details: error instanceof Error ? error.message : error });
     }
   });
 
@@ -1769,6 +2140,7 @@ senderId: req.user.id
     }
   });
 
+
   // Favorites routes
   app.get("/api/favorites", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
@@ -1782,13 +2154,76 @@ senderId: req.user.id
   app.post("/api/favorites", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const favoriteData = {
-        ...req.body,
-        userId: req.user.id
+        user_id: req.user.id,
+        listing_id: req.body.listing_id
       };
       const favorite = await storage.createFavorite(favoriteData);
       res.status(201).json(favorite);
     } catch (error) {
       res.status(500).json({ error: 'Failed to add favorite' });
+    }
+  });
+
+  app.delete("/api/favorites/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const deleted = await storage.deleteFavorite(req.params.id);
+      if (!deleted) return res.status(404).json({ error: 'Favorite not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete favorite' });
+    }
+  });
+
+  // Memberships routes
+  app.get("/api/memberships", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      // Admins can query any user, others only their own
+      const userId = req.user.role === 'admin' && req.query.user_id ? req.query.user_id : req.user.id;
+      const memberships = await storage.getMemberships(userId);
+      res.json(memberships);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch memberships' });
+    }
+  });
+
+  app.post("/api/memberships", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const membershipData = {
+        user_id: req.body.user_id,
+        plan: req.body.plan,
+        status: req.body.status || 'active',
+        started_at: req.body.started_at,
+        expires_at: req.body.expires_at
+      };
+      const membership = await storage.createMembership(membershipData);
+      res.status(201).json(membership);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create membership' });
+    }
+  });
+
+  app.put("/api/memberships/:id", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const updates = {
+        plan: req.body.plan,
+        status: req.body.status,
+        expires_at: req.body.expires_at
+      };
+      const membership = await storage.updateMembership(req.params.id, updates);
+      if (!membership) return res.status(404).json({ error: 'Membership not found' });
+      res.json(membership);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update membership' });
+    }
+  });
+
+  app.delete("/api/memberships/:id", authenticateUser, requireRole(['admin']), async (req: AuthenticatedRequest, res) => {
+    try {
+      const deleted = await storage.deleteMembership(req.params.id);
+      if (!deleted) return res.status(404).json({ error: 'Membership not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete membership' });
     }
   });
 

@@ -1,3 +1,47 @@
+import express from 'express';
+const router = express.Router();
+
+// Suggest optimal room assignment
+router.post('/suggest-room-assignment', async (req, res) => {
+  try {
+    // TODO: Implement AI logic
+    res.json({ suggestion: null, message: 'Not implemented' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to suggest room assignment' });
+  }
+});
+
+// Predict maintenance needs
+router.get('/predict-maintenance', async (req, res) => {
+  try {
+    // TODO: Implement AI logic
+    res.json({ predictions: [], message: 'Not implemented' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to predict maintenance' });
+  }
+});
+
+// Generate cleaning schedule
+router.post('/generate-cleaning-schedule', async (req, res) => {
+  try {
+    // TODO: Implement AI logic
+    res.json({ schedule: [], message: 'Not implemented' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate cleaning schedule' });
+  }
+});
+
+// Auto-assign tasks
+router.post('/auto-assign-tasks', async (req, res) => {
+  try {
+    // TODO: Implement AI logic
+    res.json({ assignments: [], message: 'Not implemented' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to auto-assign tasks' });
+  }
+});
+
+export default router;
 
 // Type definitions for AI engine parameters
 interface RoomData {

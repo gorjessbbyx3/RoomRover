@@ -557,14 +557,42 @@ export class PostgresStorage implements IStorage {
   }
 
   // Favorites methods
+
+  // Favorites methods
   async getFavorites(userId: string): Promise<any[]> {
-    // For now return empty array - would need full favorites implementation
-    return [];
+    const result = await db.select().from('favorites').where(eq('favorites.user_id', userId));
+    return result;
   }
 
-  async createFavorite(favorite: any): Promise<any> {
-    // For now return the favorite - would need full favorites implementation
-    return favorite;
+  async createFavorite(favorite: { user_id: string, listing_id: string }): Promise<any> {
+    const result = await db.insert('favorites').values(favorite).returning();
+    return result[0];
+  }
+
+  async deleteFavorite(id: string): Promise<boolean> {
+    const result = await db.delete('favorites').where(eq('favorites.id', id)).returning();
+    return result.length > 0;
+  }
+
+  // Memberships methods
+  async getMemberships(userId: string): Promise<any[]> {
+    const result = await db.select().from('memberships').where(eq('memberships.user_id', userId));
+    return result;
+  }
+
+  async createMembership(membership: { user_id: string, plan: string, status?: string, started_at?: Date, expires_at?: Date }): Promise<any> {
+    const result = await db.insert('memberships').values(membership).returning();
+    return result[0];
+  }
+
+  async updateMembership(id: string, updates: Partial<{ plan: string, status: string, expires_at: Date }>): Promise<any> {
+    const result = await db.update('memberships').set(updates).where(eq('memberships.id', id)).returning();
+    return result[0];
+  }
+
+  async deleteMembership(id: string): Promise<boolean> {
+    const result = await db.delete('memberships').where(eq('memberships.id', id)).returning();
+    return result.length > 0;
   }
 
   // Notifications methods
