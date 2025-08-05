@@ -1,4 +1,5 @@
 
+
 # RoomRover – Enterprise-Grade Property & Operations Platform
 
 > Modern, mobile-first, and AI-augmented platform for managing boutique hospitality, short-term rentals, and private clubs.
@@ -28,27 +29,27 @@
 
 **Backend**: Node.js, Express, TypeScript, Drizzle ORM, PostgreSQL, Zod, Passport.js, Supertest, AI/automation endpoints
 
-**Database**: PostgreSQL (Neon or Supabase), Drizzle migrations
+**Database**: PostgreSQL (local Docker, Neon, or Supabase), Drizzle migrations
 
-**DevOps**: Replit, Vite, PWA, CI/CD ready
+**DevOps**: Docker, Docker Compose, Vite, PWA, CI/CD ready
 
 ---
 
-
-## ⚡ Quick Start
+## ⚡ Quick Start (Docker Recommended)
 
 1. **Clone or Fork** this repo
-2. **Azure One-Click Deploy (Recommended)**
-   - Install [Azure Developer CLI](https://aka.ms/azure-dev/install)
-   - Login: `azd auth login`
-   - Provision & deploy (auto-detects `azure.yaml`):
+2. **Set up your environment variables**
+   - Copy `.env.example` to `.env` and fill in required values (see below)
+3. **Build and run with Docker Compose**
+   - From the project root, run:
      ```bash
-     azd up
+     docker-compose up --build
      ```
-   - Follow prompts to set environment variables and select Azure subscription.
-   - Your backend (App Service), frontend (Static Web App), and database (PostgreSQL) will be provisioned and deployed automatically.
+   - This will start the backend (Node.js), frontend (Nginx/React), and a Postgres database.
+   - Backend: [http://localhost:3000](http://localhost:3000)
+   - Frontend: [http://localhost:8080](http://localhost:8080)
 
-3. **Manual Local Run**
+4. **Manual Local Run (No Docker)**
    - Install dependencies:
      ```bash
      npm install
@@ -90,6 +91,7 @@ server/           # Express backend (REST, AI, automation)
   ai-engine.ts    # AI/automation endpoints
 migrations/       # DB migrations (Drizzle SQL)
 shared/           # Shared types, Zod schemas
+docker-compose.yml # Multi-service orchestration
 ```
 
 ---

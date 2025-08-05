@@ -1,6 +1,10 @@
 // ...existing code...
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Docker
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
   // --- BOOKING MANAGEMENT ---
   // Update booking
   app.put("/api/bookings/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
