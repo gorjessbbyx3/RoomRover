@@ -295,6 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Unhandled error:', err);
     res.status(500).json({ error: 'Internal server error' });
   });
+
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -2716,4 +2717,5 @@ senderId: req.user.id
 
   const httpServer = createServer(app);
   return httpServer;
+}
 }
