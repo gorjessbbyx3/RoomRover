@@ -1,3 +1,6 @@
+// ...existing code...
+
+export async function registerRoutes(app: Express): Promise<Server> {
   // --- BOOKING MANAGEMENT ---
   // Update booking
   app.put("/api/bookings/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
@@ -84,6 +87,8 @@
       res.status(500).json({ error: 'Failed to fetch booking notes' });
     }
   });
+
+  // ...existing code...
 
   // Booking attachments (file upload stub)
   app.post("/api/bookings/:id/attachments", authenticateUser, requireRole(['admin', 'manager']), async (req, res) => {

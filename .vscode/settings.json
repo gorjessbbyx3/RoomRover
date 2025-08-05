@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/70a07034-bda8-4c03-8807-dd758a5fe593/resourceGroups/appsvc_linux_eastus/providers/Microsoft.Web/sites/ROOMROVER",
+    "appService.deploySubpath": "."
+}
