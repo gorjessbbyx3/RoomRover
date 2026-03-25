@@ -3,558 +3,482 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth';
-import PropertyOverview from '@/components/property-overview';
 import StatusBadge from '@/components/status-badge';
 import { DashboardStats, RoomWithDetails, CleaningTaskWithDetails, PropertyWithRooms } from '@/lib/types';
 import {
   CheckCircle,
   Clock,
-  Wrench,
-  Home,
+  Bed,
   Users,
   Calendar,
   DollarSign,
   TrendingUp,
   AlertTriangle,
   Plus,
-  Settings,
-  Trash2,
-  User,
-  Package,
-  Activity,
   Fan,
   HandCoins,
-  Calendar as CalendarIcon,
-  MessageSquare,
-  Bed,
-  Key
+  Key,
+  ArrowRight,
+  Sparkles,
+  Shield,
+  Zap,
 } from 'lucide-react';
 import FrontDoorManager from '@/components/front-door-manager';
 import AddTaskDialog from '@/components/add-task-dialog';
+
+const fetchWithAuth = async (url: string) => {
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  });
+  if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+  return response.json();
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/dashboard/stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/dashboard/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch dashboard stats');
-      return response.json();
-    },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    staleTime: 5000 // Consider data stale after 5 seconds
+    queryFn: () => fetchWithAuth('/api/dashboard/stats'),
+    refetchInterval: 30000,
+    staleTime: 5000,
   });
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<RoomWithDetails[]>({
     queryKey: ['/api/rooms'],
-    queryFn: async () => {
-      const response = await fetch('/api/rooms', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch rooms');
-      return response.json();
-    },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    staleTime: 5000 // Consider data stale after 5 seconds
+    queryFn: () => fetchWithAuth('/api/rooms'),
+    refetchInterval: 30000,
   });
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<PropertyWithRooms[]>({
     queryKey: ['/api/properties'],
-    queryFn: async () => {
-      const response = await fetch('/api/properties', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch properties');
-      return response.json();
-    },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    staleTime: 5000 // Consider data stale after 5 seconds
+    queryFn: () => fetchWithAuth('/api/properties'),
+    refetchInterval: 30000,
   });
 
   const { data: cleaningTasks, isLoading: tasksLoading } = useQuery<CleaningTaskWithDetails[]>({
     queryKey: ['/api/cleaning-tasks'],
-    queryFn: async () => {
-      const response = await fetch('/api/cleaning-tasks', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch cleaning tasks');
-      return response.json();
-    },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    staleTime: 5000 // Consider data stale after 5 seconds
+    queryFn: () => fetchWithAuth('/api/cleaning-tasks'),
+    refetchInterval: 30000,
   });
 
   if (!user) return null;
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(0)}`;
+  const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+  const pendingTasks = cleaningTasks?.filter(t => t.status === 'pending') || [];
+  const highPriorityTasks = pendingTasks.filter(t => ['high', 'critical'].includes(t.priority));
 
-  const pendingTasks = cleaningTasks?.filter(task => task.status === 'pending') || [];
-  const highPriorityTasks = pendingTasks.filter(task => ['high', 'critical'].includes(task.priority));
+  const occupiedRooms = rooms?.filter(r => r.status === 'occupied') || [];
+  const availableRooms = rooms?.filter(r => r.status === 'available') || [];
+  const cleaningRooms = rooms?.filter(r => r.status === 'cleaning') || [];
+  const maintenanceRooms = rooms?.filter(r => r.status === 'maintenance') || [];
+  const totalRooms = rooms?.length || 0;
+  const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms.length / totalRooms) * 100) : 0;
 
-  // Group rooms by property
-  const propertiesWithRooms: PropertyWithRooms[] = properties?.map(property => ({
-    ...property,
-    rooms: rooms?.filter(room => room.propertyId === property.id) || []
+  const propertiesWithRooms: PropertyWithRooms[] = properties?.map(p => ({
+    ...p,
+    rooms: rooms?.filter(r => r.propertyId === p.id) || [],
   })) || [];
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">
-          Dashboard
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Welcome back, {user.name}. Here's your property overview.
-        </p>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="shadow-material">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-success-100 rounded-full flex items-center justify-center">
-                  <Bed className="h-4 w-4 text-success-600" />
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Available Rooms</dt>
-                  <dd className="text-lg font-medium text-gray-900" data-testid="stat-available-rooms">
-                    {statsLoading ? <Skeleton className="h-6 w-8" /> : stats?.availableRooms || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-material">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <Calendar className="h-4 w-4 text-primary-600" />
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Active Memberships</dt>
-                  <dd className="text-lg font-medium text-gray-900" data-testid="stat-active-bookings">
-                    {statsLoading ? <Skeleton className="h-6 w-8" /> : stats?.activeBookings || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-material">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-warning-100 rounded-full flex items-center justify-center">
-                  <Fan className="h-4 w-4 text-warning-600" />
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Pending Tasks</dt>
-                  <dd className="text-lg font-medium text-gray-900" data-testid="stat-pending-tasks">
-                    {statsLoading ? <Skeleton className="h-6 w-8" /> : stats?.pendingTasks || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-material">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-success-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="h-4 w-4 text-success-600" />
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Revenue Today</dt>
-                  <dd className="text-lg font-medium text-gray-900" data-testid="stat-revenue-today">
-                    {statsLoading ? <Skeleton className="h-6 w-12" /> : formatCurrency(stats?.todayRevenue || 0)}
-                  </dd>
-                  <dd className="text-xs text-success-600 mt-1">
-                    {stats?.paymentMethodBreakdown ? (
-                      `Cash: ${formatCurrency(stats.paymentMethodBreakdown.cash || 0)} | CashApp: ${formatCurrency(stats.paymentMethodBreakdown.cashApp || 0)}`
-                    ) : ''}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Property Overview */}
-      {(user.role === 'admin' || user.role === 'manager') && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {propertiesLoading ? (
-            <>
-              <Skeleton className="h-64" />
-              <Skeleton className="h-64" />
-            </>
-          ) : (
-            propertiesWithRooms
-              .filter(property => user.role === 'admin' || user.property === property.id)
-              .map((property) => (
-                <PropertyOverview 
-                  key={property.id} 
-                  property={property}
-                  onRoomClick={(roomId) => console.log('Room clicked:', roomId)}
-                />
-              ))
-          )}
-        </div>
-      )}
-
-      {/* Recent Activities & Cleaning Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Cleaning Tasks */}
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200 flex flex-row items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-medium text-gray-900">
-                Pending Cleaning Tasks
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                {highPriorityTasks.length} high priority tasks
-              </p>
-            </div>
-            {(user.role === 'admin' || user.role === 'manager') && (
-              <AddTaskDialog 
-                trigger={
-                  <Button size="sm" className="bg-primary-500 hover:bg-primary-600" data-testid="button-add-task">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Task
-                  </Button>
-                }
-              />
-            )}
-          </CardHeader>
-          <CardContent className="p-6">
-            {tasksLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-20" />
-                <Skeleton className="h-20" />
-                <Skeleton className="h-20" />
+              <div className="flex items-center gap-3 mb-1">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user.name}
+                  </h1>
+                  <p className="text-slate-400 text-sm mt-0.5">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · {user.role === 'admin' ? 'All Properties' : user.property || 'Overview'}
+                  </p>
+                </div>
               </div>
-            ) : pendingTasks.length > 0 ? (
-              <div className="space-y-4">
-                {pendingTasks.slice(0, 3).map((task) => (
-                  <div 
-                    key={task.id}
-                    className={`border rounded-lg p-4 ${
-                      task.priority === 'critical' ? 'bg-error-50 border-error-200' :
-                      task.priority === 'high' ? 'bg-warning-50 border-warning-200' :
-                      'border-gray-200'
-                    }`}
-                    data-testid={`task-${task.id}`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{task.title}</h4>
-                        {task.description && (
-                          <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                        )}
-                        <div className="flex items-center mt-2 text-sm text-gray-500">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>
-                            {task.dueDate 
-                              ? `Due: ${new Date(task.dueDate).toLocaleDateString()}`
-                              : 'No due date'
-                            }
+            </div>
+            <div className="hidden md:flex items-center gap-3">
+              <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm text-slate-300">System Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+        {/* Primary Stats Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Occupancy Rate */}
+          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-full" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Occupancy</span>
+              </div>
+              {statsLoading ? <Skeleton className="h-9 w-20" /> : (
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{occupancyRate}%</span>
+                  <span className="text-xs text-slate-500 mb-1">{occupiedRooms.length}/{totalRooms}</span>
+                </div>
+              )}
+              <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5">
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${occupancyRate}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Available Rooms */}
+          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-full" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <Bed className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Available</span>
+              </div>
+              {statsLoading ? <Skeleton className="h-9 w-16" /> : (
+                <span className="text-3xl font-bold text-slate-900">{availableRooms.length}</span>
+              )}
+              <p className="text-xs text-emerald-600 mt-1 font-medium">Ready for guests</p>
+            </div>
+          </div>
+
+          {/* Active Bookings */}
+          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-violet-100/50 to-transparent rounded-bl-full" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-violet-600" />
+                </div>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Active</span>
+              </div>
+              {statsLoading ? <Skeleton className="h-9 w-16" /> : (
+                <span className="text-3xl font-bold text-slate-900">{stats?.activeBookings || 0}</span>
+              )}
+              <p className="text-xs text-violet-600 mt-1 font-medium">Current memberships</p>
+            </div>
+          </div>
+
+          {/* Revenue Today */}
+          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-amber-100/50 to-transparent rounded-bl-full" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-amber-600" />
+                </div>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Today</span>
+              </div>
+              {statsLoading ? <Skeleton className="h-9 w-24" /> : (
+                <span className="text-3xl font-bold text-slate-900">{fmt(stats?.todayRevenue || 0)}</span>
+              )}
+              {stats?.paymentMethodBreakdown && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Cash {fmt(stats.paymentMethodBreakdown.cash || 0)} · App {fmt(stats.paymentMethodBreakdown.cashApp || 0)}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Room Status Grid + Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Room Status Visual Map */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Room Status</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Live room overview across properties</p>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" /> Available</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-400" /> Occupied</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Cleaning</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-400" /> Maintenance</span>
+              </div>
+            </div>
+            <div className="p-6">
+              {roomsLoading || propertiesLoading ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-40" />
+                  <Skeleton className="h-40" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {propertiesWithRooms
+                    .filter(p => user.role === 'admin' || user.property === p.id)
+                    .map(property => (
+                    <div key={property.id}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-4 w-4 text-slate-400" />
+                        <h3 className="text-sm font-semibold text-slate-700">{property.name}</h3>
+                        <span className="text-xs text-slate-400">·</span>
+                        <span className="text-xs text-slate-500">
+                          {property.rooms.filter(r => r.status === 'occupied').length}/{property.rooms.length} occupied
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                        {property.rooms.map(room => {
+                          const statusColor = room.status === 'available' ? 'bg-emerald-100 border-emerald-300 text-emerald-700' :
+                            room.status === 'occupied' ? 'bg-blue-100 border-blue-300 text-blue-700' :
+                            room.status === 'cleaning' ? 'bg-amber-100 border-amber-300 text-amber-700' :
+                            'bg-red-100 border-red-300 text-red-700';
+                          return (
+                            <div
+                              key={room.id}
+                              className={`${statusColor} border rounded-xl p-2.5 text-center cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-105`}
+                              title={`${room.id} - ${room.status}`}
+                            >
+                              <div className="text-xs font-bold">{room.roomNumber}</div>
+                              <div className="text-[10px] opacity-75 capitalize mt-0.5">{room.status}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Alerts Column */}
+          <div className="space-y-4">
+            {/* Payment Alerts */}
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" /> Alerts
+                </h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {statsLoading ? <Skeleton className="h-16" /> : (
+                  <>
+                    {(stats?.overduePaymentsCount || 0) > 0 && (
+                      <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                        <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-red-800">{stats?.overduePaymentsCount} Overdue</p>
+                          <p className="text-xs text-red-600">{fmt(stats?.overduePaymentsAmount || 0)} outstanding</p>
+                        </div>
+                      </div>
+                    )}
+                    {(stats?.pendingPaymentsCount || 0) > 0 && (
+                      <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">{stats?.pendingPaymentsCount} Pending</p>
+                          <p className="text-xs text-amber-600">{fmt(stats?.pendingPaymentsAmount || 0)} awaiting</p>
+                        </div>
+                      </div>
+                    )}
+                    {highPriorityTasks.length > 0 && (
+                      <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-xl border border-orange-100">
+                        <Fan className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-orange-800">{highPriorityTasks.length} Urgent Tasks</p>
+                          <p className="text-xs text-orange-600">Requires immediate attention</p>
+                        </div>
+                      </div>
+                    )}
+                    {(stats?.overduePaymentsCount || 0) === 0 && (stats?.pendingPaymentsCount || 0) === 0 && highPriorityTasks.length === 0 && (
+                      <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-emerald-800">All Clear</p>
+                          <p className="text-xs text-emerald-600">No issues requiring attention</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 p-5">
+              <h3 className="text-sm font-semibold text-slate-900 mb-4">System Status</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Payment System</span>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Active</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Cash App</span>
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">$selarazmami</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Cleaning Queue</span>
+                  <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">{cleaningRooms.length} rooms</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Maintenance</span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${maintenanceRooms.length > 0 ? 'text-amber-600 bg-amber-50' : 'text-emerald-600 bg-emerald-50'}`}>
+                    {maintenanceRooms.length > 0 ? `${maintenanceRooms.length} issues` : 'None'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cleaning Tasks + Cash Monitoring */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Pending Tasks */}
+          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Pending Tasks</h2>
+                <p className="text-xs text-slate-500 mt-0.5">{pendingTasks.length} tasks · {highPriorityTasks.length} high priority</p>
+              </div>
+              {(user.role === 'admin' || user.role === 'manager') && (
+                <AddTaskDialog
+                  trigger={
+                    <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-8 text-xs">
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+            <div className="p-4">
+              {tasksLoading ? (
+                <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+              ) : pendingTasks.length > 0 ? (
+                <div className="space-y-2">
+                  {pendingTasks.slice(0, 5).map(task => (
+                    <div
+                      key={task.id}
+                      className={`rounded-xl p-3.5 border transition-colors ${
+                        task.priority === 'critical' ? 'bg-red-50/50 border-red-200' :
+                        task.priority === 'high' ? 'bg-amber-50/50 border-amber-200' :
+                        'bg-slate-50/50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-slate-900 truncate">{task.title}</h4>
+                          {task.description && <p className="text-xs text-slate-500 mt-0.5 truncate">{task.description}</p>}
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                            </span>
+                          </div>
+                        </div>
+                        <StatusBadge status={task.priority} type="priority" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <Fan className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                  <p className="text-sm text-slate-500">All clear — no pending tasks</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Manager Cash Drawer - Admin Only */}
+          {user.role === 'admin' ? (
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <HandCoins className="h-4 w-4 text-amber-500" /> Cash Drawer Monitoring
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">Real-time manager holdings</p>
+              </div>
+              <div className="p-4">
+                {statsLoading ? (
+                  <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
+                ) : stats?.cashDrawerStats && stats.cashDrawerStats.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* Summary */}
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-xs text-slate-500">Total Holdings</p>
+                        <p className="text-xl font-bold text-slate-900 mt-0.5">
+                          {fmt(stats.cashDrawerStats.reduce((s, d) => s + d.currentCashHolding, 0))}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-xs text-slate-500">Today's Collections</p>
+                        <p className="text-xl font-bold text-slate-900 mt-0.5">
+                          {fmt(stats.cashDrawerStats.reduce((s, d) => s + d.totalCashCollectedToday, 0))}
+                        </p>
+                      </div>
+                    </div>
+                    {stats.cashDrawerStats.map(d => (
+                      <div key={d.managerId} className="rounded-xl p-3.5 border border-slate-200 bg-slate-50/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{d.managerName}</p>
+                            <p className="text-xs text-slate-500">{d.property}</p>
+                          </div>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            d.currentCashHolding > 200 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {fmt(d.currentCashHolding)}
                           </span>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <StatusBadge status={task.priority} type="priority" />
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="text-success-600 hover:text-success-800"
-                          data-testid={`button-complete-task-${task.id}`}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Fan className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No pending cleaning tasks</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Payment Alerts & System Status */}
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-medium text-gray-900">
-              Payment Alerts & System Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {/* Payment Alerts */}
-              {statsLoading ? (
-                <Skeleton className="h-16" />
-              ) : (
-                <>
-                  {(stats?.overduePaymentsCount || 0) > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-error-50 border border-error-200 rounded-lg">
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-5 w-5 text-error-500 mr-3" />
-                        <div>
-                          <div className="font-medium text-error-800">
-                            {stats?.overduePaymentsCount} Overdue Payment{(stats?.overduePaymentsCount || 0) > 1 ? 's' : ''}
-                          </div>
-                          <div className="text-sm text-error-600">
-                            Total: {formatCurrency(stats?.overduePaymentsAmount || 0)}
-                          </div>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline" className="border-error-300 text-error-700">
-                        Review
-                      </Button>
-                    </div>
-                  )}
-                  {(stats?.pendingPaymentsCount || 0) > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-warning-50 border border-warning-200 rounded-lg">
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 text-warning-500 mr-3" />
-                        <div>
-                          <div className="font-medium text-warning-800">
-                            {stats?.pendingPaymentsCount} Pending Payment{(stats?.pendingPaymentsCount || 0) > 1 ? 's' : ''}
-                          </div>
-                          <div className="text-sm text-warning-600">
-                            Total: {formatCurrency(stats?.pendingPaymentsAmount || 0)}
-                          </div>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline" className="border-warning-300 text-warning-700">
-                        Process
-                      </Button>
-                    </div>
-                  )}
-                  {(stats?.overduePaymentsCount || 0) === 0 && (stats?.pendingPaymentsCount || 0) === 0 && (
-                    <div className="flex items-center justify-between p-3 bg-success-50 border border-success-200 rounded-lg">
-                      <div className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-success-500 mr-3" />
-                        <span className="font-medium text-success-800">All Payments Up to Date</span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-              {/* System Status */}
-              <div className="pt-4 border-t border-gray-200">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Payment System</span>
-                    <span className="text-success-600 font-medium">Active</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Cash App Integration</span>
-                    <span className="text-success-600 font-medium">$selarazmami</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Last Payment</span>
-                    <span className="text-gray-600">
-                      {stats?.lastPaymentTime ? new Date(stats.lastPaymentTime).toLocaleTimeString() : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {(user.role === 'admin') && (
-                <div className="pt-4 border-t border-gray-200">
-                  <Button variant="outline" size="sm" className="w-full" data-testid="button-view-reports">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    View Payment Reports
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      
-
-      {/* Manager Cash Drawer Monitoring - Admin Only */}
-      {user.role === 'admin' && (
-        <div className="mt-8 mb-8">
-          <Card className="shadow-material bg-gradient-to-r from-yellow-50 to-green-50 border-yellow-200">
-            <CardHeader className="border-b border-yellow-200">
-              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-                <HandCoins className="h-5 w-5 mr-2 text-yellow-600" />
-                Manager Cash Drawer Monitoring
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Real-time tracking of manager cash holdings and turn-ins
-              </p>
-            </CardHeader>
-            <CardContent className="p-6">
-              {statsLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Skeleton className="h-32" />
-                  <Skeleton className="h-32" />
-                </div>
-              ) : stats?.cashDrawerStats && stats.cashDrawerStats.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
-                      <div className="flex items-center">
-                        <Users className="h-5 w-5 text-blue-500 mr-2" />
-                        <div>
-                          <div className="text-sm text-gray-600">Active Managers</div>
-                          <div className="text-xl font-bold text-blue-600">
-                            {stats.cashDrawerStats.length}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
-                      <div className="flex items-center">
-                        <DollarSign className="h-5 w-5 text-green-500 mr-2" />
-                        <div>
-                          <div className="text-sm text-gray-600">Total Cash Holdings</div>
-                          <div className="text-xl font-bold text-green-600">
-                            {formatCurrency(stats.cashDrawerStats.reduce((sum, stat) => sum + stat.currentCashHolding, 0))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border border-yellow-200">
-                      <div className="flex items-center">
-                        <TrendingUp className="h-5 w-5 text-purple-500 mr-2" />
-                        <div>
-                          <div className="text-sm text-gray-600">Today's Collections</div>
-                          <div className="text-xl font-bold text-purple-600">
-                            {formatCurrency(stats.cashDrawerStats.reduce((sum, stat) => sum + stat.totalCashCollectedToday, 0))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Individual Manager Stats */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {stats.cashDrawerStats.map((drawerStat) => (
-                      <div key={drawerStat.managerId} className="bg-white p-4 rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-medium text-gray-900">{drawerStat.managerName}</h4>
-                            <p className="text-sm text-gray-600">{drawerStat.property}</p>
-                          </div>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            drawerStat.currentCashHolding > 200 
-                              ? 'bg-warning-100 text-warning-800' 
-                              : 'bg-success-100 text-success-800'
-                          }`}>
-                            {drawerStat.currentCashHolding > 200 ? 'High' : 'Normal'}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Current Holding:</span>
-                            <span className={`font-medium ${
-                              drawerStat.currentCashHolding > 200 ? 'text-warning-600' : 'text-gray-900'
-                            }`}>
-                              {formatCurrency(drawerStat.currentCashHolding)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Today's Collection:</span>
-                            <span className="font-medium text-gray-900">
-                              {formatCurrency(drawerStat.totalCashCollectedToday)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Last Turn-in:</span>
-                            <span className="text-sm text-gray-900">
-                              {drawerStat.lastTurnInDate 
-                                ? `${formatCurrency(drawerStat.lastTurnInAmount || 0)} on ${new Date(drawerStat.lastTurnInDate).toLocaleDateString()}`
-                                : 'No turn-ins yet'
-                              }
-                            </span>
-                          </div>
-                        </div>
-
-                        {drawerStat.currentCashHolding > 200 && (
-                          <div className="mt-3 p-2 bg-warning-50 border border-warning-200 rounded">
-                            <div className="flex items-center">
-                              <AlertTriangle className="h-4 w-4 text-warning-500 mr-2" />
-                              <span className="text-xs text-warning-700">
-                                Consider requesting cash turn-in
-                              </span>
-                            </div>
+                        {d.currentCashHolding > 200 && (
+                          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600">
+                            <AlertTriangle className="h-3 w-3" /> Consider requesting turn-in
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <HandCoins className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No active managers with cash holdings</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Front Door Code Management */}
-      <div className="mt-8">
-        <Card className="shadow-material">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-              <Key className="h-5 w-5 mr-2" />
-              Front Door Code Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {propertiesLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-20" />
-                <Skeleton className="h-20" />
+                ) : (
+                  <div className="text-center py-10">
+                    <HandCoins className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm text-slate-500">No active cash holdings</p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <FrontDoorManager properties={properties || []} />
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          ) : (
+            /* Front Door Codes for managers */
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <Key className="h-4 w-4 text-slate-500" /> Front Door Codes
+                </h2>
+              </div>
+              <div className="p-4">
+                {propertiesLoading ? <Skeleton className="h-20" /> : <FrontDoorManager properties={properties || []} />}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Front Door Codes for Admin */}
+        {user.role === 'admin' && (
+          <div className="mb-8 bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <Key className="h-4 w-4 text-slate-500" /> Front Door Code Management
+              </h2>
+            </div>
+            <div className="p-6">
+              {propertiesLoading ? <Skeleton className="h-20" /> : <FrontDoorManager properties={properties || []} />}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

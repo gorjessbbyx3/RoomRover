@@ -9,19 +9,19 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRoles, allowedRoles }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
   // Use either requiredRoles or allowedRoles (they're the same thing)
   const roles = requiredRoles || allowedRoles;
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !user) {
       setLocation('/login');
     }
-  }, [user, loading, setLocation]);
+  }, [user, isLoading, setLocation]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

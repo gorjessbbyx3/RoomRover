@@ -180,9 +180,6 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <GlobalNotification />
-      <OnboardingTour />
-      <DarkModeToggle />
       <QueryClientProvider client={queryClient}>
         <AppRouter />
         <Toaster />

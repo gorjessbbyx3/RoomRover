@@ -12,7 +12,7 @@ export function validateEnvironment() {
   
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:', missing);
-    process.exit(1);
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
   // Set defaults for optional variables

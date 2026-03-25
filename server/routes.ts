@@ -1,10 +1,97 @@
-// ...existing code...
+import type { Express, Request, Response, NextFunction } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertUserSchema, insertGuestSchema, insertBookingSchema, insertPaymentSchema, insertCleaningTaskSchema, insertInquirySchema } from "@shared/schema";
+import { z } from "zod";
+import * as bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
+
+// Authentication middleware
+const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let token = null;
+
+    if (authHeader) {
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      } else {
+        token = authHeader;
+      }
+    }
+
+    if (!token) {
+      console.log('No token provided. Auth header:', authHeader);
+      console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    console.log('Token received:', token.substring(0, 10) + '...');
+
+    // In a real app, verify JWT token
+    // For now, just use the token as user ID
+    try {
+      const user = await storage.getUser(token);
+      if (!user) {
+        console.log('User not found for token:', token);
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+
+      console.log('User authenticated:', user.username);
+      req.user = user;
+      next();
+    } catch (storageError) {
+      console.error('Storage error:', storageError);
+      return res.status(401).json({ error: 'Authentication failed' });
+    }
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Role-based access control
+const requireRole = (roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+};
+
+// Global error handling middleware
+const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Unhandled error:', error);
+  
+  // Check if response was already sent
+  if (res.headersSent) {
+    return next(error);
+  }
+  
+  // Default error response
+  const statusCode = error.statusCode || error.status || 500;
+  const message = error.message || 'Internal server error';
+  
+  res.status(statusCode).json({
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  });
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for Docker
-  app.get('/api/health', (req, res) => {
+
+  // --- EXTENDED BOOKING/TASK/INVENTORY/MAINTENANCE ROUTES ---
+
+  // Health check endpoint
+  app.get('/api/health', (_req, res) => {
     res.status(200).json({ status: 'ok' });
   });
+
   // --- BOOKING MANAGEMENT ---
   // Update booking
   app.put("/api/bookings/:id", authenticateUser, requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res) => {
@@ -293,99 +380,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // TODO: Implement notification logic (email/SMS/push)
     res.status(501).json({ error: 'Not implemented' });
   });
-
-  // --- ERROR HANDLING MIDDLEWARE (at end of routes) ---
-  app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  });
-
-import type { Express, Request, Response, NextFunction } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertUserSchema, insertGuestSchema, insertBookingSchema, insertPaymentSchema, insertCleaningTaskSchema, insertInquirySchema } from "@shared/schema";
-import { z } from "zod";
-import * as bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
-
-interface AuthenticatedRequest extends Request {
-  user?: any;
-}
-
-// Authentication middleware
-const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-    let token = null;
-
-    if (authHeader) {
-      if (authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      } else {
-        token = authHeader;
-      }
-    }
-
-    if (!token) {
-      console.log('No token provided. Auth header:', authHeader);
-      console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    console.log('Token received:', token.substring(0, 10) + '...');
-
-    // In a real app, verify JWT token
-    // For now, just use the token as user ID
-    try {
-      const user = await storage.getUser(token);
-      if (!user) {
-        console.log('User not found for token:', token);
-        return res.status(401).json({ error: 'Invalid token' });
-      }
-
-      console.log('User authenticated:', user.username);
-      req.user = user;
-      next();
-    } catch (storageError) {
-      console.error('Storage error:', storageError);
-      return res.status(401).json({ error: 'Authentication failed' });
-    }
-  } catch (error) {
-    console.error('Authentication error:', error);
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
-// Role-based access control
-const requireRole = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-    next();
-  };
-};
-
-// Global error handling middleware
-const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled error:', error);
-  
-  // Check if response was already sent
-  if (res.headersSent) {
-    return next(error);
-  }
-  
-  // Default error response
-  const statusCode = error.statusCode || error.status || 500;
-  const message = error.message || 'Internal server error';
-  
-  res.status(statusCode).json({
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  });
-};
-
-export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
@@ -2721,5 +2715,4 @@ senderId: req.user.id
 
   const httpServer = createServer(app);
   return httpServer;
-}
 }

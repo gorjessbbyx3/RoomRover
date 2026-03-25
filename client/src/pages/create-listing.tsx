@@ -1,10 +1,6 @@
-Replacing the original CreateListing component with a new version that includes form state management, submission handling, and integration with React Query for data mutations.
-```
-
-```replit_final_file
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -27,7 +23,7 @@ export default function CreateListing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
 
   const createListingMutation = useMutation({

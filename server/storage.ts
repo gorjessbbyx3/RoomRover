@@ -1270,19 +1270,34 @@ export class MemStorage implements IStorage {
 }
 
 // Create storage instance - use PostgreSQL
-let storageInstance: IStorage;
+let storageInstance: IStorage | null = null;
+let initPromise: Promise<IStorage> | null = null;
 
-export const getStorage = async (): Promise<IStorage> => {
-  if (!storageInstance) {
-    try {
-      storageInstance = await initializeStorage();
-    } catch (error) {
-      console.warn('⚠️  Falling back to in-memory storage for development');
+const getStorage = async (): Promise<IStorage> => {
+  if (storageInstance) return storageInstance;
+  if (!initPromise) {
+    initPromise = initializeStorage().then(instance => {
+      storageInstance = instance;
+      return instance;
+    }).catch(error => {
+      console.warn('⚠️  Falling back to in-memory storage:', error.message);
       storageInstance = new MemStorage();
-    }
+      return storageInstance;
+    });
   }
-  return storageInstance;
+  return initPromise;
 };
 
-// For backwards compatibility, export a storage instance
-export const storage = new MemStorage();
+// Lazy proxy: forwards all method calls through async getStorage()
+export const storage: IStorage = new Proxy({} as IStorage, {
+  get(_target, prop) {
+    return async (...args: any[]) => {
+      const instance = await getStorage();
+      const method = (instance as any)[prop];
+      if (typeof method === 'function') {
+        return method.apply(instance, args);
+      }
+      return method;
+    };
+  }
+});

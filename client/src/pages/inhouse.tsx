@@ -103,10 +103,26 @@ export default function InHouse() {
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
+    queryFn: async () => {
+      const response = await fetch('/api/bookings', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      return response.json();
+    },
+    refetchInterval: 30000,
   });
 
   const { data: guests, isLoading: guestsLoading } = useQuery<Guest[]>({
     queryKey: ['/api/guests'],
+    queryFn: async () => {
+      const response = await fetch('/api/guests', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch guests');
+      return response.json();
+    },
+    refetchInterval: 30000,
   });
 
   const generateCodeMutation = useMutation({
@@ -291,54 +307,72 @@ export default function InHouse() {
   const isLoading = roomsLoading || bookingsLoading || guestsLoading;
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">
-          InHouse Management
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Manage room status, member assignments, and door codes for {user.property || 'all properties'}.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">InHouse Management</h1>
+              <p className="text-slate-400 text-sm mt-0.5">
+                Room status, member assignments & door codes · {user.property || 'All Properties'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setNewBookingDialogOpen(true)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg h-9 text-sm"
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> New Booking
+              </Button>
+              <Button 
+                onClick={() => setNewMemberDialogOpen(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg h-9 text-sm"
+              >
+                <User className="h-4 w-4 mr-1.5" /> New Member
+              </Button>
+              <Button 
+                onClick={() => window.location.href = '/master-codes-management'}
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-lg h-9 text-sm"
+              >
+                <Key className="h-4 w-4 mr-1.5" /> Master Codes
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card className="shadow-material">
-        <CardHeader className="border-b border-gray-200 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-medium text-gray-900">
-              Room & Member Overview
-            </CardTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage room assignments, member information, and access codes
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <Button 
-              onClick={() => setNewBookingDialogOpen(true)}
-              className="bg-success-500 hover:bg-success-600"
-              data-testid="button-new-booking"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Booking
-            </Button>
-            <Button 
-              onClick={() => setNewMemberDialogOpen(true)}
-              className="bg-primary-500 hover:bg-primary-600"
-              data-testid="button-new-member"
-            >
-              <User className="h-4 w-4 mr-2" />
-              New Member
-            </Button>
-            <Button 
-              onClick={() => window.location.href = '/master-codes-management'}
-              className="bg-warning-500 hover:bg-warning-600"
-              data-testid="button-master-codes"
-            >
-              <Key className="h-4 w-4 mr-2" />
-              Master Codes
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4">
+        {/* Summary Badges */}
+        <div className="flex items-center gap-3 mb-6">
+          <span className="bg-white shadow-sm border border-slate-100 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            <span className="font-medium text-slate-900">{rooms?.filter(r => r.status === 'available').length || 0}</span>
+            <span className="text-slate-500">Available</span>
+          </span>
+          <span className="bg-white shadow-sm border border-slate-100 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+            <span className="font-medium text-slate-900">{rooms?.filter(r => r.status === 'occupied').length || 0}</span>
+            <span className="text-slate-500">Occupied</span>
+          </span>
+          <span className="bg-white shadow-sm border border-slate-100 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+            <span className="font-medium text-slate-900">{rooms?.filter(r => r.status === 'cleaning').length || 0}</span>
+            <span className="text-slate-500">Cleaning</span>
+          </span>
+          <span className="bg-white shadow-sm border border-slate-100 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+            <span className="font-medium text-slate-900">{rooms?.filter(r => r.status === 'maintenance').length || 0}</span>
+            <span className="text-slate-500">Maintenance</span>
+          </span>
+        </div>
+
+      <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-base font-semibold text-slate-900">Room & Member Overview</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Manage room assignments, member information, and access codes</p>
+        </div>
+        <div className="p-0">
           {isLoading ? (
             <div className="p-6">
               <div className="space-y-3">
@@ -470,8 +504,9 @@ export default function InHouse() {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div>
 
       {/* Generate Code Dialog */}
       <Dialog open={codeDialogOpen} onOpenChange={setCodeDialogOpen}>
